@@ -32,14 +32,35 @@ struct HomeView: View {
         NavigationStack(path: $path) {
             ScrollView {
                 ZStack(alignment: .top) {
+                    Color.black
+                        .edgesIgnoringSafeArea(.all)
                     // ✅ Background image that scrolls with content
                     Image("SpaceBG")
                         .resizable()
                         .interpolation(.none)
                         .aspectRatio(contentMode: .fill)
-                        .frame(maxWidth: .infinity)
-                        .ignoresSafeArea()
-                        .zIndex(0)
+                        .clipped()
+                        .overlay(
+                            VStack {
+                                // Top fade: fades from black to transparent
+                                LinearGradient(
+                                    gradient: Gradient(colors: [Color.black, Color.clear]),
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                                .frame(height: 100) // adjust the height to control the fade intensity
+
+                                Spacer()
+
+                                // Bottom fade: fades from transparent to black
+                                LinearGradient(
+                                    gradient: Gradient(colors: [Color.clear, Color.black]),
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                                .frame(height: 100)
+                            }
+                        )
 
 
                     VStack(spacing: 20) {

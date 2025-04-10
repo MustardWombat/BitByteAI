@@ -45,6 +45,8 @@ struct CosmosApp: App {
     var body: some Scene {
         WindowGroup {
             CosmosAppView()
+                .preferredColorScheme(.dark)  // Forces everything into Dark Mode
+
         }
     }
 }
