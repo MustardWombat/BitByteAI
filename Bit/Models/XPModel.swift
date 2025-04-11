@@ -32,6 +32,7 @@ class XPModel: ObservableObject {
     // MARK: - Init
     init() {
         loadData()
+        checkForLevelUp() // Ensure saved XP promotes level if needed
     }
 
     // MARK: - Add XP
@@ -80,11 +81,20 @@ class XPModel: ObservableObject {
 
     private func loadData() {
         let defaults = UserDefaults.standard
-        xp = defaults.integer(forKey: xpKey)
-        level = defaults.integer(forKey: levelKey)
-        if level == 0 { level = 1 }
-        xpForNextLevel = defaults.integer(forKey: xpForNextLevelKey)
-        if xpForNextLevel == 0 {
+
+        if let savedXP = defaults.object(forKey: xpKey) as? Int {
+            xp = savedXP
+        }
+        
+        if let savedLevel = defaults.object(forKey: levelKey) as? Int {
+            level = savedLevel
+        } else {
+            level = 1
+        }
+        
+        if let savedXPForNextLevel = defaults.object(forKey: xpForNextLevelKey) as? Int {
+            xpForNextLevel = savedXPForNextLevel
+        } else {
             xpForNextLevel = calculateXPForNextLevel(for: level)
         }
     }
