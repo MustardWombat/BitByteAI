@@ -11,18 +11,27 @@ import Combine
 
 class XPModel: ObservableObject {
     @Published var xp: Int = 0 {
-        didSet { saveData() }
+        didSet {
+            if isInitialLoadComplete { saveData() }
+        }
     }
 
     @Published var level: Int = 1 {
-        didSet { saveData() }
+        didSet {
+            if isInitialLoadComplete { saveData() }
+        }
     }
 
     @Published var xpForNextLevel: Int = 100 {
-        didSet { saveData() }
+        didSet {
+            if isInitialLoadComplete { saveData() }
+        }
     }
 
     @Published var upgradeMultiplier: Double = 1.0  // Optional: Persist if needed
+
+    // Flag to avoid saving during initial load.
+    private var isInitialLoadComplete = false
 
     // MARK: - Persistence Keys
     private let xpKey = "XPModel.xp"
@@ -32,7 +41,10 @@ class XPModel: ObservableObject {
     // MARK: - Init
     init() {
         loadData()
-        checkForLevelUp() // Ensure saved XP promotes level if needed
+        // Once loadData is complete, enable saving
+        isInitialLoadComplete = true
+        // Removed the auto level-up check from init:
+        // checkForLevelUp()
     }
 
     // MARK: - Add XP
@@ -40,7 +52,7 @@ class XPModel: ObservableObject {
         let effectiveXP = Int(Double(amount) * upgradeMultiplier)
         xp += effectiveXP
         print("Current XP:", xp)
-        checkForLevelUp()
+        checkForLevelUp()   // Only check level-up when XP is added
     }
 
     // MARK: - Level Up Check
@@ -81,17 +93,12 @@ class XPModel: ObservableObject {
 
     private func loadData() {
         let defaults = UserDefaults.standard
-
         if let savedXP = defaults.object(forKey: xpKey) as? Int {
             xp = savedXP
         }
-        
         if let savedLevel = defaults.object(forKey: levelKey) as? Int {
             level = savedLevel
-        } else {
-            level = 1
         }
-        
         if let savedXPForNextLevel = defaults.object(forKey: xpForNextLevelKey) as? Int {
             xpForNextLevel = savedXPForNextLevel
         } else {
