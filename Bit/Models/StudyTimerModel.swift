@@ -7,6 +7,13 @@ import ActivityKit
 import UIKit
 #endif
 
+struct StudyTimerState: Codable {
+    let earnedRewards: [String]
+    let totalTimeStudied: Int
+    let focusStreak: Int
+    let selectedTopic: Category?  // Persist selected topic
+}
+
 class StudyTimerModel: ObservableObject {
     @Published var earnedRewards: [String] = [] {
         didSet { saveData() }
@@ -21,97 +28,114 @@ class StudyTimerModel: ObservableObject {
     @Published var focusStreak: Int = 0 {
         didSet { saveData() }
     }
-
+    @Published var selectedTopic: Category? {
+        didSet {
+            print("DEBUG: selectedTopic changed to: \(selectedTopic?.name ?? "nil")")
+            saveData()
+        }
+    }
+    
+    // Persistence key
+    private let studyDataKey = "StudyTimerModelData"
+    
     var xpModel: XPModel?
     var miningModel: MiningModel?
-    var selectedTopic: Category?
     var categoriesVM: CategoriesViewModel?
-
+    
     private var timer: Timer?
     private var timerStartDate: Date?
     private var initialDuration: Int = 0
-    private let studyDataKey = "StudyTimerModelData"
-    private var initialEndDate: Date? // New property for a fixed end date
-
+    private var initialEndDate: Date? // Fixed end date
+    
     #if os(iOS)
     private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
     #endif
-
+    
     private var liveActivity: Activity<StudyTimerAttributes>? = nil
-
-    init(xpModel: XPModel? = nil, miningModel: MiningModel? = nil) {
+    
+    init(xpModel: XPModel? = nil, miningModel: MiningModel? = nil, categoriesVM: CategoriesViewModel? = nil) {
         self.xpModel = xpModel
         self.miningModel = miningModel
+        self.categoriesVM = categoriesVM
         loadData()
+        // Attempt to load the selected topic from CategoriesViewModel if not already loaded.
+        if selectedTopic == nil, let cat = categoriesVM?.loadSelectedTopic() {
+            selectedTopic = cat
+        }
+        // If still nil, set a default from categories (if available)
+        if selectedTopic == nil, let firstCat = categoriesVM?.categories.first {
+            selectedTopic = firstCat
+            categoriesVM?.saveSelectedTopicID(firstCat.id)
+        }
+        print("DEBUG: Loaded selectedTopic: \(selectedTopic?.name ?? "nil")")
     }
-
+    
     func startTimer(for duration: Int) {
         let maxDuration = 3600
-
-        if isTimerRunning {
-            // Optional: Disable stacking
-            return
+        if isTimerRunning { return }
+        
+        initialDuration = min(duration, maxDuration)
+        timerStartDate = Date()
+        timeRemaining = initialDuration
+        isTimerRunning = true
+        reward = nil
+        
+        #if os(iOS)
+        backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "StudyTimer") {
+            self.endBackgroundTask()
+        }
+        #endif
+        
+        // Set fixed end date once.
+        initialEndDate = Date().addingTimeInterval(TimeInterval(initialDuration))
+        
+        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+            self?.updateTimeRemaining()
+        }
+        // Use "Focus" if a topic isn’t set; otherwise use selected topic.
+        if let topic = selectedTopic {
+            startLiveActivity(duration: initialDuration, topic: topic.name)
         } else {
-            initialDuration = min(duration, maxDuration)
-            timerStartDate = Date()
-            timeRemaining = initialDuration
-            isTimerRunning = true
-            reward = nil
-
-            #if os(iOS)
-            backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "StudyTimer") {
-                self.endBackgroundTask()
-            }
-            #endif
-
-            // Set the fixed end date once
-            initialEndDate = Date().addingTimeInterval(TimeInterval(initialDuration))
-            timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-                self?.updateTimeRemaining()
-            }
-
+            print("DEBUG: No topic selected. Using default 'Focus'")
             startLiveActivity(duration: initialDuration, topic: "Focus")
         }
     }
-
+    
     func updateTimeRemaining() {
         guard let start = timerStartDate else { return }
         let elapsed = Int(Date().timeIntervalSince(start))
         let newRemaining = max(0, initialDuration - elapsed)
         DispatchQueue.main.async { self.timeRemaining = newRemaining }
         updateLiveActivity(remaining: newRemaining)
-        if newRemaining <= 0 {
-            stopTimer()
-        }
+        if newRemaining <= 0 { stopTimer() }
     }
-
+    
     func stopTimer() {
         timer?.invalidate()
         timer = nil
         isTimerRunning = false
-
+        
         let studiedTimeSeconds = Int(Date().timeIntervalSince(timerStartDate ?? Date()))
         let studiedTimeMinutes = studiedTimeSeconds / 60
-
-        print("Adding \(studiedTimeSeconds) seconds (\(studiedTimeMinutes) min) XP")
+        
+        print("Adding \(studiedTimeSeconds) sec (\(studiedTimeMinutes) min) XP")
         xpModel?.addXP(studiedTimeSeconds)
-
+        
         if studiedTimeSeconds >= 300 {
             calculateReward(using: studiedTimeSeconds)
         }
-
+        
         if let topic = selectedTopic, let vm = categoriesVM {
             vm.logStudyTime(categoryID: topic.id, date: Date(), minutes: studiedTimeMinutes)
         }
-
+        
         stopLiveActivity()
         endBackgroundTask()
         timerStartDate = nil
     }
-
+    
     func calculateReward(using seconds: Int) {
         totalTimeStudied += seconds
-
         var planetType: PlanetType
         if seconds >= 1800 {
             planetType = .rare
@@ -120,16 +144,16 @@ class StudyTimerModel: ObservableObject {
         } else {
             planetType = .tiny
         }
-
+        
         reward = planetType.rawValue
         earnedRewards.append(planetType.rawValue)
-
+        
         if let planet = miningModel?.getPlanet(ofType: planetType) {
             miningModel?.availablePlanets.append(planet)
-            print("🪐 Added planet: \(planet.name)")
+            print("Added planet: \(planet.name)")
         }
     }
-
+    
     func harvestRewards() -> Int {
         let rewardValue = earnedRewards.reduce(0) { total, reward in
             switch reward {
@@ -142,11 +166,11 @@ class StudyTimerModel: ObservableObject {
         earnedRewards.removeAll()
         return rewardValue
     }
-
+    
     func triggerFocusCheck() {
         isFocusCheckActive = true
     }
-
+    
     func handleFocusAnswer(yes: Bool) {
         if yes {
             focusStreak += 1
@@ -156,24 +180,33 @@ class StudyTimerModel: ObservableObject {
         }
         isFocusCheckActive = false
     }
-
+    
     private func saveData() {
-        let data: [String: Any] = [
-            "earnedRewards": earnedRewards,
-            "totalTimeStudied": totalTimeStudied,
-            "focusStreak": focusStreak
-        ]
-        UserDefaults.standard.set(data, forKey: studyDataKey)
-    }
-
-    private func loadData() {
-        if let data = UserDefaults.standard.dictionary(forKey: studyDataKey) {
-            earnedRewards = data["earnedRewards"] as? [String] ?? []
-            totalTimeStudied = data["totalTimeStudied"] as? Int ?? 0
-            focusStreak = data["focusStreak"] as? Int ?? 0
+        let state = StudyTimerState(
+            earnedRewards: earnedRewards,
+            totalTimeStudied: totalTimeStudied,
+            focusStreak: focusStreak,
+            selectedTopic: selectedTopic
+        )
+        if let data = try? JSONEncoder().encode(state) {
+            UserDefaults.standard.set(data, forKey: studyDataKey)
+            print("DEBUG: Saved StudyTimerState with topic: \(selectedTopic?.name ?? "nil")")
+        } else {
+            print("❌ Failed to encode StudyTimerState")
         }
     }
-
+    
+    private func loadData() {
+        if let data = UserDefaults.standard.data(forKey: studyDataKey),
+           let state = try? JSONDecoder().decode(StudyTimerState.self, from: data) {
+            earnedRewards = state.earnedRewards
+            totalTimeStudied = state.totalTimeStudied
+            focusStreak = state.focusStreak
+            selectedTopic = state.selectedTopic
+            print("DEBUG: Loaded StudyTimerState with topic: \(selectedTopic?.name ?? "nil")")
+        }
+    }
+    
     #if os(iOS)
     private func endBackgroundTask() {
         if backgroundTaskID != .invalid {
@@ -184,7 +217,7 @@ class StudyTimerModel: ObservableObject {
     #else
     private func endBackgroundTask() {}
     #endif
-
+    
     private func startLiveActivity(duration: Int, topic: String) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else {
             print("❌ Live Activities not authorized")
@@ -193,25 +226,24 @@ class StudyTimerModel: ObservableObject {
         guard let endDate = initialEndDate else { return }
         let attributes = StudyTimerAttributes(topic: topic)
         let state = StudyTimerAttributes.ContentState(timeRemaining: duration, endDate: endDate)
-
         do {
             liveActivity = try Activity<StudyTimerAttributes>.request(attributes: attributes, contentState: state)
-            print("✅ Live Activity started")
+            print("✅ Live Activity started with topic: \(topic)")
         } catch {
             print("❌ Failed to start live activity: \(error)")
         }
     }
-
+    
     private func updateLiveActivity(remaining: Int) {
         guard let activity = liveActivity, let endDate = initialEndDate else { return }
         Task {
             await activity.update(using: StudyTimerAttributes.ContentState(
                 timeRemaining: remaining,
-                endDate: endDate  // Use the fixed end date here
+                endDate: endDate
             ))
         }
     }
-
+    
     private func stopLiveActivity() {
         guard let activity = liveActivity else { return }
         Task {
@@ -229,3 +261,4 @@ extension StudyTimerModel {
         return 0
     }
 }
+

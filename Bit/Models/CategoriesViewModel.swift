@@ -119,7 +119,10 @@ struct CategorySelectionSheet: View {
     @State private var newTopicName: String = ""
     @State private var showDeleteAlert = false
     @State private var categoryToDelete: Category?
-
+    
+    // New closure to be called when a category is selected.
+    var onCategorySelected: (Category) -> Void
+    
     var onAddCategory: (String) -> Void
     var onDeleteCategory: (Category) -> Void
 
@@ -129,6 +132,7 @@ struct CategorySelectionSheet: View {
                 ForEach(categories) { category in
                     Button(action: {
                         selected = category
+                        onCategorySelected(category) // persist the selection!
                         isPresented = false
                     }) {
                         HStack {
@@ -150,7 +154,7 @@ struct CategorySelectionSheet: View {
                     })
                 }
 
-                // Add new topic row
+                // New Topic Entry
                 HStack {
                     TextField("New Topic", text: $newTopicName)
                     Button("Add") {
