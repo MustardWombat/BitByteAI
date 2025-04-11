@@ -31,6 +31,7 @@ class StudyTimerModel: ObservableObject {
     private var timerStartDate: Date?
     private var initialDuration: Int = 0
     private let studyDataKey = "StudyTimerModelData"
+    private var initialEndDate: Date? // New property for a fixed end date
 
     #if os(iOS)
     private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
@@ -63,6 +64,8 @@ class StudyTimerModel: ObservableObject {
             }
             #endif
 
+            // Set the fixed end date once
+            initialEndDate = Date().addingTimeInterval(TimeInterval(initialDuration))
             timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
                 self?.updateTimeRemaining()
             }
@@ -187,8 +190,7 @@ class StudyTimerModel: ObservableObject {
             print("❌ Live Activities not authorized")
             return
         }
-
-        let endDate = Date().addingTimeInterval(TimeInterval(duration))
+        guard let endDate = initialEndDate else { return }
         let attributes = StudyTimerAttributes(topic: topic)
         let state = StudyTimerAttributes.ContentState(timeRemaining: duration, endDate: endDate)
 
@@ -201,11 +203,11 @@ class StudyTimerModel: ObservableObject {
     }
 
     private func updateLiveActivity(remaining: Int) {
-        guard let activity = liveActivity else { return }
+        guard let activity = liveActivity, let endDate = initialEndDate else { return }
         Task {
             await activity.update(using: StudyTimerAttributes.ContentState(
                 timeRemaining: remaining,
-                endDate: Date().addingTimeInterval(TimeInterval(remaining))
+                endDate: endDate  // Use the fixed end date here
             ))
         }
     }
