@@ -37,8 +37,6 @@ class MiningModel: ObservableObject {
         .rare: Planet(id: UUID(), name: "Rare Planet", baseMiningTime: 120, miningReward: 50),
         .common: Planet(id: UUID(), name: "Common Planet", baseMiningTime: 90, miningReward: 20),
         .tiny: Planet(id: UUID(), name: "Tiny Asteroid", baseMiningTime: 60, miningReward: 5),
-        .starter: Planet(id: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!,
-                         name: "Starter Planet", baseMiningTime: 10, miningReward: 100)
     ]
 
     // MARK: - Published Properties

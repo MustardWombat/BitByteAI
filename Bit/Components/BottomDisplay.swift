@@ -34,15 +34,19 @@ struct LayoutShell: View {
             ZStack(alignment: .topLeading) {
                 // Full-width black backdrop with slight transparency
                 Color.black.opacity(0.6)
-                    .frame(height: 70) // ⬅️ Shrink this height for a compact look
+                    .frame(height: 20)
                     .ignoresSafeArea(edges: .top)
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
+                        XPDisplayView()
                         CoinDisplay()
+
+
                             .font(.subheadline.monospaced())
                             .foregroundColor(Color(red: 0.0, green: 1, blue: 0.0))
                     }
+
 
                     Text("Welcome back, Commander!")
                         .font(.caption.monospaced())

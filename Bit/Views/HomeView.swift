@@ -64,9 +64,6 @@ struct HomeView: View {
 
 
                     VStack(spacing: 20) {
-                        XPDisplayView()
-                            .padding(.bottom, 400)
-                        //SpinningPlanetView()
                         WeeklyProgressChart()
                             .environmentObject(categoriesVM)
 
