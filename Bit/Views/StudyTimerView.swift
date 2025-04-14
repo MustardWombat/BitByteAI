@@ -12,19 +12,33 @@ struct StudyTimerView: View {
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            StarOverlay()
+
             VStack(spacing: 20) {
+
                 // MARK: - Topic Selector Sheet Trigger
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Selected Topic:")
+
+
+                // MARK: - Timer display
+                Text(formatTime(timerModel.timeRemaining))
+                    .font(.system(size: 64, weight: .bold, design: .monospaced))
+                    .foregroundColor(timerModel.isTimerRunning ? .green : .red)
+
+                // MARK: - Reward display
+                if let reward = timerModel.reward {
+                    Text("You earned: \(reward)")
+                        .font(.headline)
+                        .foregroundColor(.orange)
+                }
+                                    Text("Selected Topic:")
                         .font(.headline)
                         .foregroundColor(.white)
-                    
+
                     Button(action: {
                         isShowingCategorySheet = true
                     }) {
                         HStack {
-                            if let topic = timerModel.selectedTopic {
+                            if let topic = categoriesVM.selectedTopic {
                                 Circle()
                                     .fill(topic.displayColor)
                                     .frame(width: 12, height: 12)
@@ -43,33 +57,23 @@ struct StudyTimerView: View {
                         .cornerRadius(10)
                     }
                 }
-                
-                // MARK: - Timer display
-                Text(formatTime(timerModel.timeRemaining))
-                    .font(.system(size: 64, weight: .bold, design: .monospaced))
-                    .foregroundColor(timerModel.isTimerRunning ? .green : .red)
-                
-                // MARK: - Reward display
-                if let reward = timerModel.reward {
-                    Text("You earned: \(reward)")
-                        .font(.headline)
-                        .foregroundColor(.orange)
-                }
-                
+
                 // MARK: - Control buttons
                 HStack {
                     Button(action: {
-                        // Use the timerModel's selectedTopic directly.
+                        timerModel.selectedTopic = categoriesVM.selectedTopic
+                        timerModel.categoriesVM = categoriesVM
                         timerModel.startTimer(for: 25 * 60)
                     }) {
                         Text("Add 25 Min")
                             .padding()
                             .frame(maxWidth: .infinity)
-                            .background(Color.green)
+                            .background(categoriesVM.selectedTopic == nil ? Color.gray : Color.green)
                             .foregroundColor(.white)
                             .cornerRadius(10)
                     }
-                    
+                    .disabled(categoriesVM.selectedTopic == nil) // Disable if no topic is selected
+
                     Button(action: {
                         timerModel.stopTimer()
                     }) {
@@ -83,13 +87,13 @@ struct StudyTimerView: View {
                     .disabled(!timerModel.isTimerRunning)
                 }
                 .padding()
+
                 Spacer()
             }
             .padding()
             .onAppear {
-                // Initialize timerModel.selectedTopic if it’s nil.
-                if timerModel.selectedTopic == nil {
-                    timerModel.selectedTopic = categoriesVM.loadSelectedTopic() ?? categoriesVM.categories.first
+                if categoriesVM.selectedTopic == nil {
+                    categoriesVM.selectedTopic = categoriesVM.loadSelectedTopic()
                 }
             }
             .onChange(of: scenePhase) { newPhase in
@@ -97,47 +101,30 @@ struct StudyTimerView: View {
                     timerModel.updateTimeRemaining()
                 }
             }
-            .onChange(of: timerModel.reward) { _ in
-                // Clear reward after a short delay.
+            .onChange(of: timerModel.reward) { newReward in
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     timerModel.reward = nil
                 }
             }
             .onChange(of: timerModel.timeRemaining) { newValue in
                 if newValue == 0 && !timerModel.isTimerRunning {
-                    // Calculate studied minutes (this example uses the studiedMinutes computed property)
-                    let minutesStudied = timerModel.studiedMinutes
-                    
-                    // If a topic is selected, update its logs.
-                    if let topic = timerModel.selectedTopic {
-                        // Call the logStudyTime function in your CategoriesViewModel.
-                        categoriesVM.logStudyTime(categoryID: topic.id, date: Date(), minutes: minutesStudied)
-                    }
-                    
-                    // Show the session ended popup.
                     showSessionEndedPopup = true
                 }
             }
+
             .sheet(isPresented: $isShowingCategorySheet) {
                 CategorySelectionSheet(
                     categories: categoriesVM.categories,
-                    selected: $timerModel.selectedTopic,
+                    selected: $categoriesVM.selectedTopic, // Use the binding to the view model's selectedTopic
                     isPresented: $isShowingCategorySheet,
-                    onCategorySelected: { category in
-                        // Persist selection and update the timer model.
-                        categoriesVM.saveSelectedTopicID(category.id)
-                        timerModel.selectedTopic = category
-                    },
                     onAddCategory: { name in
                         categoriesVM.addCategory(name: name)
-                        // Automatically select newly added category.
-                        timerModel.selectedTopic = categoriesVM.categories.last
+                        categoriesVM.selectedTopic = categoriesVM.categories.last // Automatically select the newly added category
                     },
                     onDeleteCategory: { category in
                         categoriesVM.deleteCategory(category)
-                        // If the deleted category was selected, clear the selection.
-                        if timerModel.selectedTopic?.id == category.id {
-                            timerModel.selectedTopic = nil
+                        if categoriesVM.selectedTopic?.id == category.id {
+                            categoriesVM.selectedTopic = nil // Clear the selection if the selected category is deleted
                         }
                     }
                 )
@@ -161,7 +148,7 @@ struct StudyTimerView: View {
             .padding()
         }
     }
-    
+
     func formatTime(_ seconds: Int) -> String {
         let minutes = seconds / 60
         let seconds = seconds % 60

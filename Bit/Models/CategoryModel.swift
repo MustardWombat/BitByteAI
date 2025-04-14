@@ -128,3 +128,87 @@ func updateDailyLogs(for categories: [Category], categoryID: UUID, date: Date, m
         category.dailyLogs.append(newLog)
     }
 }
+
+struct CategorySelectionSheet: View {
+    let categories: [Category]
+    @Binding var selected: Category?
+    @Binding var isPresented: Bool
+    var onAddCategory: (String) -> Void
+    var onDeleteCategory: (Category) -> Void
+
+    @State private var showDeleteAlert = false
+    @State private var categoryToDelete: Category?
+    @State private var newCategoryName: String = ""
+    @State private var showCreateAlert = false
+
+    var body: some View {
+        NavigationView {
+            List {
+                // Create New Topic Button
+                Button(action: {
+                    showCreateAlert = true
+                }) {
+                    HStack {
+                        Image(systemName: "plus.circle.fill")
+                            .foregroundColor(.blue)
+                        Text("Create New Topic")
+                            .foregroundColor(.blue)
+                    }
+                }
+
+                // List of categories
+                ForEach(categories) { category in
+                    Button(action: {
+                        selected = category // Update the selected binding
+                        isPresented = false
+                    }) {
+                        HStack {
+                            Circle()
+                                .fill(category.displayColor)
+                                .frame(width: 12, height: 12)
+                            Text(category.name)
+                            Spacer()
+                            if selected?.id == category.id {
+                                Image(systemName: "checkmark")
+                                    .foregroundColor(.green)
+                            }
+                        }
+                        .contentShape(Rectangle()) // Makes the entire row tappable
+                    }
+                    .simultaneousGesture(LongPressGesture().onEnded { _ in
+                        categoryToDelete = category
+                        showDeleteAlert = true
+                    })
+                }
+            }
+            .navigationBarTitle("Choose Topic", displayMode: .inline)
+            .navigationBarItems(trailing: Button("Done") {
+                isPresented = false
+            })
+            .alert(isPresented: $showDeleteAlert) {
+                Alert(
+                    title: Text("Delete Topic"),
+                    message: Text("Are you sure you want to delete '\(categoryToDelete?.name ?? "")'?"),
+                    primaryButton: .destructive(Text("Delete")) {
+                        if let category = categoryToDelete {
+                            onDeleteCategory(category)
+                        }
+                    },
+                    secondaryButton: .cancel()
+                )
+            }
+            .alert("Create New Topic", isPresented: $showCreateAlert, actions: {
+                TextField("Topic Name", text: $newCategoryName)
+                Button("Create") {
+                    let trimmedName = newCategoryName.trimmingCharacters(in: .whitespaces)
+                    guard !trimmedName.isEmpty else { return }
+                    onAddCategory(trimmedName)
+                    newCategoryName = "" // Clear the input field
+                }
+                Button("Cancel", role: .cancel) {}
+            }, message: {
+                Text("Enter a name for your new topic.")
+            })
+        }
+    }
+}

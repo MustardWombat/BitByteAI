@@ -31,43 +31,42 @@ struct LayoutShell: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ZStack(alignment: .topLeading) {
-                // Full-width black backdrop with slight transparency
-                Color.black.opacity(0.6)
-                    .frame(height: 20)
-                    .ignoresSafeArea(edges: .top)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 6) {
+            // Top bar
+            ZStack(alignment: .top) {
+                VStack(spacing: 8) { // Slightly increased spacing for better layout
+                    // XP bar and coins on the same level, centered
+                    HStack(spacing: 16) { // Reduced spacing between XP and coins
                         XPDisplayView()
                         CoinDisplay()
-
-
                             .font(.subheadline.monospaced())
                             .foregroundColor(Color(red: 0.0, green: 1, blue: 0.0))
                     }
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 10) // Reduced top padding
 
+                    Spacer()
 
+                    // Welcome text at the bottom
                     Text("Welcome back, Commander!")
-                        .font(.caption.monospaced())
+                        .font(.subheadline.monospaced())
                         .foregroundColor(Color(red: 0.0, green: 1, blue: 0.0))
+                        .padding(.bottom, 10) // Increased bottom padding to prevent cutoff
                 }
-                .padding(.top, 10)    // ⬅️ Adjusted padding
-                .padding(.leading, 20)
+                .frame(height: 130) // Slightly increased height for the top bar
+                .background(Color.clear)
             }
 
-            // 🧩 Main content area
+            // Main content area
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            // 🔽 Bottom bar
+            // Bottom bar
             BottomBar(currentView: $currentView)
         }
         .edgesIgnoringSafeArea(.bottom)
-        .background(Color.clear)
+        .background(Color.black) // Black background for the entire layout
     }
 }
-
 
 struct BottomBar: View {
     @Binding var currentView: String
@@ -84,8 +83,8 @@ struct BottomBar: View {
             BottomBarButton(iconName: "cart.fill", viewName: "Shop", currentView: $currentView)
             Spacer()
         }
-        .padding()
-        .padding(.bottom, 40)
+        .padding(.horizontal, 10) // Reduced horizontal padding
+        .padding(.bottom, 20) // Reduced bottom padding
         .background(Color.clear)
     }
 }

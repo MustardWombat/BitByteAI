@@ -7,7 +7,6 @@ enum PlanetType: String, Codable, CaseIterable {
     case rare = "🌟 Rare Planet"
     case common = "🌕 Common Planet"
     case tiny = "🌑 Tiny Asteroid"
-    case starter = "Starter Planet"
 }
 
 // MARK: - Planet Model
@@ -30,13 +29,12 @@ struct Planet: Identifiable, Codable, Equatable {
 // MARK: - Mining Model
 class MiningModel: ObservableObject {
     var awardCoins: ((Int) -> Void)? // Injected from CosmosAppView
-    
+
     // MARK: - Planet Index
     private let planetIndex: [PlanetType: Planet] = [
         .rare: Planet(id: UUID(), name: "Rare Planet", baseMiningTime: 120, miningReward: 50),
         .common: Planet(id: UUID(), name: "Common Planet", baseMiningTime: 90, miningReward: 20),
-        .tiny: Planet(id: UUID(), name: "Tiny Asteroid", baseMiningTime: 60, miningReward: 5),
-        .starter: Planet(id: UUID(), name: "Starter Planet", baseMiningTime: 150, miningReward: 10)
+        .tiny: Planet(id: UUID(), name: "Tiny Asteroid", baseMiningTime: 60, miningReward: 5)
     ]
 
     // MARK: - Published Properties
@@ -51,17 +49,17 @@ class MiningModel: ObservableObject {
     private var targetMiningDuration: Int = 0
 
     private let savedMiningKey = "currentMiningPlanetData"
-    private let savedAvailablePlanetsKey = "availablePlanetsData"
+    private let availablePlanetsKey = "availablePlanets"
 
     // MARK: - Init
     init() {
-        loadAvailablePlanets() // Load persisted available planets or add starter if missing
+        loadAvailablePlanets() // Load persisted planets if available
         resumeMiningIfNeeded()
     }
 
     // MARK: - Planet Access
     func getPlanet(ofType type: PlanetType) -> Planet? {
-        return planetIndex[type]
+        planetIndex[type]
     }
 
     // MARK: - Start Mining
@@ -71,9 +69,8 @@ class MiningModel: ObservableObject {
         var updatedPlanet = planet
         updatedPlanet.miningStartDate = Date()
 
-        // Remove from availablePlanets and persist the change.
+        // Remove from list so we don’t show a duplicate.
         availablePlanets.removeAll { $0.id == planet.id }
-        saveAvailablePlanets()
 
         currentMiningPlanet = updatedPlanet
         speedMultiplier = inFocusMode ? 2 : 1
@@ -143,24 +140,34 @@ class MiningModel: ObservableObject {
         UserDefaults.standard.removeObject(forKey: savedMiningKey)
     }
 
-    // MARK: - Persistence for availablePlanets
+    // MARK: - Persistence for Available Planets
     private func saveAvailablePlanets() {
         do {
             let data = try JSONEncoder().encode(availablePlanets)
-            UserDefaults.standard.set(data, forKey: savedAvailablePlanetsKey)
+            UserDefaults.standard.set(data, forKey: availablePlanetsKey)
         } catch {
             print("❌ Failed to save available planets: \(error)")
         }
     }
 
     private func loadAvailablePlanets() {
-        if let data = UserDefaults.standard.data(forKey: savedAvailablePlanetsKey),
-           let planets = try? JSONDecoder().decode([Planet].self, from: data) {
-            availablePlanets = planets
-        } else if let starter = planetIndex[.starter] {
-            availablePlanets = [starter]
-            saveAvailablePlanets()
+        guard let data = UserDefaults.standard.data(forKey: availablePlanetsKey) else { return }
+        do {
+            availablePlanets = try JSONDecoder().decode([Planet].self, from: data)
+        } catch {
+            print("❌ Failed to load available planets: \(error)")
         }
+    }
+
+    // Update available planets whenever they change
+    func addPlanet(_ planet: Planet) {
+        availablePlanets.append(planet)
+        saveAvailablePlanets()
+    }
+
+    func removePlanet(_ planet: Planet) {
+        availablePlanets.removeAll { $0.id == planet.id }
+        saveAvailablePlanets()
     }
 
     // MARK: - Finish Mining
@@ -169,17 +176,11 @@ class MiningModel: ObservableObject {
 
         print("⛏️ Finished mining \(planet.name)! Awarding \(planet.miningReward) coins.")
 
-        // Award coins via the callback.
+        // ✅ Award coins via the callback
         awardCoins?(planet.miningReward)
 
-        // Do NOT re-add the planet — it's already mined.
         clearSavedMiningState()
         resetMiningState()
-    }
-
-    // MARK: - Cancel Mining (disabled)
-    func cancelMining() {
-        // Disabled
     }
 
     private func resetMiningState() {
