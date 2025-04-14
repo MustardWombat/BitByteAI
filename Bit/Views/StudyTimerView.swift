@@ -12,7 +12,7 @@ struct StudyTimerView: View {
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            //StarOverlay(starCount: 50)
+            StarOverlay()
             VStack(spacing: 20) {
                 // MARK: - Topic Selector Sheet Trigger
                 VStack(alignment: .leading, spacing: 10) {
@@ -105,6 +105,16 @@ struct StudyTimerView: View {
             }
             .onChange(of: timerModel.timeRemaining) { newValue in
                 if newValue == 0 && !timerModel.isTimerRunning {
+                    // Calculate studied minutes (this example uses the studiedMinutes computed property)
+                    let minutesStudied = timerModel.studiedMinutes
+                    
+                    // If a topic is selected, update its logs.
+                    if let topic = timerModel.selectedTopic {
+                        // Call the logStudyTime function in your CategoriesViewModel.
+                        categoriesVM.logStudyTime(categoryID: topic.id, date: Date(), minutes: minutesStudied)
+                    }
+                    
+                    // Show the session ended popup.
                     showSessionEndedPopup = true
                 }
             }

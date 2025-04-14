@@ -41,20 +41,41 @@ struct WeeklyProgressChart: View {
                         }
                     }
                     .frame(height: 250)
+                    .animation(.easeInOut, value: viewModel.categories) // Smooth transition
+                    .onChange(of: viewModel.categories) { _ in
+                        print("🟢 Chart detected a category update")
+                    }
+                    .onReceive(viewModel.objectWillChange) { _ in
+                        print("🟢 Chart view received objectWillChange")
+                    }
+
                 }
             } else {
                 Text("Swift Charts is only available on iOS 16+.")
                     .foregroundColor(.gray)
                     .frame(height: 200)
+                
             }
         }
         .padding()
     }
 
     private func maxOverallMinutes() -> Int {
-        viewModel.categories
-            .flatMap { viewModel.weeklyData(for: $0.id) }
-            .map { $0.minutes }
-            .max() ?? 10
+        let weeklyData = viewModel.categories.flatMap { viewModel.weeklyData(for: $0.id) }
+        print("DEBUG: Weekly Data for all categories: \(weeklyData)")
+        
+        let minutesArray = weeklyData.map { $0.minutes }
+        print("DEBUG: Minutes Array: \(minutesArray)")
+        
+        let maxMinutes = minutesArray.max() ?? 10
+        print("DEBUG: maxOverallMinutes computed as \(maxMinutes)")
+        return maxMinutes
+    }
+}
+
+extension CategoriesViewModel {
+    func updateCategory(at index: Int) {
+        categories[index] = categories[index]
+        categories = categories  // This forces a new array reference.
     }
 }
