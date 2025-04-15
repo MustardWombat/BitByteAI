@@ -14,23 +14,22 @@ struct StudyTimerView: View {
             Color.black.ignoresSafeArea()
 
             VStack(spacing: 20) {
-
-                // MARK: - Topic Selector Sheet Trigger
+                // Add padding to the top of the assets
                 VStack(alignment: .leading, spacing: 10) {
+                    // MARK: - Timer display
+                    Text(formatTime(timerModel.timeRemaining))
+                        .font(.system(size: 64, weight: .bold, design: .monospaced))
+                        .foregroundColor(timerModel.isTimerRunning ? .green : .red)
 
+                    // MARK: - Reward display
+                    if let reward = timerModel.reward {
+                        Text("You earned: \(reward)")
+                            .font(.headline)
+                            .foregroundColor(.orange)
+                    }
 
-                // MARK: - Timer display
-                Text(formatTime(timerModel.timeRemaining))
-                    .font(.system(size: 64, weight: .bold, design: .monospaced))
-                    .foregroundColor(timerModel.isTimerRunning ? .green : .red)
-
-                // MARK: - Reward display
-                if let reward = timerModel.reward {
-                    Text("You earned: \(reward)")
-                        .font(.headline)
-                        .foregroundColor(.orange)
-                }
-                                    Text("Selected Topic:")
+                    // MARK: - Topic Selector
+                    Text("Selected Topic:")
                         .font(.headline)
                         .foregroundColor(.white)
 
@@ -57,6 +56,8 @@ struct StudyTimerView: View {
                         .cornerRadius(10)
                     }
                 }
+                .padding(.top, 100) // Added top padding for the assets
+                .padding(.horizontal, 20)
 
                 // MARK: - Control buttons
                 HStack {

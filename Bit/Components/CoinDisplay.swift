@@ -22,8 +22,5 @@ struct CoinDisplay: View {
                 .font(.headline)
                 .foregroundColor(.white)
         }
-        .padding(8)
-        .background(Color.black.opacity(0.5))
-        .cornerRadius(8)
     }
 }

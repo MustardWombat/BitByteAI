@@ -19,8 +19,7 @@ struct ShopView: View {
             VStack(spacing: 0) {
                 ScrollView {
                     VStack(spacing: 20) {
-                        
-                        
+                        // Add padding to the top of the assets
                         ForEach(items) { item in
                             HStack {
                                 Text(item.name)
@@ -31,6 +30,11 @@ struct ShopView: View {
                                 Button("Buy") {
                                     buy(item: item)
                                 }
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 5)
+                                .background(Color.green)
+                                .foregroundColor(.white)
+                                .cornerRadius(5)
                             }
                             .padding()
                             .background(Color.black.opacity(0.5))
@@ -38,10 +42,11 @@ struct ShopView: View {
                         }
                     }
                     .padding()
+                    .padding(.top, 100) // Added top padding for the assets
                 }
                 // Optionally, you could add a bottom bar here if desired.
             }
-            .padding()
+            .padding(.horizontal, 20) // Added horizontal padding for consistent spacing
         }
         .background(Color.black.ignoresSafeArea())
     }

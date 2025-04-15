@@ -41,11 +41,14 @@ struct HomeView: View {
                         .ignoresSafeArea()
                         .zIndex(0)
 
-
                     VStack(spacing: 20) {
-                        //SpinningPlanetView()
+                        // Add padding to the top of the assets
+                        SpinningPlanetView()
+                            .padding(.top, 50) // Added top padding for the spinning planet
+
                         WeeklyProgressChart()
                             .environmentObject(categoriesVM)
+                            .padding(.top, 20) // Added top padding for the chart
 
                         // 🛍 Purchases Section
                         VStack(alignment: .leading, spacing: 10) {
@@ -73,10 +76,11 @@ struct HomeView: View {
                         .padding()
                         .background(Color.black.opacity(0.5))
                         .cornerRadius(10)
+                        .padding(.top, 20) // Added top padding for the purchases section
 
                         Spacer(minLength: 40)
                     }
-                    .padding(.top, 100)
+                    .padding(.top, 100) // Overall top padding for the VStack
                     .padding(.horizontal, 20)
                     .zIndex(1)
                 }

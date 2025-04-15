@@ -10,81 +10,37 @@ import SwiftUI
 import Combine
 
 class XPModel: ObservableObject {
-    @Published var xp: Int = 0 {
-        didSet {
-            if isInitialLoadComplete { saveData() }
-        }
-    }
+    @Published var xp: Int = 0 { didSet { saveIfLoaded() } }
+    @Published var level: Int = 1 { didSet { saveIfLoaded() } }
+    @Published var xpForNextLevel: Int = 100 { didSet { saveIfLoaded() } }
+    @Published var upgradeMultiplier: Double = 1.0
 
-    @Published var level: Int = 1 {
-        didSet {
-            if isInitialLoadComplete { saveData() }
-        }
-    }
-
-    @Published var xpForNextLevel: Int = 100 {
-        didSet {
-            if isInitialLoadComplete { saveData() }
-        }
-    }
-
-    @Published var upgradeMultiplier: Double = 1.0  // Optional: Persist if needed
-
-    // Flag to avoid saving during initial load.
     private var isInitialLoadComplete = false
-
-    // MARK: - Persistence Keys
     private let xpKey = "XPModel.xp"
     private let levelKey = "XPModel.level"
     private let xpForNextLevelKey = "XPModel.xpForNextLevel"
 
-    // MARK: - Init
     init() {
         loadData()
-        // Once loadData is complete, enable saving
         isInitialLoadComplete = true
-        // Removed the auto level-up check from init:
-        // checkForLevelUp()
     }
 
-    // MARK: - Add XP
     func addXP(_ amount: Int) {
-        let effectiveXP = Int(Double(amount) * upgradeMultiplier)
-        xp += effectiveXP
-        print("Current XP:", xp)
-        checkForLevelUp()   // Only check level-up when XP is added
-    }
-
-    // MARK: - Level Up Check
-    private func checkForLevelUp() {
+        xp += Int(Double(amount) * upgradeMultiplier)
         while xp >= xpForNextLevel {
             xp -= xpForNextLevel
             level += 1
-            xpForNextLevel = calculateXPForNextLevel(for: level)
-            print("Leveled up! New level: \(level)")
+            xpForNextLevel = 100 * level * level
         }
     }
 
-    // MARK: - XP Formula
-    private func calculateXPForNextLevel(for level: Int) -> Int {
-        return 100 * level * level
-    }
-
-    // MARK: - Upgrade Handling
-    func applyUpgrade(multiplier: Double) {
-        upgradeMultiplier *= multiplier
-    }
-
-    // MARK: - Reset XP
+    func applyUpgrade(multiplier: Double) { upgradeMultiplier *= multiplier }
     func resetXP() {
-        xp = 0
-        level = 1
-        xpForNextLevel = calculateXPForNextLevel(for: level)
-        upgradeMultiplier = 1.0
+        xp = 0; level = 1; xpForNextLevel = 100; upgradeMultiplier = 1.0
     }
 
-    // MARK: - Persistence
-    private func saveData() {
+    private func saveIfLoaded() {
+        guard isInitialLoadComplete else { return }
         let defaults = UserDefaults.standard
         defaults.set(xp, forKey: xpKey)
         defaults.set(level, forKey: levelKey)
@@ -93,17 +49,9 @@ class XPModel: ObservableObject {
 
     private func loadData() {
         let defaults = UserDefaults.standard
-        if let savedXP = defaults.object(forKey: xpKey) as? Int {
-            xp = savedXP
-        }
-        if let savedLevel = defaults.object(forKey: levelKey) as? Int {
-            level = savedLevel
-        }
-        if let savedXPForNextLevel = defaults.object(forKey: xpForNextLevelKey) as? Int {
-            xpForNextLevel = savedXPForNextLevel
-        } else {
-            xpForNextLevel = calculateXPForNextLevel(for: level)
-        }
+        xp = defaults.integer(forKey: xpKey)
+        level = max(1, defaults.integer(forKey: levelKey)) // Ensure level is at least 1
+        xpForNextLevel = defaults.integer(forKey: xpForNextLevelKey) > 0 ? defaults.integer(forKey: xpForNextLevelKey) : 100
     }
 }
 
@@ -111,16 +59,34 @@ struct XPDisplayView: View {
     @EnvironmentObject var xpModel: XPModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Level: \(xpModel.level)")
-                .foregroundColor(.white)
-            ProgressView(value: Double(xpModel.xp), total: Double(xpModel.xpForNextLevel))
-                .progressViewStyle(LinearProgressViewStyle(tint: .blue))
-            Text("\(xpModel.xp) / \(xpModel.xpForNextLevel) XP")
-                .foregroundColor(.white)
+        HStack(spacing: 10) { // Horizontal layout for the vertical bar and text
+            // Vertical XP bar
+            ZStack(alignment: .bottom) {
+                // Background bar
+                RoundedRectangle(cornerRadius: 4)
+                    .frame(width: 5, height: 50) // Adjusted size for compactness
+                    .foregroundColor(Color.gray.opacity(0.3))
+
+                // Foreground progress bar
+                RoundedRectangle(cornerRadius: 4)
+                    .frame(width: 5, height: 50 * CGFloat(xpModel.xp) / CGFloat(xpModel.xpForNextLevel)) // Corrected dynamic height
+                    .foregroundColor(Color.blue)
+            }
+
+            // Level and XP text
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Level \(xpModel.level)")
+                    .font(.headline)
+                    .foregroundColor(.white)
+
+                Text("\(xpModel.xp) / \(xpModel.xpForNextLevel) XP")
+                    .font(.caption)
+                    .foregroundColor(.white)
+                    .lineLimit(1) // Ensure text fits within the view
+                    .minimumScaleFactor(0.8) // Scale down text if needed
+            }
         }
-        .padding()
-        .background(Color.black.opacity(0.5))
-        .cornerRadius(10)
+        .padding(8) // Add padding for better spacing
+        .cornerRadius(8) // Rounded corners for a polished look
     }
 }
