@@ -40,54 +40,71 @@ struct LayoutShell: View {
     @State private var maxXP: Int = 200 // Example max XP value
     @EnvironmentObject var timerModel: StudyTimerModel // Inject StudyTimerModel
 
+    // Define fixed heights for overlays
+    private let topBarHeight: CGFloat = 100
+    private let bottomBarHeight: CGFloat = 90
+
     var body: some View {
-        ZStack {
-            // Main content
-            content
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(.bottom, 90) // Prevent overlap with BottomBar
-
-            // Overlay Top & Bottom bars
-            VStack(spacing: 0) {
-                // Top Bar
-                ZStack {
-                    BlurView(style: .systemMaterial)
-                        .ignoresSafeArea(edges: .top) // Extend to the very top of the screen
-                        .frame(height: 100) // Reduced height for a more compact top bar
-
-                    VStack(spacing: 4) { // Reduced spacing for compactness
-                        // Top Level: XP and Coin Display
-                        HStack(spacing: 12) { // Horizontal layout for XP and Coin
-                            XPDisplayView() // Ensure XPDisplayView accepts these parameters
-                                .frame(maxWidth: .infinity, alignment: .leading) // Align XP display to the far left
-                            Spacer() // Add a spacer for better separation
-                            CoinDisplay()
-                                .font(.caption.monospaced()) // Slightly larger font for better readability
-                                .foregroundColor(Color.green)
-                            StreakDisplay()
-                                .environmentObject(timerModel)
-                        }
-                        .padding(.horizontal, 16) // Add horizontal padding to prevent hugging the edges
-                        .frame(maxWidth: .infinity)
-
-                        // Bottom Level: Dynamic Welcome Text
-                        Text(dynamicWelcomeText(for: currentView)) // Display dynamic text
-                            .font(.caption.monospaced()) // Reduced font size for a more compact appearance
-                            .foregroundColor(Color.green)
-                    }
-                    .padding(.top, 4) // Minimal padding to bring content closer to the top
-                    .frame(maxWidth: .infinity) // Ensure it spans the full width
-                    .frame(height: 100) // Match the reduced height of the top bar
-                    .cornerRadius(12, corners: [.bottomLeft, .bottomRight]) // Slightly larger corner radius
+        GeometryReader { geo in
+            ZStack {
+                // Main content, constrained to not overlap overlays
+                VStack(spacing: 0) {
+                    Spacer(minLength: topBarHeight)
+                    content
+                        .frame(
+                            maxWidth: .infinity,
+                            maxHeight: geo.size.height - topBarHeight - bottomBarHeight
+                        )
+                    Spacer(minLength: bottomBarHeight)
                 }
+                .frame(width: geo.size.width, height: geo.size.height)
+                .clipped()
+
+                // Top Bar (absolutely positioned)
+                VStack {
+                    ZStack {
+                        BlurView(style: .systemMaterial)
+                            .ignoresSafeArea(edges: .top)
+                            .frame(height: topBarHeight)
+                        VStack(spacing: 4) {
+                            HStack(spacing: 12) {
+                                XPDisplayView()
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                Spacer()
+                                CoinDisplay()
+                                    .font(.caption.monospaced())
+                                    .foregroundColor(Color.green)
+                                StreakDisplay()
+                                    .environmentObject(timerModel)
+                            }
+                            .padding(.horizontal, 16)
+                            .frame(maxWidth: .infinity)
+                            Text(dynamicWelcomeText(for: currentView))
+                                .font(.caption.monospaced())
+                                .foregroundColor(Color.green)
+                        }
+                        .padding(.top, 4)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: topBarHeight)
+                        .cornerRadius(12, corners: [.bottomLeft, .bottomRight])
+                    }
+                    .frame(height: topBarHeight)
+                    Spacer()
+                }
+                .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
                 .zIndex(2)
 
-                Spacer()
-
-                // Bottom Bar
-                BottomBar(currentView: $currentView)
-                    .zIndex(2)
+                // Bottom Bar (absolutely positioned)
+                VStack {
+                    Spacer()
+                    BottomBar(currentView: $currentView)
+                        .frame(height: bottomBarHeight)
+                        .ignoresSafeArea(edges: .bottom)
+                }
+                .frame(width: geo.size.width, height: geo.size.height, alignment: .bottom)
+                .zIndex(2)
             }
+            .frame(width: geo.size.width, height: geo.size.height)
         }
         .onAppear {
             updateXPValues()
