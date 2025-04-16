@@ -31,6 +31,22 @@ struct BottomBarButton: View {
     }
 }
 
+// MARK: - TopShellSpritePlaceholder
+struct TopShellSpritePlaceholder: View {
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(Color.gray.opacity(0.5), lineWidth: 2)
+                .background(RoundedRectangle(cornerRadius: 8).fill(Color.black.opacity(0.2)))
+            Image("BitDefault")
+                .font(.caption2)
+                .foregroundColor(.gray)
+        }
+        .frame(width: 44, height: 44)
+        .padding(.horizontal, 8)
+    }
+}
+
 // MARK: - LayoutShell
 struct LayoutShell: View {
     @Binding var currentView: String
@@ -67,10 +83,11 @@ struct LayoutShell: View {
                             .ignoresSafeArea(edges: .top)
                             .frame(height: topBarHeight)
                         VStack(spacing: 4) {
+                            // --- Info row with sprite placeholder centered between XP and Coin ---
                             HStack(spacing: 12) {
                                 XPDisplayView()
                                     .frame(maxWidth: .infinity, alignment: .leading)
-                                Spacer()
+                                TopShellSpritePlaceholder()
                                 CoinDisplay()
                                     .font(.caption.monospaced())
                                     .foregroundColor(Color.green)

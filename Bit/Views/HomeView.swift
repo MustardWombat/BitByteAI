@@ -6,7 +6,7 @@ struct SpinningPlanetView: View {
     @State private var rotation: Angle = .zero
 
     var body: some View {
-        Image("planet01")
+        Image("planet")
             .resizable()
             .frame(width: 300, height: 300)
             .rotationEffect(rotation)

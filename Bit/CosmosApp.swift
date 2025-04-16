@@ -10,6 +10,7 @@ struct CosmosAppView: View {
     @StateObject var civModel = CivilizationModel()
     @StateObject var categoriesModel = CategoriesViewModel()
     @StateObject var currencyModel = CurrencyModel()
+    @StateObject var taskModel = TaskModel() // <-- Add this
 
     init() {
         let xp = XPModel()
@@ -36,6 +37,7 @@ struct CosmosAppView: View {
             .environmentObject(miningModel)
             .environmentObject(categoriesModel)
             .environmentObject(currencyModel)
+            .environmentObject(taskModel) // <-- Add this
     }
 }
 
