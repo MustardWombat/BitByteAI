@@ -11,7 +11,7 @@ import SwiftUI
 
 struct CoinDisplay: View {
     @EnvironmentObject var currencyModel: CurrencyModel
-    
+
     var body: some View {
         HStack(spacing: 4) {
             Image("coin") // Ensure "coin" exists in Assets

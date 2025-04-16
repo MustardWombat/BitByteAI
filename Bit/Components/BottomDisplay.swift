@@ -38,6 +38,7 @@ struct LayoutShell: View {
 
     @State private var currentXP: Int = 150 // Example current XP value
     @State private var maxXP: Int = 200 // Example max XP value
+    @EnvironmentObject var timerModel: StudyTimerModel // Inject StudyTimerModel
 
     var body: some View {
         ZStack {
@@ -63,6 +64,8 @@ struct LayoutShell: View {
                             CoinDisplay()
                                 .font(.caption.monospaced()) // Slightly larger font for better readability
                                 .foregroundColor(Color.green)
+                            StreakDisplay()
+                                .environmentObject(timerModel)
                         }
                         .padding(.horizontal, 16) // Add horizontal padding to prevent hugging the edges
                         .frame(maxWidth: .infinity)

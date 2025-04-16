@@ -12,6 +12,8 @@ struct StudyTimerState: Codable {
     let totalTimeStudied: Int
     let focusStreak: Int
     let selectedTopic: Category?  // Persist selected topic
+    let dailyStreak: Int
+    let lastStudyDate: Date?
 }
 
 class StudyTimerModel: ObservableObject {
@@ -33,6 +35,12 @@ class StudyTimerModel: ObservableObject {
             print("DEBUG: selectedTopic changed to: \(selectedTopic?.name ?? "nil")")
             saveData()
         }
+    }
+    @Published var dailyStreak: Int = 0 {
+        didSet { saveData() }
+    }
+    @Published var lastStudyDate: Date? = nil {
+        didSet { saveData() }
     }
     
     // Persistence key
@@ -129,6 +137,22 @@ class StudyTimerModel: ObservableObject {
             vm.logStudyTime(categoryID: topic.id, date: Date(), minutes: studiedTimeMinutes)
         }
         
+        // --- Daily Streak Logic ---
+        let today = Calendar.current.startOfDay(for: Date())
+        if let lastDate = lastStudyDate {
+            let last = Calendar.current.startOfDay(for: lastDate)
+            let diff = Calendar.current.dateComponents([.day], from: last, to: today).day ?? 0
+            if diff == 1 {
+                dailyStreak += 1
+            } else if diff > 1 {
+                dailyStreak = 1
+            } // else diff == 0, same day, don't increment
+        } else {
+            dailyStreak = 1
+        }
+        lastStudyDate = today
+        // --- End Daily Streak Logic ---
+        
         stopLiveActivity()
         endBackgroundTask()
         timerStartDate = nil
@@ -186,7 +210,9 @@ class StudyTimerModel: ObservableObject {
             earnedRewards: earnedRewards,
             totalTimeStudied: totalTimeStudied,
             focusStreak: focusStreak,
-            selectedTopic: selectedTopic
+            selectedTopic: selectedTopic,
+            dailyStreak: dailyStreak,
+            lastStudyDate: lastStudyDate
         )
         if let data = try? JSONEncoder().encode(state) {
             UserDefaults.standard.set(data, forKey: studyDataKey)
@@ -203,6 +229,8 @@ class StudyTimerModel: ObservableObject {
             totalTimeStudied = state.totalTimeStudied
             focusStreak = state.focusStreak
             selectedTopic = state.selectedTopic
+            dailyStreak = state.dailyStreak
+            lastStudyDate = state.lastStudyDate
             print("DEBUG: Loaded StudyTimerState with topic: \(selectedTopic?.name ?? "nil")")
         }
     }
