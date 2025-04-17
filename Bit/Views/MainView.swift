@@ -15,10 +15,13 @@ struct MainView: View {
                     return AnyView(SessionView(currentView: $currentView))
                 case "Shop":
                     return AnyView(ShopView(currentView: $currentView))
+                case "Profile":
+                    return AnyView(ProfileView())
                 default:
                     return AnyView(HomeView(currentView: $currentView))
                 }
             }()
         )
+        .id(currentView) // Force reload when switching tabs
     }
 }

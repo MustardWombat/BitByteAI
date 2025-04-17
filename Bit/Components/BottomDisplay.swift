@@ -152,28 +152,29 @@ struct BottomBar: View {
     var body: some View {
         HStack {
             Spacer()
-            BottomBarButton(iconName: "house.fill", viewName: "Home", currentView: $currentView) // Correct view name
+            BottomBarButton(iconName: "house.fill", viewName: "Home", currentView: $currentView)
             Spacer()
-            BottomBarButton(iconName: "globe", viewName: "PlanetView", currentView: $currentView) // Correct view name
+            BottomBarButton(iconName: "globe", viewName: "PlanetView", currentView: $currentView)
             Spacer()
-            BottomBarButton(iconName: "gearshape.fill", viewName: "StudySession", currentView: $currentView) // Correct view name
+            BottomBarButton(iconName: "gearshape.fill", viewName: "StudySession", currentView: $currentView)
             Spacer()
-            BottomBarButton(iconName: "cart.fill", viewName: "Shop", currentView: $currentView) // Correct view name
+            BottomBarButton(iconName: "cart.fill", viewName: "Shop", currentView: $currentView)
+            Spacer()
+            BottomBarButton(iconName: "person.crop.circle", viewName: "Profile", currentView: $currentView)
             Spacer()
         }
         .padding(.horizontal, 20)
         .padding(.top, 10)
         .padding(.bottom, 20)
         .background(
-            Color.black.opacity(0.65) // ✅ Semi-transparent black background
-                .cornerRadius(20, corners: [.topLeft, .topRight]) // Rounded top corners
+            Color.black.opacity(0.65)
+                .cornerRadius(20, corners: [.topLeft, .topRight])
         )
-        .shadow(color: Color.black.opacity(0.8), radius: 10, x: 0, y: -5) // Shadow above the bar
+        .shadow(color: Color.black.opacity(0.8), radius: 10, x: 0, y: -5)
         .frame(maxWidth: .infinity)
-        .ignoresSafeArea(edges: .bottom) // Extend to the bottom of the screen
+        .ignoresSafeArea(edges: .bottom)
     }
 }
-
 
 // MARK: - BlurView
 struct BlurView: UIViewRepresentable {
