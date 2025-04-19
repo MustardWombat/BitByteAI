@@ -4,14 +4,17 @@ import CloudKit
 
 struct Profile: Codable {
     var name: String
-    var email: String
 }
 
 struct ProfileView: View {
     @State private var name: String = ""
-    @State private var email: String = ""
-    @State private var isSignedIn: Bool = false
     @State private var showAlert = false
+    @AppStorage("isSignedIn") private var isSignedIn: Bool = false
+    @AppStorage("profileName") private var storedName: String = ""
+
+    @EnvironmentObject var currencyModel: CurrencyModel
+    @EnvironmentObject var xpModel: XPModel
+    @EnvironmentObject var shopModel: ShopModel
 
     private let profileKey = "UserProfile"
     private let recordID = CKRecord.ID(recordName: "UserProfile")
@@ -34,16 +37,7 @@ struct ProfileView: View {
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .frame(width: 180)
                     }
-                    HStack {
-                        Text("Email:")
-                        Spacer()
-                        TextField("Your Email", text: $email)
-                            .multilineTextAlignment(.trailing)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .frame(width: 180)
-                    }
                     Button("Save to Cloud") {
-                        saveProfile()
                         saveProfileToCloudKit()
                         showAlert = true
                     }
@@ -51,19 +45,39 @@ struct ProfileView: View {
                     .background(Color.green)
                     .foregroundColor(.white)
                     .cornerRadius(8)
-                    
-                    Button("Sync from CloudKit") {
-                        loadProfileFromCloudKit()
+
+                    // Display crucial information
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Coins: \(currencyModel.balance)")
+                            .font(.headline)
+                        Text("XP: \(xpModel.xp) / \(xpModel.xpForNextLevel)")
+                            .font(.headline)
+                        Text("Level: \(xpModel.level)")
+                            .font(.headline)
+                        Text("Purchases:")
+                            .font(.headline)
+                        if shopModel.purchasedItems.isEmpty {
+                            Text("No items purchased yet.")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        } else {
+                            ForEach(shopModel.purchasedItems) { item in
+                                Text("\(item.name) x\(item.quantity)")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                            }
+                        }
                     }
-                    .padding(.top, 4)
-                    .font(.caption)
+                    .padding()
+                    .background(Color.black.opacity(0.1))
+                    .cornerRadius(8)
                 }
                 .padding()
             } else {
                 SignInWithAppleButton(
                     .signIn,
                     onRequest: { request in
-                        request.requestedScopes = [.fullName, .email]
+                        request.requestedScopes = [.fullName]
                     },
                     onCompletion: { result in
                         switch result {
@@ -73,9 +87,7 @@ struct ProfileView: View {
                                     .compactMap { $0 }
                                     .joined(separator: " ")
                                 name = fullName.isEmpty ? name : fullName
-                                email = credential.email ?? email
                                 isSignedIn = true
-                                saveProfile()
                                 saveProfileToCloudKit()
                             }
                         case .failure:
@@ -87,30 +99,24 @@ struct ProfileView: View {
                 .frame(height: 45)
                 .padding(.horizontal, 40)
             }
+            // NEW: Add a Sign Out button when signed in
+            if isSignedIn {
+                Button("Sign Out") {
+                    signOut()
+                }
+                .padding()
+                .background(Color.red)
+                .foregroundColor(.white)
+                .cornerRadius(8)
+                .padding(.top, 20)
+            }
         }
         .alert(isPresented: $showAlert) {
-            Alert(title: Text("Profile Saved"), message: Text("Your profile info is saved to CloudKit and locally."), dismissButton: .default(Text("OK")))
+            Alert(title: Text("Profile Saved"), message: Text("Your profile info is saved to CloudKit."), dismissButton: .default(Text("OK")))
         }
         .background(Color.black.ignoresSafeArea())
         .onAppear {
-            loadProfileFromCloudKit()
-            loadProfile()
-        }
-    }
-
-    private func saveProfile() {
-        let profile = Profile(name: name, email: email)
-        if let data = try? JSONEncoder().encode(profile) {
-            UserDefaults.standard.set(data, forKey: profileKey)
-        }
-    }
-
-    private func loadProfile() {
-        if let data = UserDefaults.standard.data(forKey: profileKey),
-           let profile = try? JSONDecoder().decode(Profile.self, from: data) {
-            name = profile.name
-            email = profile.email
-            isSignedIn = !(name.isEmpty && email.isEmpty)
+            loadProfileFromCloudKit() // or your preferred load method
         }
     }
 
@@ -118,7 +124,6 @@ struct ProfileView: View {
     private func saveProfileToCloudKit() {
         let record = CKRecord(recordType: recordType, recordID: recordID)
         record["name"] = name as CKRecordValue
-        record["email"] = email as CKRecordValue
 
         CKContainer.default().privateCloudDatabase.save(record) { _, error in
             if let error = error {
@@ -129,20 +134,35 @@ struct ProfileView: View {
 
     private func loadProfileFromCloudKit() {
         CKContainer.default().privateCloudDatabase.fetch(withRecordID: recordID) { record, error in
-            if let record = record {
-                let cloudName = record["name"] as? String ?? ""
-                let cloudEmail = record["email"] as? String ?? ""
+            if let record = record,
+               let cloudName = record["name"] as? String,
+               !cloudName.isEmpty {
                 DispatchQueue.main.async {
                     self.name = cloudName
-                    self.email = cloudEmail
-                    self.isSignedIn = !(cloudName.isEmpty && cloudEmail.isEmpty)
-                    self.saveProfile()
+                    self.isSignedIn = true
+                    // No local backup is used anymore
                 }
             } else if let ckError = error as? CKError, ckError.code == .unknownItem {
-                // No profile exists in CloudKit yet
                 print("No CloudKit profile found.")
             } else if let error = error {
                 print("CloudKit fetch error: \(error)")
+            }
+        }
+    }
+
+    private func signOut() {
+        // Delete cloud-saved profile so that login state is cleared on relaunch.
+        deleteProfileFromCloudKit()
+        isSignedIn = false
+        name = ""
+    }
+
+    private func deleteProfileFromCloudKit() {
+        CKContainer.default().privateCloudDatabase.delete(withRecordID: recordID) { _, error in
+            if let error = error {
+                print("Error deleting CloudKit profile: \(error)")
+            } else {
+                print("CloudKit profile deleted.")
             }
         }
     }

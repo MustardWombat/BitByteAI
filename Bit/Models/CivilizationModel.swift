@@ -42,7 +42,7 @@ class CivilizationModel: ObservableObject {
     /// Update the simulation based on the time elapsed since the last update.
     func updateFromBackground() {
         let now = Date()
-        let lastUpdate = UserDefaults.standard.object(forKey: lastUpdateKey) as? Date ?? now
+        let lastUpdate = NSUbiquitousKeyValueStore.default.object(forKey: lastUpdateKey) as? Date ?? now
         let elapsedSeconds = now.timeIntervalSince(lastUpdate)
         
         // Determine the number of cycles that should have occurred.
@@ -58,7 +58,8 @@ class CivilizationModel: ObservableObject {
     }
     
     private func updateLastUpdate() {
-        UserDefaults.standard.set(Date(), forKey: lastUpdateKey)
+        NSUbiquitousKeyValueStore.default.set(Date(), forKey: lastUpdateKey)
+        NSUbiquitousKeyValueStore.default.synchronize()
     }
     
     private func saveData() {
@@ -66,11 +67,12 @@ class CivilizationModel: ObservableObject {
             "population": population,
             "resources": resources
         ]
-        UserDefaults.standard.set(data, forKey: simulationKey)
+        NSUbiquitousKeyValueStore.default.set(data, forKey: simulationKey)
+        NSUbiquitousKeyValueStore.default.synchronize()
     }
     
     private func loadData() {
-        if let data = UserDefaults.standard.dictionary(forKey: simulationKey) as? [String: Int] {
+        if let data = NSUbiquitousKeyValueStore.default.dictionary(forKey: simulationKey) as? [String: Int] {
             population = data["population"] ?? 100
             resources = data["resources"] ?? 50
         }

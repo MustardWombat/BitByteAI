@@ -101,12 +101,14 @@ class TaskModel: ObservableObject {
 
     private func saveTasks() {
         if let data = try? JSONEncoder().encode(tasks) {
-            UserDefaults.standard.set(data, forKey: tasksKey)
+            NSUbiquitousKeyValueStore.default.set(data, forKey: tasksKey)
+            NSUbiquitousKeyValueStore.default.synchronize()
         }
     }
 
     private func loadTasks() {
-        if let data = UserDefaults.standard.data(forKey: tasksKey),
+        NSUbiquitousKeyValueStore.default.synchronize() // Force iCloud sync before loading
+        if let data = NSUbiquitousKeyValueStore.default.data(forKey: tasksKey),
            let saved = try? JSONDecoder().decode([TaskItem].self, from: data) {
             tasks = saved
         }

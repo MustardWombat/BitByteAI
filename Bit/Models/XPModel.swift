@@ -41,17 +41,18 @@ class XPModel: ObservableObject {
 
     private func saveIfLoaded() {
         guard isInitialLoadComplete else { return }
-        let defaults = UserDefaults.standard
-        defaults.set(xp, forKey: xpKey)
-        defaults.set(level, forKey: levelKey)
-        defaults.set(xpForNextLevel, forKey: xpForNextLevelKey)
+        let store = NSUbiquitousKeyValueStore.default
+        store.set(xp, forKey: xpKey)
+        store.set(level, forKey: levelKey)
+        store.set(xpForNextLevel, forKey: xpForNextLevelKey)
+        store.synchronize()
     }
 
     private func loadData() {
-        let defaults = UserDefaults.standard
-        xp = defaults.integer(forKey: xpKey)
-        level = max(1, defaults.integer(forKey: levelKey)) // Ensure level is at least 1
-        xpForNextLevel = defaults.integer(forKey: xpForNextLevelKey) > 0 ? defaults.integer(forKey: xpForNextLevelKey) : 100
+        let store = NSUbiquitousKeyValueStore.default
+        xp = Int(store.longLong(forKey: xpKey))
+        level = max(1, Int(store.longLong(forKey: levelKey))) // Ensure level is at least 1
+        xpForNextLevel = Int(store.longLong(forKey: xpForNextLevelKey))
     }
 }
 

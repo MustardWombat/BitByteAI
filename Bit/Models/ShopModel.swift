@@ -29,12 +29,13 @@ class ShopModel: ObservableObject {
     
     private func saveData() {
         if let encoded = try? JSONEncoder().encode(purchasedItems) {
-            UserDefaults.standard.set(encoded, forKey: shopKey)
+            NSUbiquitousKeyValueStore.default.set(encoded, forKey: shopKey)
+            NSUbiquitousKeyValueStore.default.synchronize()
         }
     }
     
     private func loadData() {
-        if let data = UserDefaults.standard.data(forKey: shopKey),
+        if let data = NSUbiquitousKeyValueStore.default.data(forKey: shopKey),
            let items = try? JSONDecoder().decode([PurchasedItem].self, from: data) {
             purchasedItems = items
         }

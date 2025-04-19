@@ -215,15 +215,15 @@ class StudyTimerModel: ObservableObject {
             lastStudyDate: lastStudyDate
         )
         if let data = try? JSONEncoder().encode(state) {
-            UserDefaults.standard.set(data, forKey: studyDataKey)
-            print("DEBUG: Saved StudyTimerState with topic: \(selectedTopic?.name ?? "nil")")
+            NSUbiquitousKeyValueStore.default.set(data, forKey: studyDataKey)
+            print("DEBUG: Saved StudyTimerState with topic: \(selectedTopic?.name ?? "nil") to iCloud")
         } else {
             print("❌ Failed to encode StudyTimerState")
         }
     }
     
     private func loadData() {
-        if let data = UserDefaults.standard.data(forKey: studyDataKey),
+        if let data = NSUbiquitousKeyValueStore.default.data(forKey: studyDataKey),
            let state = try? JSONDecoder().decode(StudyTimerState.self, from: data) {
             earnedRewards = state.earnedRewards
             totalTimeStudied = state.totalTimeStudied
@@ -231,8 +231,12 @@ class StudyTimerModel: ObservableObject {
             selectedTopic = state.selectedTopic
             dailyStreak = state.dailyStreak
             lastStudyDate = state.lastStudyDate
-            print("DEBUG: Loaded StudyTimerState with topic: \(selectedTopic?.name ?? "nil")")
+            print("DEBUG: Loaded StudyTimerState with topic: \(selectedTopic?.name ?? "nil") from iCloud")
         }
+    }
+
+    func synchronizeICloud() {
+        NSUbiquitousKeyValueStore.default.synchronize()
     }
     
     #if os(iOS)

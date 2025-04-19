@@ -7,57 +7,34 @@
 
 import Foundation
 import Combine
-import CloudKit
 
 class CurrencyModel: ObservableObject {
     @Published var balance: Int = 0
 
-    private let recordID = CKRecord.ID(recordName: "UserCurrency")
-    private let recordType = "Currency"
+    private let balanceKey = "CurrencyModel.balance"
 
     init() {
-        fetchFromCloudKit()
+        fetchFromICloud()
     }
 
     func earn(amount: Int) {
         balance += amount
-        saveToCloudKit()
+        saveToICloud()
     }
 
     func deposit(_ amount: Int) {
         balance += amount
-        saveToCloudKit()
+        saveToICloud()
     }
 
-    // --- CloudKit Sync ---
-    func saveToCloudKit() {
-        let record = CKRecord(recordType: recordType, recordID: recordID)
-        record["balance"] = balance as CKRecordValue
-
-        CKContainer.default().privateCloudDatabase.save(record) { _, error in
-            if let error = error {
-                print("CloudKit save error: \(error)")
-            } else {
-                self.fetchFromCloudKit() // Refresh after save
-            }
-        }
+    // --- iCloud Sync ---
+    func saveToICloud() {
+        NSUbiquitousKeyValueStore.default.set(balance, forKey: balanceKey)
+        NSUbiquitousKeyValueStore.default.synchronize()
     }
 
-    func fetchFromCloudKit() {
-        CKContainer.default().privateCloudDatabase.fetch(withRecordID: recordID) { record, error in
-            if let record = record, let cloudBalance = record["balance"] as? Int {
-                DispatchQueue.main.async {
-                    self.balance = cloudBalance
-                }
-            } else if let ckError = error as? CKError, ckError.code == .unknownItem {
-                // Record does not exist, create it
-                DispatchQueue.main.async {
-                    self.balance = 0
-                    self.saveToCloudKit()
-                }
-            } else if let error = error {
-                print("CloudKit fetch error: \(error)")
-            }
-        }
+    func fetchFromICloud() {
+        let store = NSUbiquitousKeyValueStore.default
+        balance = store.longLong(forKey: balanceKey) as? Int ?? 0
     }
 }

@@ -87,16 +87,16 @@ class CategoriesViewModel: ObservableObject {
     // MARK: - Selected Topic Persistence
     func saveSelectedTopicID(_ id: UUID?) {
         if let id = id {
-            UserDefaults.standard.set(id.uuidString, forKey: selectedTopicKey)
+            NSUbiquitousKeyValueStore.default.set(id.uuidString, forKey: selectedTopicKey)
         } else {
-            UserDefaults.standard.removeObject(forKey: selectedTopicKey)
+            NSUbiquitousKeyValueStore.default.removeObject(forKey: selectedTopicKey)
         }
+        NSUbiquitousKeyValueStore.default.synchronize()
     }
 
     func loadSelectedTopic() -> Category? {
-        guard let savedID = UserDefaults.standard.string(forKey: selectedTopicKey),
+        guard let savedID = NSUbiquitousKeyValueStore.default.string(forKey: selectedTopicKey),
               let uuid = UUID(uuidString: savedID) else { return nil }
-
         return categories.first(where: { $0.id == uuid })
     }
 
@@ -104,15 +104,15 @@ class CategoriesViewModel: ObservableObject {
     private func saveCategories() {
         do {
             let data = try JSONEncoder().encode(categories)
-            UserDefaults.standard.set(data, forKey: storageKey)
+            NSUbiquitousKeyValueStore.default.set(data, forKey: storageKey)
+            NSUbiquitousKeyValueStore.default.synchronize()
         } catch {
             print("Failed to save categories: \(error)")
         }
     }
 
     private func loadCategories() {
-        guard let data = UserDefaults.standard.data(forKey: storageKey) else { return }
-
+        guard let data = NSUbiquitousKeyValueStore.default.data(forKey: storageKey) else { return }
         do {
             categories = try JSONDecoder().decode([Category].self, from: data)
         } catch {

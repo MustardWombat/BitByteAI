@@ -48,7 +48,9 @@ struct CosmosApp: App {
         WindowGroup {
             CosmosAppView()
                 .preferredColorScheme(.dark)  // Forces everything into Dark Mode
-
+                .onAppear {
+                    NSUbiquitousKeyValueStore.default.synchronize()
+                }
         }
     }
 }
