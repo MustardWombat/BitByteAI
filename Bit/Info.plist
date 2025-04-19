@@ -10,5 +10,9 @@
 		<string>processing</string>
 		<string>remote-notification</string>
 	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.jameswilliams.Bit.backgroundTask</string>
+	</array>
 </dict>
 </plist>
