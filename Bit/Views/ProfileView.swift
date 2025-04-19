@@ -87,7 +87,7 @@ struct ProfileView: View {
                                     .compactMap { $0 }
                                     .joined(separator: " ")
                                 name = fullName.isEmpty ? name : fullName
-                                isSignedIn = true
+                                isSignedIn = true // Set the global flag
                                 saveProfileToCloudKit()
                             }
                         case .failure:

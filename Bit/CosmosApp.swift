@@ -1,7 +1,6 @@
 import SwiftUI
 import WidgetKit
 
-
 struct CosmosAppView: View {
     @StateObject var xpModel: XPModel
     @StateObject var miningModel: MiningModel
@@ -11,6 +10,9 @@ struct CosmosAppView: View {
     @StateObject var categoriesModel = CategoriesViewModel()
     @StateObject var currencyModel = CurrencyModel()
     @StateObject var taskModel = TaskModel() // <-- Add this
+
+    @AppStorage("isSignedIn") private var isSignedIn: Bool = false
+    @State private var showSignInPrompt: Bool = false
 
     init() {
         let xp = XPModel()
@@ -37,10 +39,30 @@ struct CosmosAppView: View {
             .environmentObject(miningModel)
             .environmentObject(categoriesModel)
             .environmentObject(currencyModel)
-            .environmentObject(taskModel) // <-- Add this
+            .environmentObject(taskModel)
+            .onAppear {
+                // Show the prompt only on first launch if not signed in.
+                if !isSignedIn {
+                    showSignInPrompt = true
+                }
+            }
+            .sheet(isPresented: $showSignInPrompt, onDismiss: {
+                /* On dismiss, if now signed in, trigger a merge-sync of local with iCloud
+                 e.g. by calling a method on each model (not shown here) */
+            }) {
+                SignInPromptView(onSignIn: {
+                    // Present your actual sign‑in flow here.
+                    // Once complete, set isSignedIn = true and update the cloud merge.
+                    isSignedIn = true
+                    showSignInPrompt = false
+                    categoriesModel.mergeWithICloudData() // New line to merge categories
+                }, onSkip: {
+                    // User chooses to skip; use local data only.
+                    showSignInPrompt = false
+                })
+            }
     }
 }
-
 
 @main
 struct CosmosApp: App {

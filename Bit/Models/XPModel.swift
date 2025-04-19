@@ -14,14 +14,17 @@ class XPModel: ObservableObject {
     @Published var level: Int = 1 { didSet { saveIfLoaded() } }
     @Published var xpForNextLevel: Int = 100 { didSet { saveIfLoaded() } }
     @Published var upgradeMultiplier: Double = 1.0
+    @AppStorage("isSignedIn") private var isSignedIn: Bool = false
 
     private var isInitialLoadComplete = false
     private let xpKey = "XPModel.xp"
     private let levelKey = "XPModel.level"
     private let xpForNextLevelKey = "XPModel.xpForNextLevel"
+    private let localXPKey = "Local_XPModelData" // new key for local save
 
     init() {
-        loadData()
+        loadLocalData()
+        if isSignedIn { loadCloudDataAndMerge() }
         isInitialLoadComplete = true
     }
 
@@ -40,7 +43,15 @@ class XPModel: ObservableObject {
     }
 
     private func saveIfLoaded() {
-        guard isInitialLoadComplete else { return }
+        // Always save locally:
+        let localData: [String: Int] = [
+            "xp": xp,
+            "level": level,
+            "xpForNextLevel": xpForNextLevel
+        ]
+        UserDefaults.standard.set(localData, forKey: localXPKey)
+        // And if signed in, also use iCloud
+        guard isInitialLoadComplete && isSignedIn else { return }
         let store = NSUbiquitousKeyValueStore.default
         store.set(xp, forKey: xpKey)
         store.set(level, forKey: levelKey)
@@ -48,11 +59,30 @@ class XPModel: ObservableObject {
         store.synchronize()
     }
 
-    private func loadData() {
+    private func loadLocalData() {
+        if let localData = UserDefaults.standard.dictionary(forKey: localXPKey) as? [String: Int] {
+            xp = localData["xp"] ?? 0
+            level = max(1, localData["level"] ?? 1)
+            xpForNextLevel = localData["xpForNextLevel"] ?? 100
+        }
+    }
+
+    private func loadCloudDataAndMerge() {
         let store = NSUbiquitousKeyValueStore.default
-        xp = Int(store.longLong(forKey: xpKey))
-        level = max(1, Int(store.longLong(forKey: levelKey))) // Ensure level is at least 1
-        xpForNextLevel = Int(store.longLong(forKey: xpForNextLevelKey))
+        let cloudXP = Int(store.longLong(forKey: xpKey))
+        let cloudLevel = max(1, Int(store.longLong(forKey: levelKey)))
+        let cloudNext = Int(store.longLong(forKey: xpForNextLevelKey))
+        // Merge by choosing the higher value.
+        xp = max(xp, cloudXP)
+        level = max(level, cloudLevel)
+        xpForNextLevel = max(xpForNextLevel, cloudNext)
+        // Also update local storage.
+        let merged: [String: Int] = [
+            "xp": xp,
+            "level": level,
+            "xpForNextLevel": xpForNextLevel
+        ]
+        UserDefaults.standard.set(merged, forKey: localXPKey)
     }
 }
 

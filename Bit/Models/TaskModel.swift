@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import SwiftUI // Add this import
 
 enum TaskSortOption: String, CaseIterable, Identifiable {
     case dueDate = "Due Date"
@@ -34,17 +35,28 @@ struct TaskItem: Identifiable, Codable {
 
 class TaskModel: ObservableObject {
     @Published var tasks: [TaskItem] = [] {
-        didSet { saveTasks() }
+        didSet { 
+            saveLocalTasks()  // always save locally
+            if isSignedIn { saveCloudTasks() }
+        }
     }
 
     @Published var sortOption: TaskSortOption = .dueDate {
         didSet { sortTasks(by: sortOption) }
     }
 
+    @AppStorage("isSignedIn") private var isSignedIn: Bool = false
+
     private let tasksKey = "UserTasks"
+    private let localTasksKey = "Local_UserTasks"
 
     init() {
-        loadTasks()
+        // Load from local first...
+        loadLocalTasks()
+        // ...if signed in, load iCloud tasks and merge higher info
+        if isSignedIn {
+            loadCloudTasksAndMerge()
+        }
         sortTasks(by: sortOption)
     }
 
@@ -99,18 +111,44 @@ class TaskModel: ObservableObject {
         }
     }
 
-    private func saveTasks() {
+    private func saveLocalTasks() {
         if let data = try? JSONEncoder().encode(tasks) {
-            NSUbiquitousKeyValueStore.default.set(data, forKey: tasksKey)
-            NSUbiquitousKeyValueStore.default.synchronize()
+            UserDefaults.standard.set(data, forKey: localTasksKey)
         }
     }
 
-    private func loadTasks() {
+    private func loadLocalTasks() {
+        if let data = UserDefaults.standard.data(forKey: localTasksKey),
+           let local = try? JSONDecoder().decode([TaskItem].self, from: data) {
+            tasks = local
+        }
+    }
+
+    private func saveCloudTasks() {
+        guard let data = try? JSONEncoder().encode(tasks) else { return }
+        NSUbiquitousKeyValueStore.default.set(data, forKey: tasksKey)
+        NSUbiquitousKeyValueStore.default.synchronize()
+    }
+
+    private func loadCloudTasksAndMerge() {
         NSUbiquitousKeyValueStore.default.synchronize() // Force iCloud sync before loading
         if let data = NSUbiquitousKeyValueStore.default.data(forKey: tasksKey),
-           let saved = try? JSONDecoder().decode([TaskItem].self, from: data) {
-            tasks = saved
+           let cloudTasks = try? JSONDecoder().decode([TaskItem].self, from: data) {
+            // Merge local and cloud; here we simply take the union by id
+            var merged = tasks
+            for task in cloudTasks {
+                if let index = merged.firstIndex(where: { $0.id == task.id }) {
+                    // For conflict resolution you can choose the task with a more advanced state.
+                    // Here we “merge” by taking the one with higher coinReward.
+                    merged[index].coinReward = max(merged[index].coinReward, task.coinReward)
+                    // ...similarly update other fields if needed.
+                } else {
+                    merged.append(task)
+                }
+            }
+            tasks = merged
+            // Update local storage with merged info.
+            saveLocalTasks()
         }
     }
 }
