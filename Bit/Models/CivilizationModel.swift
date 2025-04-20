@@ -48,6 +48,9 @@ class CivilizationModel: ObservableObject {
         // Determine the number of cycles that should have occurred.
         let cycles = Int(elapsedSeconds / cycleInterval)
         
+        // Prevent adding values if no cycles have passed.
+        guard cycles > 0 else { return }
+        
         // Run simulation cycles to "catch up"
         for _ in 0..<cycles {
             simulateCycle()

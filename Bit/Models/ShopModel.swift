@@ -19,6 +19,7 @@ class ShopModel: ObservableObject {
     }
     
     func addPurchase(item: ShopItem) {
+        guard item.price > 0 else { return } // Prevent adding invalid items.
         if let index = purchasedItems.firstIndex(where: { $0.name == item.name }) {
             purchasedItems[index].quantity += 1
         } else {
@@ -34,7 +35,7 @@ class ShopModel: ObservableObject {
         }
     }
     
-    private func loadData() {
+    func loadData() {
         if let data = NSUbiquitousKeyValueStore.default.data(forKey: shopKey),
            let items = try? JSONDecoder().decode([PurchasedItem].self, from: data) {
             purchasedItems = items

@@ -21,11 +21,11 @@ struct BottomBarButton: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 24, height: 24)
-                    .foregroundColor(currentView == viewName ? Color.orange : Color.white)
+                    .foregroundColor(currentView == viewName ? Color.green : Color.white)
 
                 Text(viewName)
                     .font(.caption)
-                    .foregroundColor(currentView == viewName ? Color.orange : Color.white)
+                    .foregroundColor(currentView == viewName ? Color.green : Color.white)
             }
         }
     }
@@ -131,8 +131,8 @@ struct LayoutShell: View {
     private func dynamicWelcomeText(for view: String) -> String {
         switch view {
         case "Home": return "Welcome back, Commander!"
-        case "PlanetView": return "Explore the galaxy!"
-        case "StudySession": return "Focus and achieve greatness!"
+        case "Planets": return "Explore the galaxy!"
+        case "Study": return "Focus and achieve greatness!"
         case "Shop": return "Upgrade your journey!"
         default: return "Welcome back, Commander!"
         }
@@ -151,17 +151,16 @@ struct BottomBar: View {
 
     var body: some View {
         HStack {
-            Spacer()
             BottomBarButton(iconName: "house.fill", viewName: "Home", currentView: $currentView)
-            Spacer()
-            BottomBarButton(iconName: "globe", viewName: "PlanetView", currentView: $currentView)
-            Spacer()
-            BottomBarButton(iconName: "gearshape.fill", viewName: "StudySession", currentView: $currentView)
-            Spacer()
+                .frame(maxWidth: .infinity)
+            BottomBarButton(iconName: "globe", viewName: "Planets", currentView: $currentView)
+                .frame(maxWidth: .infinity)
+            BottomBarButton(iconName: "gearshape.fill", viewName: "Study", currentView: $currentView)
+                .frame(maxWidth: .infinity)
             BottomBarButton(iconName: "cart.fill", viewName: "Shop", currentView: $currentView)
-            Spacer()
+                .frame(maxWidth: .infinity)
             BottomBarButton(iconName: "person.crop.circle", viewName: "Profile", currentView: $currentView)
-            Spacer()
+                .frame(maxWidth: .infinity)
         }
         .padding(.horizontal, 20)
         .padding(.top, 10)

@@ -25,16 +25,13 @@ class CategoriesViewModel: ObservableObject {
         }
     }
 
-    private let storageKey = "savedCategories"
-    private let localCategoriesKey = "Local_savedCategories"
+    internal let storageKey = "savedCategories"
+    internal let localCategoriesKey = "Local_savedCategories"
 
     init() {
-        // Load local and cloud categories then merge
-        let localCats = loadLocalCategories()
-        let cloudCats = loadCloudCategories()
-        categories = mergeCategories(local: localCats, cloud: cloudCats)
-        // Load previously selected topic (if any) after merging.
-        selectedTopic = loadSelectedTopic() ?? (categories.first)
+        // Load categories from the most recent source
+        categories = loadCategories()
+        selectedTopic = loadSelectedTopic() ?? categories.first
     }
 
     // Add a new category
@@ -87,75 +84,40 @@ class CategoriesViewModel: ObservableObject {
         return results.sorted { $0.date < $1.date }
     }
 
-    // MARK: - Updated Persistence for Categories with Merge
-    private func saveCategories() {
-        do {
-            let data = try JSONEncoder().encode(categories)
-            // Save to iCloud
-            NSUbiquitousKeyValueStore.default.set(data, forKey: storageKey)
-            NSUbiquitousKeyValueStore.default.synchronize()
-            // Also save locally
-            UserDefaults.standard.set(data, forKey: localCategoriesKey)
-        } catch {
-            print("Failed to save categories: \(error)")
-        }
-    }
+    // MARK: - Updated Persistence for Categories
 
-    private func loadLocalCategories() -> [Category] {
-        if let data = UserDefaults.standard.data(forKey: localCategoriesKey),
-           let cats = try? JSONDecoder().decode([Category].self, from: data) {
-            return cats
+    internal func loadCategories() -> [Category] {
+        if let cloudData = NSUbiquitousKeyValueStore.default.data(forKey: storageKey),
+           let cloudCategories = try? JSONDecoder().decode([Category].self, from: cloudData) {
+            return cloudCategories
+        } else if let localData = UserDefaults.standard.data(forKey: localCategoriesKey),
+                  let localCategories = try? JSONDecoder().decode([Category].self, from: localData) {
+            return localCategories
         }
         return []
     }
 
-    private func loadCloudCategories() -> [Category] {
-        if let data = NSUbiquitousKeyValueStore.default.data(forKey: storageKey),
-           let cats = try? JSONDecoder().decode([Category].self, from: data) {
-            return cats
+    internal func loadCloudCategories() -> [Category] {
+        if let cloudData = NSUbiquitousKeyValueStore.default.data(forKey: storageKey),
+           let cloudCategories = try? JSONDecoder().decode([Category].self, from: cloudData) {
+            return cloudCategories
         }
         return []
     }
 
-    private func mergeCategories(local: [Category], cloud: [Category]) -> [Category] {
-        var mergedDict = [UUID: Category]()
-        
-        // Add all local categories.
-        for cat in local {
-            mergedDict[cat.id] = cat
+    internal func mergeCategories(local: [Category], cloud: [Category]) -> [Category] {
+        var merged = local
+        let cloudOnly = cloud.filter { cloudCategory in
+            !local.contains(where: { $0.id == cloudCategory.id })
         }
-        
-        // Merge cloud categories.
-        for cloudCat in cloud {
-            if let localCat = mergedDict[cloudCat.id] {
-                // Conflict: add weeklyGoalMinutes.
-                let mergedWeeklyGoal = localCat.weeklyGoalMinutes + cloudCat.weeklyGoalMinutes
-                
-                // Merge daily logs by summing minutes per day.
-                var mergedLogsDict = [Date: Int]()
-                let calendar = Calendar.current
-                for log in localCat.dailyLogs {
-                    let day = calendar.startOfDay(for: log.date)
-                    mergedLogsDict[day, default: 0] += log.minutes
-                }
-                for log in cloudCat.dailyLogs {
-                    let day = calendar.startOfDay(for: log.date)
-                    mergedLogsDict[day, default: 0] += log.minutes
-                }
-                let mergedLogs = mergedLogsDict.map { DailyLog(date: $0.key, minutes: $0.value) }
-                    .sorted { $0.date < $1.date }
-                
-                // Create merged category (keeping local name/color).
-                var mergedCat = localCat
-                mergedCat.weeklyGoalMinutes = mergedWeeklyGoal
-                mergedCat.dailyLogs = mergedLogs
-                mergedDict[cloudCat.id] = mergedCat
-            } else {
-                // New cloud category.
-                mergedDict[cloudCat.id] = cloudCat
-            }
-        }
-        return Array(mergedDict.values)
+        merged.append(contentsOf: cloudOnly)
+        return merged
+    }
+
+    internal func mergeWithICloudData() {
+        let localCats = loadCategories()
+        let cloudCats = loadCloudCategories()
+        self.categories = mergeCategories(local: localCats, cloud: cloudCats)
     }
 
     // MARK: - Selected Topic Persistence
@@ -172,13 +134,6 @@ class CategoriesViewModel: ObservableObject {
         guard let savedID = NSUbiquitousKeyValueStore.default.string(forKey: selectedTopicKey),
               let uuid = UUID(uuidString: savedID) else { return nil }
         return categories.first(where: { $0.id == uuid })
-    }
-
-    // Add this function below existing methods
-    func mergeWithICloudData() {
-        let localCats = loadLocalCategories()
-        let cloudCats = loadCloudCategories()
-        self.categories = mergeCategories(local: localCats, cloud: cloudCats)
     }
 }
 

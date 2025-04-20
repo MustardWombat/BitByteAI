@@ -51,12 +51,7 @@ class TaskModel: ObservableObject {
     private let localTasksKey = "Local_UserTasks"
 
     init() {
-        // Load from local first...
-        loadLocalTasks()
-        // ...if signed in, load iCloud tasks and merge higher info
-        if isSignedIn {
-            loadCloudTasksAndMerge()
-        }
+        loadTasks()
         sortTasks(by: sortOption)
     }
 
@@ -67,7 +62,7 @@ class TaskModel: ObservableObject {
     }
 
     func completeTask(_ task: TaskItem, xpModel: XPModel, currencyModel: CurrencyModel) {
-        if let idx = tasks.firstIndex(where: { $0.id == task.id }) {
+        if let idx = tasks.firstIndex(where: { $0.id == task.id && !$0.isCompleted }) {
             tasks[idx].isCompleted = true
             xpModel.addXP(tasks[idx].xpReward)
             currencyModel.earn(amount: tasks[idx].coinReward)
@@ -117,10 +112,13 @@ class TaskModel: ObservableObject {
         }
     }
 
-    private func loadLocalTasks() {
-        if let data = UserDefaults.standard.data(forKey: localTasksKey),
-           let local = try? JSONDecoder().decode([TaskItem].self, from: data) {
-            tasks = local
+    internal func loadTasks() {
+        if let cloudData = NSUbiquitousKeyValueStore.default.data(forKey: tasksKey),
+           let cloudTasks = try? JSONDecoder().decode([TaskItem].self, from: cloudData) {
+            tasks = cloudTasks
+        } else if let localData = UserDefaults.standard.data(forKey: localTasksKey),
+                  let localTasks = try? JSONDecoder().decode([TaskItem].self, from: localData) {
+            tasks = localTasks
         }
     }
 
@@ -128,27 +126,5 @@ class TaskModel: ObservableObject {
         guard let data = try? JSONEncoder().encode(tasks) else { return }
         NSUbiquitousKeyValueStore.default.set(data, forKey: tasksKey)
         NSUbiquitousKeyValueStore.default.synchronize()
-    }
-
-    private func loadCloudTasksAndMerge() {
-        NSUbiquitousKeyValueStore.default.synchronize() // Force iCloud sync before loading
-        if let data = NSUbiquitousKeyValueStore.default.data(forKey: tasksKey),
-           let cloudTasks = try? JSONDecoder().decode([TaskItem].self, from: data) {
-            // Merge local and cloud; here we simply take the union by id
-            var merged = tasks
-            for task in cloudTasks {
-                if let index = merged.firstIndex(where: { $0.id == task.id }) {
-                    // For conflict resolution you can choose the task with a more advanced state.
-                    // Here we “merge” by taking the one with higher coinReward.
-                    merged[index].coinReward = max(merged[index].coinReward, task.coinReward)
-                    // ...similarly update other fields if needed.
-                } else {
-                    merged.append(task)
-                }
-            }
-            tasks = merged
-            // Update local storage with merged info.
-            saveLocalTasks()
-        }
     }
 }

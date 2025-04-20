@@ -13,8 +13,7 @@ struct ShopView: View {
     
     var body: some View {
         ZStack {
-            // Add the starry background.
-            StarOverlay()
+            StarOverlay() // Add the starry background
             
             VStack(spacing: 0) {
                 ScrollView {

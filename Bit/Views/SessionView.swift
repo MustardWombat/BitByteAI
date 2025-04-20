@@ -11,9 +11,12 @@ struct SessionView: View {
     @Binding var currentView: String
     
     var body: some View {
-        VStack {
-            StudyTimerView()
-            Spacer()
+        ZStack {
+            StarOverlay() // Add the starry background
+            VStack {
+                StudyTimerView()
+                Spacer()
+            }
         }
     }
 }

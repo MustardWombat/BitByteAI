@@ -23,12 +23,12 @@ class XPModel: ObservableObject {
     private let localXPKey = "Local_XPModelData" // new key for local save
 
     init() {
-        loadLocalData()
-        if isSignedIn { loadCloudDataAndMerge() }
+        loadData()
         isInitialLoadComplete = true
     }
 
     func addXP(_ amount: Int) {
+        guard amount > 0 else { return } // Prevent adding zero or negative values.
         xp += Int(Double(amount) * upgradeMultiplier)
         while xp >= xpForNextLevel {
             xp -= xpForNextLevel
@@ -59,30 +59,16 @@ class XPModel: ObservableObject {
         store.synchronize()
     }
 
-    private func loadLocalData() {
-        if let localData = UserDefaults.standard.dictionary(forKey: localXPKey) as? [String: Int] {
-            xp = localData["xp"] ?? 0
-            level = max(1, localData["level"] ?? 1)
-            xpForNextLevel = localData["xpForNextLevel"] ?? 100
+    func loadData() {
+        if let cloudXP = NSUbiquitousKeyValueStore.default.dictionary(forKey: localXPKey) as? [String: Int] {
+            xp = cloudXP["xp"] ?? 0
+            level = max(1, cloudXP["level"] ?? 1)
+            xpForNextLevel = cloudXP["xpForNextLevel"] ?? 100
+        } else if let localXP = UserDefaults.standard.dictionary(forKey: localXPKey) as? [String: Int] {
+            xp = localXP["xp"] ?? 0
+            level = max(1, localXP["level"] ?? 1)
+            xpForNextLevel = localXP["xpForNextLevel"] ?? 100
         }
-    }
-
-    private func loadCloudDataAndMerge() {
-        let store = NSUbiquitousKeyValueStore.default
-        let cloudXP = Int(store.longLong(forKey: xpKey))
-        let cloudLevel = max(1, Int(store.longLong(forKey: levelKey)))
-        let cloudNext = Int(store.longLong(forKey: xpForNextLevelKey))
-        // Merge by choosing the higher value.
-        xp = max(xp, cloudXP)
-        level = max(level, cloudLevel)
-        xpForNextLevel = max(xpForNextLevel, cloudNext)
-        // Also update local storage.
-        let merged: [String: Int] = [
-            "xp": xp,
-            "level": level,
-            "xpForNextLevel": xpForNextLevel
-        ]
-        UserDefaults.standard.set(merged, forKey: localXPKey)
     }
 }
 

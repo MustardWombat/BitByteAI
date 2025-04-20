@@ -29,64 +29,67 @@ struct HomeView: View {
     @EnvironmentObject var xpModel: XPModel
 
     var body: some View {
-        NavigationStack(path: $path) {
-            ScrollView {
-                ZStack(alignment: .top) {
-                    // ✅ Background image that scrolls with content
-                    Image("SpaceBG")
-                        .resizable()
-                        .interpolation(.none)
-                        .aspectRatio(contentMode: .fill)
-                        .frame(maxWidth: .infinity)
-                        .ignoresSafeArea()
-                        .zIndex(0)
+        ZStack {
+            StarOverlay() // Add the starry background
+            NavigationStack(path: $path) {
+                ScrollView {
+                    ZStack(alignment: .top) {
+                        // ✅ Background image that scrolls with content
+                        Image("SpaceBG")
+                            .resizable()
+                            .interpolation(.none)
+                            .aspectRatio(contentMode: .fill)
+                            .frame(maxWidth: .infinity)
+                            .ignoresSafeArea()
+                            .zIndex(0)
 
-                    VStack(spacing: 20) {
-                        // Add padding to the top of the assets
-                        SpinningPlanetView()
-                            .padding(.top, 50) // Added top padding for the spinning planet
+                        VStack(spacing: 20) {
+                            // Add padding to the top of the assets
+                            SpinningPlanetView()
+                                .padding(.top, 50) // Added top padding for the spinning planet
 
-                        WeeklyProgressChart()
-                            .environmentObject(categoriesVM)
-                            .padding(.top, 20) // Added top padding for the chart
+                            WeeklyProgressChart()
+                                .environmentObject(categoriesVM)
+                                .padding(.top, 20) // Added top padding for the chart
 
-                        // 🛍 Purchases Section
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("Your Purchases")
-                                .font(.title2)
-                                .bold()
-                                .foregroundColor(.orange)
+                            // 🛍 Purchases Section
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("Your Purchases")
+                                    .font(.title2)
+                                    .bold()
+                                    .foregroundColor(.orange)
 
-                            if shopModel.purchasedItems.isEmpty {
-                                Text("No items purchased yet.")
-                                    .foregroundColor(.gray)
-                            } else {
-                                ForEach(shopModel.purchasedItems) { item in
-                                    HStack {
-                                        Text(item.name)
-                                            .foregroundColor(.white)
-                                        Spacer()
-                                        Text("Qty: \(item.quantity)")
-                                            .foregroundColor(.white)
+                                if shopModel.purchasedItems.isEmpty {
+                                    Text("No items purchased yet.")
+                                        .foregroundColor(.gray)
+                                } else {
+                                    ForEach(shopModel.purchasedItems) { item in
+                                        HStack {
+                                            Text(item.name)
+                                                .foregroundColor(.white)
+                                            Spacer()
+                                            Text("Qty: \(item.quantity)")
+                                                .foregroundColor(.white)
+                                        }
+                                        .padding(.vertical, 4)
                                     }
-                                    .padding(.vertical, 4)
                                 }
                             }
-                        }
-                        .padding()
-                        .background(Color.black.opacity(0.5))
-                        .cornerRadius(10)
-                        .padding(.top, 20) // Added top padding for the purchases section
+                            .padding()
+                            .background(Color.black.opacity(0.5))
+                            .cornerRadius(10)
+                            .padding(.top, 20) // Added top padding for the purchases section
 
-                        Spacer(minLength: 40)
+                            Spacer(minLength: 40)
+                        }
+                        .padding(.top, 100) // Overall top padding for the VStack
+                        .padding(.horizontal, 20)
+                        .zIndex(1)
                     }
-                    .padding(.top, 100) // Overall top padding for the VStack
-                    .padding(.horizontal, 20)
-                    .zIndex(1)
                 }
+                .scrollContentBackground(.hidden)
+                .navigationBarBackButtonHidden(true)
             }
-            .scrollContentBackground(.hidden)
-            .navigationBarBackButtonHidden(true)
         }
         .onAppear {
             simTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in

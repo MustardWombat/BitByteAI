@@ -9,7 +9,7 @@ struct CosmosAppView: View {
     @StateObject var civModel = CivilizationModel()
     @StateObject var categoriesModel = CategoriesViewModel()
     @StateObject var currencyModel = CurrencyModel()
-    @StateObject var taskModel = TaskModel() // <-- Add this
+    @StateObject var taskModel = TaskModel()
 
     @AppStorage("isSignedIn") private var isSignedIn: Bool = false
     @State private var showSignInPrompt: Bool = false
@@ -19,7 +19,7 @@ struct CosmosAppView: View {
         let mining = MiningModel()
         let currency = CurrencyModel()
 
-        // ✅ Hook the mining reward to the currency model
+        // Hook the mining reward to the currency model
         mining.awardCoins = { amount in
             currency.deposit(amount)
         }
@@ -41,21 +41,28 @@ struct CosmosAppView: View {
             .environmentObject(currencyModel)
             .environmentObject(taskModel)
             .onAppear {
-                // Show the prompt only on first launch if not signed in.
-                if !isSignedIn {
-                    showSignInPrompt = true
-                }
+                // Refresh data on startup for all models:
+                NSUbiquitousKeyValueStore.default.synchronize()
+                xpModel.loadData()
+                categoriesModel.categories = categoriesModel.loadCategories() // Explicitly update categories
+                taskModel.loadTasks()
+                currencyModel.fetchFromICloud()
+                shopModel.loadData()
+                civModel.updateFromBackground()
+                miningModel.resumeMiningIfNeeded()
             }
             .sheet(isPresented: $showSignInPrompt, onDismiss: {
-                /* On dismiss, if now signed in, trigger a merge-sync of local with iCloud
-                 e.g. by calling a method on each model (not shown here) */
+                // On dismiss, if now signed in, trigger a merge-sync of local with iCloud
+                if isSignedIn {
+                    categoriesModel.mergeWithICloudData()
+                }
             }) {
                 SignInPromptView(onSignIn: {
                     // Present your actual sign‑in flow here.
                     // Once complete, set isSignedIn = true and update the cloud merge.
                     isSignedIn = true
                     showSignInPrompt = false
-                    categoriesModel.mergeWithICloudData() // New line to merge categories
+                    categoriesModel.mergeWithICloudData()
                 }, onSkip: {
                     // User chooses to skip; use local data only.
                     showSignInPrompt = false

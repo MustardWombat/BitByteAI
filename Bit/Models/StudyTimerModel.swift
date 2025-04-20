@@ -222,16 +222,23 @@ class StudyTimerModel: ObservableObject {
         }
     }
     
-    private func loadData() {
-        if let data = NSUbiquitousKeyValueStore.default.data(forKey: studyDataKey),
-           let state = try? JSONDecoder().decode(StudyTimerState.self, from: data) {
+    internal func loadData() {
+        if let cloudData = NSUbiquitousKeyValueStore.default.data(forKey: studyDataKey),
+           let state = try? JSONDecoder().decode(StudyTimerState.self, from: cloudData) {
             earnedRewards = state.earnedRewards
             totalTimeStudied = state.totalTimeStudied
             focusStreak = state.focusStreak
             selectedTopic = state.selectedTopic
             dailyStreak = state.dailyStreak
             lastStudyDate = state.lastStudyDate
-            print("DEBUG: Loaded StudyTimerState with topic: \(selectedTopic?.name ?? "nil") from iCloud")
+        } else if let localData = UserDefaults.standard.data(forKey: studyDataKey),
+                  let state = try? JSONDecoder().decode(StudyTimerState.self, from: localData) {
+            earnedRewards = state.earnedRewards
+            totalTimeStudied = state.totalTimeStudied
+            focusStreak = state.focusStreak
+            selectedTopic = state.selectedTopic
+            dailyStreak = state.dailyStreak
+            lastStudyDate = state.lastStudyDate
         }
     }
 
