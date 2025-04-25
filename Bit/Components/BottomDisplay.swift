@@ -58,7 +58,10 @@ struct LayoutShell: View {
 
     @State private var currentXP: Int = 150 // Example current XP value
     @State private var maxXP: Int = 200 // Example max XP value
+    @State private var funFact: String = "Loading fun fact..." // Fun fact state
     @EnvironmentObject var timerModel: StudyTimerModel // Inject StudyTimerModel
+
+    private let openAIService = OpenAIService() // Instance of OpenAIService
 
     // Define fixed heights for overlays
     private let topBarHeight: CGFloat = 100
@@ -67,19 +70,7 @@ struct LayoutShell: View {
     var body: some View {
         GeometryReader { geo in
             VStack(spacing: 0) {
-                Spacer(minLength: topBarHeight)
-                content
-                    .frame(
-                        maxWidth: .infinity,
-                        maxHeight: geo.size.height - topBarHeight - bottomBarHeight
-                    )
-                Spacer(minLength: bottomBarHeight)
-            }
-            .frame(width: geo.size.width, height: geo.size.height)
-            // Removed .clipped() to prevent cutting off shadows or rounded corners.
-
-            VStack {
-                // Top Bar (absolutely positioned)
+                // Top Bar
                 ZStack {
                     AdaptiveBlurView(style: .regular)
                         .ignoresSafeArea(edges: .top)
@@ -98,30 +89,41 @@ struct LayoutShell: View {
                         }
                         .padding(.horizontal, 16)
                         .frame(maxWidth: .infinity)
-                        Text(dynamicWelcomeText(for: currentView))
-                            .font(.subheadline)
-                            .foregroundColor(.white)
+                        // Replace static text with scrolling fun fact for Home view
+                        if currentView == "Home" {
+                            MarqueeText(text: funFact)
+                                .font(.subheadline)
+                                .foregroundColor(.white)
+                        } else {
+                            Text(dynamicWelcomeText(for: currentView))
+                                .font(.subheadline)
+                                .foregroundColor(.white)
+                        }
                     }
                 }
+                .frame(height: topBarHeight)
                 .zIndex(2) // Bring the top bar above the main content.
-            }
 
-            VStack {
-                Spacer()
+                // Main Content
+                content
+                    .frame(maxWidth: .infinity, maxHeight: geo.size.height - topBarHeight - bottomBarHeight)
+
+                // Bottom Bar
                 BottomBar(currentView: $currentView)
                     .frame(height: bottomBarHeight)
                     .ignoresSafeArea(edges: .bottom)
+                    .zIndex(2) // Ensure the bottom bar stays above the content.
             }
-            .zIndex(2) // Ensure the bottom bar stays above the content.
+            .frame(width: geo.size.width, height: geo.size.height)
         }
         .onAppear {
             updateXPValues()
+            if currentView == "Home" { fetchFunFact() } // Fetch fun fact for Home
         }
     }
 
     private func dynamicWelcomeText(for view: String) -> String {
         switch view {
-        case "Home": return "Welcome back, Commander!"
         case "Planets": return "Explore the galaxy!"
         case "Study": return "Focus and achieve greatness!"
         case "Shop": return "Upgrade your journey!"
@@ -133,6 +135,60 @@ struct LayoutShell: View {
         // Replace with actual logic to fetch or calculate XP values
         currentXP = 150 // Example current XP value
         maxXP = 200 // Example max XP value
+    }
+
+    // Fetch fun fact using OpenAIService
+    private func fetchFunFact() {
+        openAIService.fetchAIResponse(prompt: "Tell me a fun fact.") { response in
+            DispatchQueue.main.async {
+                funFact = response ?? "Could not load a fun fact. Try again later!"
+            }
+        }
+    }
+}
+
+// Updated MarqueeText view: scrolls until the text’s right edge passes the container’s left edge using a recursive animation
+struct MarqueeText: View {
+    let text: String
+    @State private var offset: CGFloat = 0
+    @State private var textWidth: CGFloat = 0
+    @State private var containerWidth: CGFloat = 0
+
+    var body: some View {
+        GeometryReader { geo in
+            let containerW = geo.size.width
+            HStack {
+                Text(text)
+                    .fixedSize() // ensure full text renders without truncation
+                    .background(GeometryReader { textGeo in
+                        Color.clear.onAppear {
+                            textWidth = textGeo.size.width
+                            containerWidth = containerW
+                            offset = containerW  // start off-screen on the right
+                            startScrolling()
+                        }
+                    })
+                    .offset(x: offset)
+            }
+            .frame(width: containerW, alignment: .leading)
+            .clipped()
+        }
+    }
+    
+    private func startScrolling() {
+        guard textWidth > 0, containerWidth > 0 else { return }
+        let totalDistance = textWidth + containerWidth
+        let duration = Double(totalDistance) / 30.0  // adjust speed (30 points per second)
+        
+        // Animate from the starting offset to the position where the text’s right edge is off-screen
+        withAnimation(Animation.linear(duration: duration)) {
+            offset = -textWidth
+        }
+        // After the animation completes, reset and start again
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
+            offset = containerWidth
+            startScrolling()
+        }
     }
 }
 

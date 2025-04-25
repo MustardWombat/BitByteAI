@@ -5,19 +5,12 @@ class OpenAIService {
     private let endpoint = "https://api.openai.com/v1/chat/completions" // Updated endpoint
 
     init() {
-        // Try loading SecretsLocal.plist first for your actual API key.
-        if let localPath = Bundle.main.path(forResource: "SecretsLocal", ofType: "plist"),
-           let localDict = NSDictionary(contentsOfFile: localPath),
-           let key = localDict["API_KEY"] as? String {
-            self.apiKey = key
-        }
-        // Fallback to public Secrets.plist if it contains a valid key.
-        else if let path = Bundle.main.path(forResource: "Secrets", ofType: "plist"),
-                let dict = NSDictionary(contentsOfFile: path),
-                let key = dict["API_KEY"] as? String, key != "YOUR_API_KEY_HERE" {
+        if let path = Bundle.main.path(forResource: "Secrets", ofType: "plist"),
+           let dict = NSDictionary(contentsOfFile: path),
+           let key = dict["API_KEY"] as? String {
             self.apiKey = key
         } else {
-            fatalError("API Key not found")
+            fatalError("API Key not found in Secrets.plist")
         }
     }
 
