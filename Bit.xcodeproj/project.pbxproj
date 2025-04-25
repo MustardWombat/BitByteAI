@@ -13,13 +13,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		4F95C6672DA30C8100839484 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 4FEA9AF42D8E205B00D8B37B /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 4F95C6522DA30C7F00839484;
-			remoteInfo = StudyTimerWidgetExtensionExtension;
-		};
 		4FEA9B0E2D8E205D00D8B37B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 4FEA9AF42D8E205B00D8B37B /* Project object */;
@@ -36,25 +29,12 @@
 		};
 /* End PBXContainerItemProxy section */
 
-/* Begin PBXCopyFilesBuildPhase section */
-		4F95C66A2DA30C8100839484 /* Embed Foundation Extensions */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 13;
-			files = (
-			);
-			name = "Embed Foundation Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
-
 /* Begin PBXFileReference section */
-		4F95C6532DA30C7F00839484 /* StudyTimerWidgetExtensionExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = StudyTimerWidgetExtensionExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		4F95C6552DA30C7F00839484 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		4F95C6572DA30C7F00839484 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		4F95C6772DA311D300839484 /* StudyTimerWidgetExtensionExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = StudyTimerWidgetExtensionExtension.entitlements; sourceTree = "<group>"; };
 		4F95C6782DA316AA00839484 /* Bit.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Bit.entitlements; sourceTree = "<group>"; };
+		4FE61E532DBC3E87001B12C0 /* StudyTimerWidgetExtensionExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = StudyTimerWidgetExtensionExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		4FEA9AFC2D8E205B00D8B37B /* Bit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Bit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4FEA9B0D2D8E205D00D8B37B /* CosmosTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CosmosTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4FEA9B172D8E205D00D8B37B /* CosmosUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CosmosUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -177,6 +157,7 @@
 				4FEA9AFC2D8E205B00D8B37B /* Bit.app */,
 				4FEA9B0D2D8E205D00D8B37B /* CosmosTests.xctest */,
 				4FEA9B172D8E205D00D8B37B /* CosmosUITests.xctest */,
+				4FE61E532DBC3E87001B12C0 /* StudyTimerWidgetExtensionExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -203,7 +184,7 @@
 			packageProductDependencies = (
 			);
 			productName = StudyTimerWidgetExtensionExtension;
-			productReference = 4F95C6532DA30C7F00839484 /* StudyTimerWidgetExtensionExtension.appex */;
+			productReference = 4FE61E532DBC3E87001B12C0 /* StudyTimerWidgetExtensionExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 		4FEA9AFB2D8E205B00D8B37B /* Bit */ = {
@@ -386,7 +367,7 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-			4FEA9B0F2D8E205D00D8B37B /* PBXTargetDependency */ = {
+		4FEA9B0F2D8E205D00D8B37B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 4FEA9AFB2D8E205B00D8B37B /* Bit */;
 			targetProxy = 4FEA9B0E2D8E205D00D8B37B /* PBXContainerItemProxy */;
