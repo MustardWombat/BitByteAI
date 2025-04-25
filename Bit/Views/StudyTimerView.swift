@@ -149,10 +149,17 @@ struct StudyTimerView: View {
             }
             .padding()
         }
+        #if os(iOS)
         .fullScreenCover(isPresented: $showStudySession) {
             StudySessionView()
                 .environmentObject(timerModel)
         }
+        #elseif os(macOS)
+        .sheet(isPresented: $showStudySession) {
+            StudySessionView()
+                .environmentObject(timerModel)
+        }
+        #endif
     }
 
     func formatTime(_ seconds: Int) -> String {
