@@ -7,13 +7,9 @@
 import SwiftUI
 
 struct ContentView: View {
-    var fetchFunFactCallback: (() -> Void)? = nil
-
     var body: some View {
         MainView()
-            .onAppear {
-                fetchFunFactCallback?()
-            }
+        
     }
 }
 
@@ -27,5 +23,7 @@ struct ContentView_Previews: PreviewProvider {
             .environmentObject(MiningModel())
             .environmentObject(CategoriesViewModel())
             .environmentObject(XPModel())
+
+
     }
 }
