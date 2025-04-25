@@ -54,7 +54,10 @@ struct LayoutShell: View {
 
     @State private var currentXP: Int = 150 // Example current XP value
     @State private var maxXP: Int = 200 // Example max XP value
+    @State private var funFact: String = "Loading fun fact..." // State for fun fact
+    @State private var scrollOffset: CGFloat = 0 // State for scrolling offset
     @EnvironmentObject var timerModel: StudyTimerModel // Inject StudyTimerModel
+    @EnvironmentObject var studySessionModel: StudySessionModel
 
     // Define fixed heights for overlays
     private let topBarHeight: CGFloat = 100
@@ -96,9 +99,22 @@ struct LayoutShell: View {
                             }
                             .padding(.horizontal, 16)
                             .frame(maxWidth: .infinity)
-                            Text(dynamicWelcomeText(for: currentView))
-                                .font(.caption.monospaced())
-                                .foregroundColor(Color.green)
+
+                            // Dynamic welcome text or fun fact with horizontal scrolling
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack {
+                                    Text(dynamicWelcomeText(for: currentView))
+                                        .font(.caption.monospaced())
+                                        .foregroundColor(Color.green)
+                                        .lineLimit(1)
+                                        .padding(.horizontal, 16)
+                                        .offset(x: scrollOffset) // Apply scrolling offset
+                                        .onAppear {
+                                            let textLength = dynamicWelcomeText(for: currentView).count
+                                            startScrollingAnimation(textLength: textLength)
+                                        }
+                                }
+                            }
                         }
                         .padding(.top, 4)
                         .frame(maxWidth: .infinity)
@@ -122,19 +138,34 @@ struct LayoutShell: View {
                 .zIndex(2)
             }
             .frame(width: geo.size.width, height: geo.size.height)
-        }
-        .onAppear {
-            updateXPValues()
+            .onAppear {
+                updateXPValues()
+                fetchFunFact() // Fetch a fun fact when the shell appears
+            }
         }
     }
 
     private func dynamicWelcomeText(for view: String) -> String {
         switch view {
-        case "Home": return "Welcome back, Commander!"
-        case "Planets": return "Explore the galaxy!"
+        case "Home": return funFact
+        case "Planets": return "Manage your tasks efficiently!"
         case "Study": return "Focus and achieve greatness!"
         case "Shop": return "Upgrade your journey!"
         default: return "Welcome back, Commander!"
+        }
+    }
+
+    private func startScrollingAnimation(textLength: Int) {
+        let characterWidth: CGFloat = 7.0 // Approximate width of a single character in the chosen font
+        let textWidth = CGFloat(textLength) * characterWidth
+        let screenWidth: CGFloat = UIScreen.main.bounds.width
+        let extraDelay: CGFloat = 200 // Additional delay after the text moves off-screen
+        let scrollDistance: CGFloat = textWidth + screenWidth + extraDelay // Total distance to scroll
+        let scrollDuration: Double = Double(scrollDistance) / 30.0 // Dynamic duration based on distance
+
+        scrollOffset = screenWidth // Start off-screen to the right
+        withAnimation(Animation.linear(duration: scrollDuration).repeatForever(autoreverses: false)) {
+            scrollOffset = -(textWidth + extraDelay) // Scroll to the left with extended delay
         }
     }
 
@@ -142,6 +173,26 @@ struct LayoutShell: View {
         // Replace with actual logic to fetch or calculate XP values
         currentXP = 150 // Example current XP value
         maxXP = 200 // Example max XP value
+    }
+
+    public func fetchFunFact() {
+        print("🔍 Debug: fetchFunFact called") // Debugging log
+        let openAIService = OpenAIService()
+        let prompt = "Provide a fun and interesting fact about space or productivity."
+        print("🔍 Debug: Sending OpenAI request with prompt: \(prompt)") // Debugging log
+
+        openAIService.fetchAIResponse(prompt: prompt) { response in
+            print("🔍 Debug: OpenAI response received: \(String(describing: response))") // Debugging log
+            DispatchQueue.main.async {
+                if let response = response, !response.isEmpty {
+                    print("✅ Debug: Fun Fact fetched: \(response)") // Debugging log
+                    funFact = response
+                } else {
+                    print("⚠️ Debug: Using fallback Fun Fact") // Debugging log
+                    funFact = "Did you know? The sun is 93 million miles away from Earth!"
+                }
+            }
+        }
     }
 }
 

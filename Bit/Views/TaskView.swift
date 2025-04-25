@@ -1,22 +1,27 @@
 import SwiftUI
 
-struct PlanetView: View {
-    @EnvironmentObject var scheduleModel: ScheduleModel
+struct TaskView: View {
+    @EnvironmentObject var taskModel: TaskModel
 
     var body: some View {
         VStack {
-            Text("Schedule Maker")
+            Text("Task Manager")
                 .font(.largeTitle)
                 .padding(.top, 16)
 
             List {
-                ForEach(scheduleModel.events) { event in
+                ForEach(taskModel.tasks) { task in
                     VStack(alignment: .leading) {
-                        Text(event.title)
+                        Text(task.title)
                             .font(.headline)
-                        Text(event.date, style: .date)
-                            .font(.subheadline)
-                        if event.isRecurring {
+                        if let due = task.dueDate {
+                            Text(due, style: .date)
+                                .font(.subheadline)
+                        } else {
+                            Text("No Due Date")
+                                .font(.subheadline)
+                        }
+                        if task.isRecurring {
                             Text("Recurring")
                                 .font(.caption)
                                 .foregroundColor(.gray)
@@ -26,9 +31,9 @@ struct PlanetView: View {
             }
 
             Button(action: {
-                scheduleModel.addEvent(title: "New Event", date: Date(), isRecurring: false)
+                taskModel.addTask(title: "New Task", dueDate: Date(), isRecurring: false)
             }) {
-                Text("Add Event")
+                Text("Add Task")
                     .padding()
                     .background(Color.green)
                     .foregroundColor(.white)

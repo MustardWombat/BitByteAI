@@ -11,8 +11,8 @@ struct MainView: View {
                     switch currentView {
                     case "Home":
                         return AnyView(HomeView(currentView: $currentView))
-                    case "Planets":
-                        return AnyView(PlanetView(currentView: $currentView))
+                    case "Planets": // Update to reference TaskView
+                        return AnyView(TaskView().environmentObject(TaskModel()))
                     case "Study":
                         return AnyView(SessionView(currentView: $currentView))
                     case "Shop":

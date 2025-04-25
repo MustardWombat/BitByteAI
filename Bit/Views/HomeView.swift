@@ -27,6 +27,7 @@ struct HomeView: View {
     @EnvironmentObject var shopModel: ShopModel
     @EnvironmentObject var categoriesVM: CategoriesViewModel
     @EnvironmentObject var xpModel: XPModel
+    @EnvironmentObject var miningModel: MiningModel
 
     var body: some View {
         ZStack {
@@ -51,6 +52,24 @@ struct HomeView: View {
                             WeeklyProgressChart()
                                 .environmentObject(categoriesVM)
                                 .padding(.top, 20) // Added top padding for the chart
+
+                            // Mining Section
+                            HStack(spacing: 10) {
+                                ForEach(miningModel.availablePlanets.prefix(4)) { planet in
+                                    VStack {
+                                        Text(planet.type.rawValue) // Display associated emoji
+                                            .font(.largeTitle)
+                                        Text(planet.name)
+                                            .font(.caption)
+                                            .foregroundColor(.white)
+                                    }
+                                    .frame(width: 70, height: 100)
+                                    .background(Color.black.opacity(0.3))
+                                    .cornerRadius(10)
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
 
                             // 🛍 Purchases Section
                             VStack(alignment: .leading, spacing: 10) {
@@ -109,5 +128,6 @@ struct HomeView_Previews: PreviewProvider {
             .environmentObject(ShopModel())
             .environmentObject(CategoriesViewModel())
             .environmentObject(XPModel())
+            .environmentObject(MiningModel())
     }
 }
