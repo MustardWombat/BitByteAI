@@ -14,62 +14,22 @@ class XPModel: ObservableObject {
     @Published var level: Int = 1 { didSet { saveIfLoaded() } }
     @Published var xpForNextLevel: Int = 100 { didSet { saveIfLoaded() } }
     @Published var upgradeMultiplier: Double = 1.0
+    @AppStorage("isSignedIn") private var isSignedIn: Bool = false
 
     private var isInitialLoadComplete = false
     private let xpKey = "XPModel.xp"
     private let levelKey = "XPModel.level"
     private let xpForNextLevelKey = "XPModel.xpForNextLevel"
+    private let localXPKey = "Local_XPModelData" // new key for local save
 
     init() {
         loadData()
         isInitialLoadComplete = true
-        setupNotifications()
-    }
-    
-    private func setupNotifications() {
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleXPBoost),
-            name: Notification.Name("ApplyXPBoost"),
-            object: nil
-        )
-        
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(resetXPBoost),
-            name: Notification.Name("ResetXPBoost"),
-            object: nil
-        )
-        
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(resetAllBoosts),
-            name: Notification.Name("ResetAllBoosts"),
-            object: nil
-        )
-    }
-    
-    @objc private func handleXPBoost(notification: Notification) {
-        if let multiplier = notification.userInfo?["multiplier"] as? Double {
-            upgradeMultiplier *= multiplier
-        }
-    }
-    
-    @objc private func resetXPBoost(notification: Notification) {
-        if let newMultiplier = notification.userInfo?["multiplier"] as? Double {
-            upgradeMultiplier = newMultiplier
-        } else {
-            upgradeMultiplier = 1.0
-        }
-    }
-    
-    @objc private func resetAllBoosts(notification: Notification) {
-        upgradeMultiplier = 1.0
     }
 
     func addXP(_ amount: Int) {
-        let boostedAmount = Int(Double(amount) * upgradeMultiplier)
-        xp += boostedAmount
+        guard amount > 0 else { return } // Prevent adding zero or negative values.
+        xp += Int(Double(amount) * upgradeMultiplier)
         while xp >= xpForNextLevel {
             xp -= xpForNextLevel
             level += 1
@@ -83,18 +43,32 @@ class XPModel: ObservableObject {
     }
 
     private func saveIfLoaded() {
-        guard isInitialLoadComplete else { return }
-        let defaults = UserDefaults.standard
-        defaults.set(xp, forKey: xpKey)
-        defaults.set(level, forKey: levelKey)
-        defaults.set(xpForNextLevel, forKey: xpForNextLevelKey)
+        // Always save locally:
+        let localData: [String: Int] = [
+            "xp": xp,
+            "level": level,
+            "xpForNextLevel": xpForNextLevel
+        ]
+        UserDefaults.standard.set(localData, forKey: localXPKey)
+        // And if signed in, also use iCloud
+        guard isInitialLoadComplete && isSignedIn else { return }
+        let store = NSUbiquitousKeyValueStore.default
+        store.set(xp, forKey: xpKey)
+        store.set(level, forKey: levelKey)
+        store.set(xpForNextLevel, forKey: xpForNextLevelKey)
+        store.synchronize()
     }
 
     func loadData() {
-        let defaults = UserDefaults.standard
-        xp = defaults.integer(forKey: xpKey)
-        level = max(1, defaults.integer(forKey: levelKey)) // Ensure level is at least 1
-        xpForNextLevel = defaults.integer(forKey: xpForNextLevelKey) > 0 ? defaults.integer(forKey: xpForNextLevelKey) : 100
+        if let cloudXP = NSUbiquitousKeyValueStore.default.dictionary(forKey: localXPKey) as? [String: Int] {
+            xp = cloudXP["xp"] ?? 0
+            level = max(1, cloudXP["level"] ?? 1)
+            xpForNextLevel = cloudXP["xpForNextLevel"] ?? 100
+        } else if let localXP = UserDefaults.standard.dictionary(forKey: localXPKey) as? [String: Int] {
+            xp = localXP["xp"] ?? 0
+            level = max(1, localXP["level"] ?? 1)
+            xpForNextLevel = localXP["xpForNextLevel"] ?? 100
+        }
     }
 }
 

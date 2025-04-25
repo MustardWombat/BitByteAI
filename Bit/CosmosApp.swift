@@ -47,7 +47,7 @@ struct CosmosAppView: View {
                 categoriesModel.categories = categoriesModel.loadCategories() // Explicitly update categories
                 taskModel.loadTasks()
                 currencyModel.fetchFromICloud()
-                shopModel.loadData() // Ensure ShopModel is loaded
+                shopModel.loadData()
                 civModel.updateFromBackground()
                 miningModel.resumeMiningIfNeeded()
             }
