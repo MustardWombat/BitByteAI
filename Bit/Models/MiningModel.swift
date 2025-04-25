@@ -10,7 +10,7 @@ enum PlanetType: String, Codable, CaseIterable {
 }
 
 // MARK: - Planet Model
-struct Planet: Identifiable, Codable, Equatable {
+struct Planet: Identifiable, Codable, Equatable, Hashable { // added Hashable conformance
     let id: UUID
     let name: String
     let baseMiningTime: Int    // in seconds
@@ -50,11 +50,14 @@ class MiningModel: ObservableObject {
 
     private let savedMiningKey = "currentMiningPlanetData"
     private let availablePlanetsKey = "availablePlanets"
+    private let availablePlanetsCloudKey = "availablePlanets"
+    private let currentMiningPlanetCloudKey = "currentMiningPlanet"
 
     // MARK: - Init
     init() {
         loadAvailablePlanets() // Load persisted planets if available
         resumeMiningIfNeeded()
+        fetchPlanetsFromICloud() // Fetch cloud saved planet data
     }
 
     // MARK: - Planet Access
@@ -163,11 +166,13 @@ class MiningModel: ObservableObject {
     func addPlanet(_ planet: Planet) {
         availablePlanets.append(planet)
         saveAvailablePlanets()
+        savePlanetsToICloud() // Update cloud
     }
 
     func removePlanet(_ planet: Planet) {
         availablePlanets.removeAll { $0.id == planet.id }
         saveAvailablePlanets()
+        savePlanetsToICloud() // Update cloud
     }
 
     // MARK: - Finish Mining
@@ -180,6 +185,7 @@ class MiningModel: ObservableObject {
         awardCoins?(planet.miningReward)
 
         clearSavedMiningState()
+        savePlanetsToICloud() // Update cloud after clearing state
         resetMiningState()
     }
 
@@ -190,5 +196,33 @@ class MiningModel: ObservableObject {
         miningStartTime = nil
         targetMiningDuration = 0
         miningProgress = 0.0
+    }
+
+    // MARK: - iCloud Sync
+    func savePlanetsToICloud() {
+        let store = NSUbiquitousKeyValueStore.default
+        if let data = try? JSONEncoder().encode(availablePlanets) {
+            store.set(data, forKey: availablePlanetsCloudKey)
+        }
+        if let planet = currentMiningPlanet,
+           let data = try? JSONEncoder().encode(planet) {
+            store.set(data, forKey: currentMiningPlanetCloudKey)
+        } else {
+            store.removeObject(forKey: currentMiningPlanetCloudKey)
+        }
+        store.synchronize()
+    }
+
+    func fetchPlanetsFromICloud() {
+        let store = NSUbiquitousKeyValueStore.default
+        if let data = store.data(forKey: availablePlanetsCloudKey),
+           let cloudPlanets = try? JSONDecoder().decode([Planet].self, from: data) {
+            // Merge by taking all unique planets
+            availablePlanets = Array(Set(availablePlanets + cloudPlanets))
+        }
+        if let data = store.data(forKey: currentMiningPlanetCloudKey),
+           let cloudPlanet = try? JSONDecoder().decode(Planet.self, from: data) {
+            currentMiningPlanet = cloudPlanet
+        }
     }
 }

@@ -27,6 +27,7 @@ class XPModel: ObservableObject {
     init() {
         loadData()
         isInitialLoadComplete = true
+        fetchFromICloud() // new: load cloud data
         setupNotifications()
     }
     
@@ -92,6 +93,38 @@ class XPModel: ObservableObject {
         defaults.set(xp, forKey: xpKey)
         defaults.set(level, forKey: levelKey)
         defaults.set(xpForNextLevel, forKey: xpForNextLevelKey)
+        saveToICloud() // new: save to cloud
+    }
+
+    func saveToICloud() {
+        let store = NSUbiquitousKeyValueStore.default
+        store.set(xp, forKey: xpKey)
+        store.set(level, forKey: levelKey)
+        store.set(xpForNextLevel, forKey: xpForNextLevelKey)
+        store.synchronize()
+    }
+
+    func fetchFromICloud() {
+        let store = NSUbiquitousKeyValueStore.default
+        let cloudXP = store.object(forKey: xpKey) as? Int ?? 0
+        let cloudLevel = max(1, store.object(forKey: levelKey) as? Int ?? 1)
+        let cloudXPForNext = store.object(forKey: xpForNextLevelKey) as? Int ?? 0
+        
+        // Merge local and cloud values by taking the higher ones
+        let mergedXP = max(xp, cloudXP)
+        let mergedLevel = max(level, cloudLevel)
+        let mergedXPForNext = max(xpForNextLevel, cloudXPForNext)
+        
+        xp = mergedXP
+        level = mergedLevel
+        xpForNextLevel = mergedXPForNext
+        
+        // Write back the merged values to both iCloud and local storage
+        saveToICloud()
+        let defaults = UserDefaults.standard
+        defaults.set(mergedXP, forKey: xpKey)
+        defaults.set(mergedLevel, forKey: levelKey)
+        defaults.set(mergedXPForNext, forKey: xpForNextLevelKey)
     }
 
     func loadData() {
