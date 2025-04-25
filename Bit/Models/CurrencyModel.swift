@@ -8,6 +8,10 @@
 import Foundation
 import Combine
 
+#if canImport(AppKit)
+import AppKit
+#endif
+
 class CurrencyModel: ObservableObject {
     @Published var balance: Int = 0
     @Published var coinMultiplier: Double = 1.0

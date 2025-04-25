@@ -9,6 +9,7 @@
 
 import Foundation
 import SwiftUI
+import Combine
 
 private let selectedTopicKey = "selectedTopicID"
 
@@ -134,6 +135,14 @@ class CategoriesViewModel: ObservableObject {
         guard let savedID = NSUbiquitousKeyValueStore.default.string(forKey: selectedTopicKey),
               let uuid = UUID(uuidString: savedID) else { return nil }
         return categories.first(where: { $0.id == uuid })
+    }
+
+    func showCategorySelection(for binding: Binding<Category?>, onComplete: @escaping () -> Void) {
+        #if os(iOS)
+        // iOS presentation logic
+        #else
+        // macOS presentation logic using sheets or popovers
+        #endif
     }
 }
 

@@ -135,31 +135,25 @@ struct CategorySelectionSheet: View {
     @Binding var isPresented: Bool
     var onAddCategory: (String) -> Void
     var onDeleteCategory: (Category) -> Void
-
-    @State private var showDeleteAlert = false
-    @State private var categoryToDelete: Category?
-    @State private var newCategoryName: String = ""
+    
     @State private var showCreateAlert = false
-
+    @State private var newCategoryName = ""
+    @State private var showDeleteAlert = false
+    @State private var categoryToDelete: Category? = nil
+    
     var body: some View {
         NavigationView {
             List {
-                // Create New Topic Button
                 Button(action: {
                     showCreateAlert = true
                 }) {
-                    HStack {
-                        Image(systemName: "plus.circle.fill")
-                            .foregroundColor(.blue)
-                        Text("Create New Topic")
-                            .foregroundColor(.blue)
-                    }
+                    Label("Add New Topic", systemImage: "plus.circle")
+                        .foregroundColor(.blue)
                 }
-
-                // List of categories
+                
                 ForEach(categories) { category in
                     Button(action: {
-                        selected = category // Update the selected binding
+                        selected = category
                         isPresented = false
                     }) {
                         HStack {
@@ -181,10 +175,14 @@ struct CategorySelectionSheet: View {
                     })
                 }
             }
-            .navigationBarTitle("Choose Topic", displayMode: .inline)
-            .navigationBarItems(trailing: Button("Done") {
-                isPresented = false
-            })
+            .navigationTitle("Choose Topic")
+            .toolbar {
+                ToolbarItem(placement: .automatic) {
+                    Button("Done") {
+                        isPresented = false
+                    }
+                }
+            }
             .alert(isPresented: $showDeleteAlert) {
                 Alert(
                     title: Text("Delete Topic"),

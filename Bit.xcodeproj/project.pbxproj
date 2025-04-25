@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		4F95C6562DA30C7F00839484 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F95C6552DA30C7F00839484 /* WidgetKit.framework */; };
 		4F95C6582DA30C7F00839484 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F95C6572DA30C7F00839484 /* SwiftUI.framework */; };
-		4F95C6692DA30C8100839484 /* StudyTimerWidgetExtensionExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4F95C6532DA30C7F00839484 /* StudyTimerWidgetExtensionExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4F95C6792DA316B100839484 /* Bit.entitlements in Sources */ = {isa = PBXBuildFile; fileRef = 4F95C6782DA316AA00839484 /* Bit.entitlements */; };
 /* End PBXBuildFile section */
 
@@ -44,7 +43,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				4F95C6692DA30C8100839484 /* StudyTimerWidgetExtensionExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -179,7 +177,6 @@
 				4FEA9AFC2D8E205B00D8B37B /* Bit.app */,
 				4FEA9B0D2D8E205D00D8B37B /* CosmosTests.xctest */,
 				4FEA9B172D8E205D00D8B37B /* CosmosUITests.xctest */,
-				4F95C6532DA30C7F00839484 /* StudyTimerWidgetExtensionExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -216,12 +213,10 @@
 				4FEA9AF82D8E205B00D8B37B /* Sources */,
 				4FEA9AF92D8E205B00D8B37B /* Frameworks */,
 				4FEA9AFA2D8E205B00D8B37B /* Resources */,
-				4F95C66A2DA30C8100839484 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				4F95C6682DA30C8100839484 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				4FEA9AFE2D8E205B00D8B37B /* Bit */,
@@ -391,12 +386,7 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		4F95C6682DA30C8100839484 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 4F95C6522DA30C7F00839484 /* StudyTimerWidgetExtensionExtension */;
-			targetProxy = 4F95C6672DA30C8100839484 /* PBXContainerItemProxy */;
-		};
-		4FEA9B0F2D8E205D00D8B37B /* PBXTargetDependency */ = {
+			4FEA9B0F2D8E205D00D8B37B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 4FEA9AFB2D8E205B00D8B37B /* Bit */;
 			targetProxy = 4FEA9B0E2D8E205D00D8B37B /* PBXContainerItemProxy */;
@@ -587,6 +577,7 @@
 		4FEA9B222D8E205D00D8B37B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALLOW_TARGET_PLATFORM_SPECIALIZATION = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Bit/Bit.entitlements;
@@ -617,8 +608,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.jameswilliams.Bit-";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
+				SUPPORTED_PLATFORMS = "xrsimulator xros watchsimulator watchos macosx iphonesimulator iphoneos driverkit appletvsimulator appletvos";
+				SUPPORTS_MACCATALYST = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
@@ -629,6 +620,7 @@
 		4FEA9B232D8E205D00D8B37B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALLOW_TARGET_PLATFORM_SPECIALIZATION = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Bit/Bit.entitlements;
@@ -659,8 +651,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.jameswilliams.Bit-";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
+				SUPPORTED_PLATFORMS = "xrsimulator xros watchsimulator watchos macosx iphonesimulator iphoneos driverkit appletvsimulator appletvos";
+				SUPPORTS_MACCATALYST = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;

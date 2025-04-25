@@ -116,7 +116,7 @@ struct PurchaseConfirmationView: View {
                 }
                 .padding(.bottom, 20)
             }
-            .background(Color.secondary.opacity(0.2)) // Cross-platform backgrounday6).opacity(0.9)) // Fix this line for cross-platform
+            .background(Color.secondary.opacity(0.2)) // Cross-platform background
             .cornerRadius(16)
             .shadow(radius: 10)
             .padding(.horizontal, 30)

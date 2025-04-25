@@ -9,6 +9,10 @@ import Foundation
 import SwiftUI
 import Combine
 
+#if canImport(AppKit)
+import AppKit
+#endif
+
 class XPModel: ObservableObject {
     @Published var xp: Int = 0 { didSet { saveIfLoaded() } }
     @Published var level: Int = 1 { didSet { saveIfLoaded() } }

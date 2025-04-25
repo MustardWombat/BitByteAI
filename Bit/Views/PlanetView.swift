@@ -98,9 +98,11 @@ struct PlanetView: View {
                 miningModel.restoreSavedMiningState()
             }
             .onChange(of: scenePhase) { newPhase in
+                #if os(iOS) || os(macOS)
                 if newPhase == .active {
                     miningModel.refreshMiningProgress()
                 }
+                #endif
             }
             .alert(isPresented: $showMineConfirmation) {
                 Alert(

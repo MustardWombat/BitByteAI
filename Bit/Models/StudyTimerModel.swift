@@ -1,10 +1,22 @@
 import Foundation
 import Combine
 import SwiftUI
-import ActivityKit
 
 #if os(iOS)
 import UIKit
+import ActivityKit
+#endif
+
+#if canImport(AppKit)
+import AppKit
+#endif
+
+// Use a proper typealias approach for cross-platform activity
+#if os(iOS) && canImport(ActivityKit)
+import ActivityKit
+typealias TimerActivity = Activity<StudyTimerAttributes>?
+#else
+typealias TimerActivity = Any?
 #endif
 
 struct StudyTimerState: Codable {
@@ -59,7 +71,8 @@ class StudyTimerModel: ObservableObject {
     private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
     #endif
     
-    private var liveActivity: Activity<StudyTimerAttributes>? = nil
+    // Use the typealias
+    private var liveActivity: TimerActivity = nil
     
     init(xpModel: XPModel? = nil, miningModel: MiningModel? = nil, categoriesVM: CategoriesViewModel? = nil) {
         self.xpModel = xpModel
@@ -89,8 +102,9 @@ class StudyTimerModel: ObservableObject {
         reward = nil
         
         #if os(iOS)
-        backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "StudyTimer") {
-            self.endBackgroundTask()
+        backgroundTaskID = UIApplication.shared.beginBackgroundTask {
+            UIApplication.shared.endBackgroundTask(self.backgroundTaskID)
+            self.backgroundTaskID = .invalid
         }
         #endif
         
@@ -258,37 +272,52 @@ class StudyTimerModel: ObservableObject {
     #endif
     
     private func startLiveActivity(duration: Int, topic: String) {
-        guard ActivityAuthorizationInfo().areActivitiesEnabled else {
-            print("❌ Live Activities not authorized")
-            return
+        #if os(iOS) && canImport(ActivityKit)
+        if ActivityAuthorizationInfo().areActivitiesEnabled {
+            guard let endDate = initialEndDate else { return }
+            
+            let attributes = StudyTimerAttributes(topic: topic)
+            let state = StudyTimerAttributes.ContentState(
+                timeRemaining: duration, 
+                endDate: endDate
+            )
+            
+            do {
+                liveActivity = try Activity<StudyTimerAttributes>.request(
+                    attributes: attributes, 
+                    contentState: state
+                )
+            } catch {
+                print("Failed to start live activity: \(error)")
+            }
         }
-        guard let endDate = initialEndDate else { return }
-        let attributes = StudyTimerAttributes(topic: topic)
-        let state = StudyTimerAttributes.ContentState(timeRemaining: duration, endDate: endDate)
-        do {
-            liveActivity = try Activity<StudyTimerAttributes>.request(attributes: attributes, contentState: state)
-            print("✅ Live Activity started with topic: \(topic)")
-        } catch {
-            print("❌ Failed to start live activity: \(error)")
-        }
+        #endif
     }
     
     private func updateLiveActivity(remaining: Int) {
-        guard let activity = liveActivity, let endDate = initialEndDate else { return }
+        #if os(iOS)
+        guard let activity = liveActivity as? Activity<StudyTimerAttributes>, let endDate = initialEndDate else { return }
         Task {
             await activity.update(using: StudyTimerAttributes.ContentState(
                 timeRemaining: remaining,
                 endDate: endDate
             ))
         }
+        #else
+        // No live activity update on macOS.
+        #endif
     }
     
     private func stopLiveActivity() {
-        guard let activity = liveActivity else { return }
+        #if os(iOS)
+        guard let activity = liveActivity as? Activity<StudyTimerAttributes> else { return }
         Task {
             await activity.end(dismissalPolicy: .immediate)
             liveActivity = nil
         }
+        #else
+        // Nothing to stop on macOS.
+        #endif
     }
 }
 

@@ -98,9 +98,11 @@ struct StudyTimerView: View {
                 }
             }
             .onChange(of: scenePhase) { newPhase in
+                #if os(iOS) || os(macOS)
                 if newPhase == .active {
                     timerModel.updateTimeRemaining()
                 }
+                #endif
             }
             .onChange(of: timerModel.reward) { newReward in
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {

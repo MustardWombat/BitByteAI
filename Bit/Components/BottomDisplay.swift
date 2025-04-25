@@ -1,5 +1,9 @@
 import SwiftUI
 
+#if os(iOS)
+import UIKit
+#endif
+
 // MARK: - BottomBarButton
 struct BottomBarButton: View {
     let iconName: String
@@ -62,66 +66,53 @@ struct LayoutShell: View {
 
     var body: some View {
         GeometryReader { geo in
-            ZStack {
-                // Main content, constrained to not overlap overlays
-                VStack(spacing: 0) {
-                    Spacer(minLength: topBarHeight)
-                    content
-                        .frame(
-                            maxWidth: .infinity,
-                            maxHeight: geo.size.height - topBarHeight - bottomBarHeight
-                        )
-                    Spacer(minLength: bottomBarHeight)
-                }
-                .frame(width: geo.size.width, height: geo.size.height)
-                .clipped()
-
-                // Top Bar (absolutely positioned)
-                VStack {
-                    ZStack {
-                        BlurView(style: .systemMaterial)
-                            .ignoresSafeArea(edges: .top)
-                            .frame(height: topBarHeight)
-                        VStack(spacing: 4) {
-                            // --- Info row with sprite placeholder centered between XP and Coin ---
-                            HStack(spacing: 12) {
-                                XPDisplayView()
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                TopShellSpritePlaceholder()
-                                CoinDisplay()
-                                    .font(.caption.monospaced())
-                                    .foregroundColor(Color.green)
-                                StreakDisplay()
-                                    .environmentObject(timerModel)
-                            }
-                            .padding(.horizontal, 16)
-                            .frame(maxWidth: .infinity)
-                            Text(dynamicWelcomeText(for: currentView))
-                                .font(.caption.monospaced())
-                                .foregroundColor(Color.green)
-                        }
-                        .padding(.top, 4)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: topBarHeight)
-                        .cornerRadius(12, corners: [.bottomLeft, .bottomRight])
-                    }
-                    .frame(height: topBarHeight)
-                    Spacer()
-                }
-                .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
-                .zIndex(2)
-
-                // Bottom Bar (absolutely positioned)
-                VStack {
-                    Spacer()
-                    BottomBar(currentView: $currentView)
-                        .frame(height: bottomBarHeight)
-                        .ignoresSafeArea(edges: .bottom)
-                }
-                .frame(width: geo.size.width, height: geo.size.height, alignment: .bottom)
-                .zIndex(2)
+            VStack(spacing: 0) {
+                Spacer(minLength: topBarHeight)
+                content
+                    .frame(
+                        maxWidth: .infinity,
+                        maxHeight: geo.size.height - topBarHeight - bottomBarHeight
+                    )
+                Spacer(minLength: bottomBarHeight)
             }
             .frame(width: geo.size.width, height: geo.size.height)
+            // Removed .clipped() to prevent cutting off shadows or rounded corners.
+
+            VStack {
+                // Top Bar (absolutely positioned)
+                ZStack {
+                    AdaptiveBlurView(style: .regular)
+                        .ignoresSafeArea(edges: .top)
+                        .frame(height: topBarHeight)
+                    VStack(spacing: 4) {
+                        // --- Info row with sprite placeholder centered between XP and Coin ---
+                        HStack(spacing: 12) {
+                            XPDisplayView()
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            TopShellSpritePlaceholder()
+                            CoinDisplay()
+                                .font(.caption.monospaced())
+                                .foregroundColor(Color.green)
+                            StreakDisplay()
+                                .environmentObject(timerModel)
+                        }
+                        .padding(.horizontal, 16)
+                        .frame(maxWidth: .infinity)
+                        Text(dynamicWelcomeText(for: currentView))
+                            .font(.subheadline)
+                            .foregroundColor(.white)
+                    }
+                }
+                .zIndex(2) // Bring the top bar above the main content.
+            }
+
+            VStack {
+                Spacer()
+                BottomBar(currentView: $currentView)
+                    .frame(height: bottomBarHeight)
+                    .ignoresSafeArea(edges: .bottom)
+            }
+            .zIndex(2) // Ensure the bottom bar stays above the content.
         }
         .onAppear {
             updateXPValues()
@@ -167,7 +158,7 @@ struct BottomBar: View {
         .padding(.bottom, 20)
         .background(
             Color.black.opacity(0.65)
-                .cornerRadius(20, corners: [.topLeft, .topRight])
+                .adaptiveCornerRadius(20, corners: [.topLeft, .topRight])
         )
         .shadow(color: Color.black.opacity(0.8), radius: 10, x: 0, y: -5)
         .frame(maxWidth: .infinity)
@@ -175,9 +166,25 @@ struct BottomBar: View {
     }
 }
 
+// MARK: - BlurEffect Style (cross-platform)
+#if os(iOS)
+typealias BlurEffectStyle = UIBlurEffect.Style
+#else
+enum BlurEffectStyle {
+    case systemMaterial
+    case systemThinMaterial
+    case systemUltraThinMaterial
+    case systemThickMaterial
+    case systemChromeMaterial
+    case prominent
+    case regular
+}
+#endif
+
 // MARK: - BlurView
+#if os(iOS)
 struct BlurView: UIViewRepresentable {
-    var style: UIBlurEffect.Style
+    var style: BlurEffectStyle
 
     func makeUIView(context: Context) -> UIVisualEffectView {
         UIVisualEffectView(effect: UIBlurEffect(style: style))
@@ -185,24 +192,12 @@ struct BlurView: UIViewRepresentable {
 
     func updateUIView(_ uiView: UIVisualEffectView, context: Context) {}
 }
+#else
+struct BlurView: View {
+    var style: BlurEffectStyle
 
-// MARK: - RoundedCorner Extension
-extension View {
-    func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
-        clipShape(RoundedCorner(radius: radius, corners: corners))
+    var body: some View {
+        Color.gray.opacity(0.5) // Use a simple gray background as a fallback
     }
 }
-
-struct RoundedCorner: Shape {
-    var radius: CGFloat = .infinity
-    var corners: UIRectCorner = .allCorners
-
-    func path(in rect: CGRect) -> Path {
-        let path = UIBezierPath(
-            roundedRect: rect,
-            byRoundingCorners: corners,
-            cornerRadii: CGSize(width: radius, height: radius)
-        )
-        return Path(path.cgPath)
-    }
-}
+#endif

@@ -9,6 +9,10 @@ import Foundation
 import Combine
 import SwiftUI
 
+#if canImport(AppKit)
+import AppKit
+#endif
+
 class ShopModel: ObservableObject {
     @Published var purchasedItems: [PurchasedItem] = [] {
         didSet { saveData() }

@@ -208,17 +208,21 @@ struct NewTaskSheet: View {
                     }
                 }
             }
-            .navigationBarTitle("New Task", displayMode: .inline)
-            .navigationBarItems(
-                leading: Button("Cancel") { isPresented = false },
-                trailing: Button("Add") {
-                    let trimmed = title.trimmingCharacters(in: .whitespaces)
-                    guard !trimmed.isEmpty else { return }
-                    taskModel.addTask(title: trimmed, difficulty: difficulty, dueDate: dueDate)
-                    isPresented = false
+            .navigationTitle("New Task")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { isPresented = false }
                 }
-                .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
-            )
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Add") {
+                        let trimmed = title.trimmingCharacters(in: .whitespaces)
+                        guard !trimmed.isEmpty else { return }
+                        taskModel.addTask(title: trimmed, difficulty: difficulty, dueDate: dueDate)
+                        isPresented = false
+                    }
+                    .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
             .sheet(isPresented: $showDueDatePicker) {
                 VStack {
                     DatePicker(

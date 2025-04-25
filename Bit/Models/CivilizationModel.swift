@@ -8,6 +8,10 @@
 import Foundation
 import Combine
 
+#if canImport(AppKit)
+import AppKit
+#endif
+
 class CivilizationModel: ObservableObject {
     @Published var population: Int = 100
     @Published var resources: Int = 50
@@ -22,6 +26,28 @@ class CivilizationModel: ObservableObject {
     init() {
         loadData()
         // When initializing, update the model using the elapsed time.
+        updateFromBackground()
+        setupNotificationObservers()
+    }
+
+    deinit {
+        #if canImport(AppKit)
+        NotificationCenter.default.removeObserver(self)
+        #endif
+    }
+
+    private func setupNotificationObservers() {
+        #if canImport(AppKit)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAppActivation),
+            name: NSApplication.didBecomeActiveNotification,
+            object: nil
+        )
+        #endif
+    }
+
+    @objc private func handleAppActivation() {
         updateFromBackground()
     }
     

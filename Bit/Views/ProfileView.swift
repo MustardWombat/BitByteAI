@@ -1,6 +1,9 @@
 import SwiftUI
-import AuthenticationServices
 import CloudKit
+
+#if os(iOS)
+import AuthenticationServices
+#endif
 
 struct Profile: Codable {
     var name: String
@@ -76,6 +79,7 @@ struct ProfileView: View {
                     }
                     .padding()
                 } else {
+                    #if os(iOS)
                     SignInWithAppleButton(
                         .signIn,
                         onRequest: { request in
@@ -100,6 +104,15 @@ struct ProfileView: View {
                     .signInWithAppleButtonStyle(.whiteOutline)
                     .frame(height: 45)
                     .padding(.horizontal, 40)
+                    #else
+                    Button("Sign In") {
+                        signIn()
+                    }
+                    .padding()
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
+                    #endif
                 }
                 // NEW: Add a Sign Out button when signed in
                 if isSignedIn {
@@ -168,5 +181,15 @@ struct ProfileView: View {
                 print("CloudKit profile deleted.")
             }
         }
+    }
+
+    private func signIn() {
+        #if os(iOS)
+        // iOS-specific Sign In with Apple implementation
+        #else
+        // Mac-specific implementation or fallback
+        isSignedIn = true
+        saveProfileToCloudKit()
+        #endif
     }
 }
