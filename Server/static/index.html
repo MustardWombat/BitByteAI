@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notification Time Predictor</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>ML Notification Time Predictor</h1>
+        </header>
+        
+        <div class="card">
+            <h2>Predict Optimal Notification Time</h2>
+            <div id="status-indicator" class="status">
+                <span class="dot"></span>
+                <span id="status-text">Checking API status...</span>
+            </div>
+            
+            <form id="prediction-form">
+                <div class="form-group">
+                    <label for="dayOfWeek">Day of Week (0-6, Sunday=0):</label>
+                    <input type="number" id="dayOfWeek" min="0" max="6" value="1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="hourOfDay">Hour (0-23):</label>
+                    <input type="number" id="hourOfDay" min="0" max="23" value="14">
+                </div>
+                
+                <div class="form-group">
+                    <label for="minuteOfHour">Minute (0-59):</label>
+                    <input type="number" id="minuteOfHour" min="0" max="59" value="30">
+                </div>
+                
+                <div class="form-group">
+                    <label for="device_activity">Device Activity (0-1):</label>
+                    <input type="range" id="device_activity" min="0" max="1" step="0.1" value="0.7">
+                    <span id="device_activity_value">0.7</span>
+                </div>
+                
+                <div class="form-group">
+                    <label for="device_batteryLevel">Battery Level (0-1):</label>
+                    <input type="range" id="device_batteryLevel" min="0" max="1" step="0.1" value="0.8">
+                    <span id="device_batteryLevel_value">0.8</span>
+                </div>
+                
+                <button type="submit" class="btn">Predict!</button>
+            </form>
+            
+            <div id="result" class="result hidden">
+                <h3>Prediction Result</h3>
+                <p>Optimal notification time: <span id="prediction-value">--</span> seconds</p>
+                <div class="interpretation">
+                    <p>This means the user is likely to respond within this time period.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>API Information</h2>
+            <p>Endpoint: <code>/predict</code></p>
+            <p>Method: <code>POST</code></p>
+            <p>Example Request:</p>
+            <pre>{
+  "dayOfWeek": 2,
+  "hourOfDay": 14,
+  "minuteOfHour": 30,
+  "device_activity": 0.7,
+  "device_batteryLevel": 0.8
+}</pre>
+        </div>
+        
+        <footer>
+            <p>&copy; 2023 bitbyte.lol - ML Prediction Service</p>
+        </footer>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+Starting simple server on port 5001
+ * Serving Flask app 'simple_prediction_api'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://35.22.243.104:5001
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 692-729-655
+127.0.0.1 - - [26/Apr/2025 16:36:43] "GET /health HTTP/1.1" 200 -
+127.0.0.1 - - [26/Apr/2025 16:36:43] "POST /predict HTTP/1.1" 200 -
+127.0.0.1 - - [26/Apr/2025 16:36:44] "POST /predict HTTP/1.1" 200 -
+127.0.0.1 - - [26/Apr/2025 16:36:44] "POST /predict HTTP/1.1" 200 -
+127.0.0.1 - - [26/Apr/2025 16:36:45] "POST /predict HTTP/1.1" 200 -
+127.0.0.1 - - [26/Apr/2025 16:36:45] "POST /predict HTTP/1.1" 200 -
+/opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/lib/python3.13/multiprocessing/resource_tracker.py:277: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown: {'/loky-47903-nfacytkd'}
+  warnings.warn(

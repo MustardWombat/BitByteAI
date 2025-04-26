@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bit ML Data Collection Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h1>Bit ML Data Collection Dashboard</h1>
+                <p class="lead">Monitor the data collection process and model performance</p>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">Data Collection Statistics</div>
+                    <div class="card-body">
+                        <h5>Total Sessions: <span id="totalSessions">{{ total_sessions }}</span></h5>
+                        <h5>Total Users: <span id="totalUsers">{{ total_users }}</span></h5>
+                        <h5>Last Update: <span id="lastUpdate">{{ last_update }}</span></h5>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">Model Performance</div>
+                    <div class="card-body">
+                        <h5>Current Model: <span id="modelVersion">{{ model_version }}</span></h5>
+                        <h5>Accuracy: <span id="modelAccuracy">{{ model_accuracy }}</span></h5>
+                        <button class="btn btn-primary" id="trainButton">Train New Model</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">Data Collection Trends</div>
+                    <div class="card-body">
+                        <canvas id="dataChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">Recent Data Submissions</div>
+                    <div class="card-body">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Device Type</th>
+                                    <th>Sessions</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="submissionsTable">
+                                {% for submission in submissions %}
+                                <tr>
+                                    <td>{{ submission.timestamp }}</td>
+                                    <td>{{ submission.device_type }}</td>
+                                    <td>{{ submission.session_count }}</td>
+                                    <td><a href="#" class="btn btn-sm btn-info">View</a></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample chart data - In a real implementation this would come from your server
+        const ctx = document.getElementById('dataChart').getContext('2d');
+        const myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ chart_labels|safe }},
+                datasets: [{
+                    label: 'Sessions Collected',
+                    data: {{ chart_data|safe }},
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        // Training button
+        document.getElementById('trainButton').addEventListener('click', function() {
+            fetch('/api/train-model', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Model training started!');
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

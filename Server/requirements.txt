@@ -1,0 +1,14 @@
+# Basic requirements - use specific versions known to work with Python 3.13
+setuptools>=65.0.0
+wheel>=0.37.0
+
+# Core dependencies - specify binary preference
+numpy>=1.24.0,<2.0.0
+# Comment out pandas in this file - we'll install it separately
+# pandas>=1.5.0,<2.0.0
+scikit-learn>=1.0.0,<2.0.0
+Flask>=2.0.0,<3.0.0
+requests>=2.0.0,<3.0.0
+
+# Optional: Try to install coremltools, but it might not work on all platforms
+# coremltools>=6.3.0

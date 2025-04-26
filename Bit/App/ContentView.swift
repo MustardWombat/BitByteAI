@@ -6,16 +6,15 @@
 
 import SwiftUI
 
-struct ContentView: View {
+struct AppContentView: View {  // Renamed from ContentView to avoid conflict
     var body: some View {
         MainView()
-        
     }
 }
 
-struct ContentView_Previews: PreviewProvider {
+struct AppContentView_Previews: PreviewProvider {  // Also renamed Preview struct
     static var previews: some View {
-        ContentView()
+        AppContentView()
             .environmentObject(CurrencyModel())
             .environmentObject(StudyTimerModel())
             .environmentObject(ShopModel())
@@ -23,7 +22,5 @@ struct ContentView_Previews: PreviewProvider {
             .environmentObject(MiningModel())
             .environmentObject(CategoriesViewModel())
             .environmentObject(XPModel())
-
-
     }
 }

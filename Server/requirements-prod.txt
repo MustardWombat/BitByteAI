@@ -1,0 +1,6 @@
+# Include all requirements from standard file
+-r requirements.txt
+
+# Production-specific requirements
+gunicorn>=20.1.0
+supervisor>=4.2.0

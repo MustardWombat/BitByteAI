@@ -12,6 +12,7 @@ import SwiftUI
 
 struct FocusCheckView: View {
     var onAnswer: (Bool) -> Void
+    @EnvironmentObject var timerModel: StudyTimerModel
     
     var body: some View {
         ZStack {
@@ -32,6 +33,8 @@ struct FocusCheckView: View {
                     .foregroundColor(.white)
                 HStack(spacing: 20) {
                     Button("Yes, I stayed focused") {
+                        // Record this as high engagement
+                        timerModel.recordFocusLevel(0.9)
                         onAnswer(true)
                     }
                     .padding()
@@ -40,6 +43,8 @@ struct FocusCheckView: View {
                     .cornerRadius(8)
                     
                     Button("No, I got distracted") {
+                        // Record this as lower engagement
+                        timerModel.recordFocusLevel(0.4)
                         onAnswer(false)
                     }
                     .padding()

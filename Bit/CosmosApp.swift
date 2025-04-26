@@ -31,7 +31,7 @@ struct CosmosAppView: View {
     }
 
     var body: some View {
-        ContentView()
+        AppContentView()  // Updated to use AppContentView
             .environmentObject(xpModel)
             .environmentObject(timerModel)
             .environmentObject(shopModel)
