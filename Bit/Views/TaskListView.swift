@@ -9,98 +9,100 @@ struct TaskListView: View {
     @State private var showSortMenu: Bool = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // --- Top Row: Sort Dropdown + New Task Button ---
-            HStack {
-                // Sort Dropdown
-                Menu {
-                    Button {
-                        taskModel.sortOption = .dueDate
+        GeometryReader { geometry in
+            VStack(alignment: .leading, spacing: 16) {
+                // --- Top Row: Sort Dropdown + New Task Button ---
+                HStack {
+                    // Sort Dropdown
+                    Menu {
+                        Button {
+                            taskModel.sortOption = .dueDate
+                        } label: {
+                            Label("Due Date", systemImage: "calendar")
+                        }
+                        Button {
+                            taskModel.sortOption = .difficulty
+                        } label: {
+                            Label("Difficulty", systemImage: "flame.fill")
+                        }
                     } label: {
-                        Label("Due Date", systemImage: "calendar")
+                        HStack(spacing: 6) {
+                            Image(systemName: sortIcon(for: taskModel.sortOption))
+                                .foregroundColor(.green)
+                            Text(sortLabel(for: taskModel.sortOption))
+                                .foregroundColor(.green)
+                            Image(systemName: "chevron.down")
+                                .font(.caption)
+                                .foregroundColor(.green)
+                        }
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 12)
+                        .background(Color.green.opacity(0.15))
+                        .cornerRadius(8)
                     }
-                    Button {
-                        taskModel.sortOption = .difficulty
-                    } label: {
-                        Label("Difficulty", systemImage: "flame.fill")
-                    }
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: sortIcon(for: taskModel.sortOption))
-                            .foregroundColor(.green)
-                        Text(sortLabel(for: taskModel.sortOption))
-                            .foregroundColor(.green)
-                        Image(systemName: "chevron.down")
-                            .font(.caption)
+                    .padding(.top, 20)
+
+                    Spacer()
+
+                    Button(action: { showNewTaskSheet = true }) {
+                        Label("New Task", systemImage: "plus.circle.fill")
+                            .font(.headline)
                             .foregroundColor(.green)
                     }
-                    .padding(.vertical, 6)
-                    .padding(.horizontal, 12)
-                    .background(Color.green.opacity(0.15))
-                    .cornerRadius(8)
+                    .padding(.top, 20)
                 }
-                .padding(.top, 20)
-
-                Spacer()
-
-                Button(action: { showNewTaskSheet = true }) {
-                    Label("New Task", systemImage: "plus.circle.fill")
-                        .font(.headline)
-                        .foregroundColor(.green)
-                }
-                .padding(.top, 20)
-            }
-
-            // --- Task List ---
-            List {
-                ForEach(taskModel.tasks) { task in
-                    HStack {
-                        Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
-                            .foregroundColor(task.isCompleted ? .green : .gray)
-                        VStack(alignment: .leading) {
-                            Text(task.title)
-                                .strikethrough(task.isCompleted)
-                                .foregroundColor(task.isCompleted ? .gray : .white)
-                            HStack(spacing: 8) {
-                                // Difficulty
-                                Text("⭐️\(task.difficulty)")
-                                    .font(.caption)
-                                    .foregroundColor(.yellow)
-                                // Due Date (custom display)
-                                if let due = task.dueDate {
-                                    Text(dueDateDisplay(due))
+                
+                // --- Task List ---
+                List {
+                    ForEach(taskModel.tasks) { task in
+                        HStack {
+                            Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
+                                .foregroundColor(task.isCompleted ? .green : .gray)
+                            VStack(alignment: .leading) {
+                                Text(task.title)
+                                    .strikethrough(task.isCompleted)
+                                    .foregroundColor(task.isCompleted ? .gray : .white)
+                                HStack(spacing: 8) {
+                                    // Difficulty
+                                    Text("⭐️\(task.difficulty)")
                                         .font(.caption)
-                                        .foregroundColor(.orange)
+                                        .foregroundColor(.yellow)
+                                    // Due Date (custom display)
+                                    if let due = task.dueDate {
+                                        Text(dueDateDisplay(due))
+                                            .font(.caption)
+                                            .foregroundColor(.orange)
+                                    }
+                                    // XP/Coins
+                                    if !task.isCompleted {
+                                        Text("+\(task.xpReward) XP, +\(task.coinReward) Coins")
+                                            .font(.caption)
+                                            .foregroundColor(.orange)
+                                    }
                                 }
-                                // XP/Coins
-                                if !task.isCompleted {
-                                    Text("+\(task.xpReward) XP, +\(task.coinReward) Coins")
-                                        .font(.caption)
-                                        .foregroundColor(.orange)
+                            }
+                            Spacer()
+                            if !task.isCompleted {
+                                Button("Complete") {
+                                    taskModel.completeTask(task, xpModel: xpModel, currencyModel: currencyModel)
                                 }
+                                .buttonStyle(TransparentButtonStyle())
+                                .foregroundColor(.blue)
+                            } else {
+                                Button(action: { taskModel.removeTask(task) }) {
+                                    Image(systemName: "trash")
+                                        .foregroundColor(.red)
+                                }
+                                .buttonStyle(TransparentButtonStyle())
                             }
                         }
-                        Spacer()
-                        if !task.isCompleted {
-                            Button("Complete") {
-                                taskModel.completeTask(task, xpModel: xpModel, currencyModel: currencyModel)
-                            }
-                            .buttonStyle(BorderlessButtonStyle())
-                            .foregroundColor(.blue)
-                        } else {
-                            Button(action: {
-                                taskModel.removeTask(task)
-                            }) {
-                                Image(systemName: "trash")
-                                    .foregroundColor(.red)
-                            }
-                            .buttonStyle(BorderlessButtonStyle())
-                        }
+                        .padding(.vertical, 4)
                     }
-                    .padding(.vertical, 4)
                 }
+                .listStyle(PlainListStyle())
             }
-            .listStyle(PlainListStyle())
+            .padding(.vertical, 50)
+            .frame(width: 800, height: 600) // Set default size to a normal rectangle
         }
         .padding(.horizontal, 20)
         .background(Color.black)
@@ -110,7 +112,6 @@ struct TaskListView: View {
         }
     }
 
-    // Helper for due date display
     func dueDateDisplay(_ due: Date) -> String {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
@@ -147,7 +148,6 @@ struct TaskListView: View {
     }
 }
 
-// --- Sort Button View ---
 struct SortButton: View {
     let label: String
     let isSelected: Bool
@@ -208,6 +208,7 @@ struct NewTaskSheet: View {
                     }
                 }
             }
+            .frame(minHeight: 800)
             .navigationTitle("New Task")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

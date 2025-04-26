@@ -52,6 +52,25 @@ struct HomeView: View {
                                 .environmentObject(categoriesVM)
                                 .padding(.top, 20) // Added top padding for the chart
 
+                            // Add Earned Planets section
+                            VStack(alignment: .leading, spacing: 16) {
+                                Text("Earned Planets")
+                                    .font(.title2)
+                                    .foregroundColor(.orange)
+                                HStack(spacing: 16) {
+                                    ForEach(0..<4, id: \.self) { index in
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .stroke(Color.gray, lineWidth: 2)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 10)
+                                                    .fill(Color.black.opacity(0.3))
+                                            )
+                                            .frame(width: 80, height: 80)
+                                    }
+                                }
+                                .padding(.vertical, 10)
+                            }
+
                             // 🛍 Purchases Section
                             VStack(alignment: .leading, spacing: 10) {
                                 Text("Your Purchases")

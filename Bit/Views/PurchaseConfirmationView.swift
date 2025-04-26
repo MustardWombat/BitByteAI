@@ -99,9 +99,8 @@ struct PurchaseConfirmationView: View {
                             .foregroundColor(.white)
                             .padding(.horizontal, 20)
                             .padding(.vertical, 10)
-                            .background(Color.gray.opacity(0.5))
-                            .cornerRadius(8)
                     }
+                    .buttonStyle(TransparentButtonStyle())
                     
                     Button(action: onConfirm) {
                         Text("Purchase")

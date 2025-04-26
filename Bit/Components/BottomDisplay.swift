@@ -32,6 +32,7 @@ struct BottomBarButton: View {
                     .foregroundColor(currentView == viewName ? Color.green : Color.white)
             }
         }
+        .buttonStyle(TransparentButtonStyle()) // Apply the transparent style
     }
 }
 

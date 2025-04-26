@@ -25,9 +25,8 @@ struct SignInPromptView: View {
                 onSkip()
             }
             .padding()
-            .background(Color.gray)
+            .buttonStyle(TransparentButtonStyle())
             .foregroundColor(.white)
-            .cornerRadius(8)
         }
         .padding()
     }
