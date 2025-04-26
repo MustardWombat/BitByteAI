@@ -8,7 +8,6 @@ struct StudyTimerView: View {
 
     @State private var isShowingCategorySheet = false
     @State private var showSessionEndedPopup = false
-    @State private var showStudySession = false
 
     var body: some View {
         ZStack {
@@ -63,7 +62,9 @@ struct StudyTimerView: View {
                 // MARK: - Control buttons
                 HStack {
                     Button(action: {
-                        showStudySession = true
+                        timerModel.selectedTopic = categoriesVM.selectedTopic
+                        timerModel.categoriesVM = categoriesVM
+                        timerModel.startTimer(for: 25 * 60)
                     }) {
                         Text("Add 25 Min")
                             .padding()
@@ -149,17 +150,6 @@ struct StudyTimerView: View {
             }
             .padding()
         }
-        #if os(iOS)
-        .fullScreenCover(isPresented: $showStudySession) {
-            StudySessionView()
-                .environmentObject(timerModel)
-        }
-        #elseif os(macOS)
-        .sheet(isPresented: $showStudySession) {
-            StudySessionView()
-                .environmentObject(timerModel)
-        }
-        #endif
     }
 
     func formatTime(_ seconds: Int) -> String {
