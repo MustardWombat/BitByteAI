@@ -431,83 +431,107 @@ class ProductivityTracker: ObservableObject {
     
     /// Send anonymized data to the server
     private func sendDataToServer(_ jsonData: Data) {
-        // Create a URL to your bitbyte.lol domain
-        guard let url = URL(string: "https://bitbyte.lol/api/submit-study-data") else {
+        // Use HTTP instead of HTTPS temporarily
+        guard let url = URL(string: "http://bitbyte.lol/api/submit-study-data") else {
             print("Invalid server URL")
             return
         }
         
+        // Create a custom URL session configuration that allows self-signed certificates
+        let sessionConfig = URLSessionConfiguration.defaultelegate: SSLTrustingDelegate(), delegateQueue: nil)
+        sessionConfig.timeoutIntervalForRequest = 30
+        var request = URLRequest(url: url)
+        let session = URLSession(configuration: sessionConfig)
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = jsonData
-        
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
+                print("Error sending data: \(error)")
+        let task = session.dataTask(with: request) { data, response, error in
+            if let error = error {ly as backup since server submission failed
                 print("Error sending data: \(error)")
                 return
-            }
-            
-            // Check HTTP response
-            if let httpResponse = response as? HTTPURLResponse {
+                // Save data locally as backup since server submission failed
+                self.saveAnonymizedData(jsonData)
+                returnTTP response
+            }f let httpResponse = response as? HTTPURLResponse {
                 if httpResponse.statusCode == 200 {
+            // Check HTTP responseccessfully sent to server")
+            if let httpResponse = response as? HTTPURLResponse {
+                if httpResponse.statusCode == 200 {(httpResponse.statusCode)")
                     print("Data successfully sent to server")
-                } else {
+                } else {ave data locally as backup since server returned error
                     print("Server returned error: \(httpResponse.statusCode)")
-                }
+                    
+                    // Save data locally as backup since server returned error
+                    self.saveAnonymizedData(jsonData)
+                }me()
             }
         }
-        task.resume()
-    }
-    
+        task.resume() the complete data payload
+    }truct DataSharePayload: Codable {
+        let deviceContext: DeviceContext
     /// Structure for the complete data payload
     struct DataSharePayload: Codable {
         let deviceContext: DeviceContext
         let sessions: [AnonymizedSession]
         let dataVersion: String
-        let timestamp = Date()
-    }
-    
+        let timestamp = Date()text information (non-identifying)
+    }rivate func getDeviceContext() -> DeviceContext {
+        // We only collect information relevant to ML training
     /// Get generic device context information (non-identifying)
     private func getDeviceContext() -> DeviceContext {
-        // We only collect information relevant to ML training
+        // We only collect information relevant to ML training= .pad ? "tablet" : "phone"
         // No unique identifiers
-        #if os(iOS)
+        #if os(iOS)ype = "desktop"
         let deviceType = UIDevice.current.userInterfaceIdiom == .pad ? "tablet" : "phone"
-        #elseif os(macOS)
+        #elseif os(macOS)"unknown"
         let deviceType = "desktop"
         #else
         let deviceType = "unknown"
-        #endif
-        
-        return DeviceContext(
-            osVersion: ProcessInfo.processInfo.operatingSystemVersionString,
+        #endifVersion: ProcessInfo.processInfo.operatingSystemVersionString,
+            deviceType: deviceType,
+        return DeviceContext(rrent.languageCode ?? "unknown",
+            osVersion: ProcessInfo.processInfo.operatingSystemVersionString,ing"] as? String ?? "unknown"
             deviceType: deviceType,
             locale: Locale.current.languageCode ?? "unknown",
             appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
-        )
-    }
-    
+        )evice context information for ML training
+    }truct DeviceContext: Codable {
+        let osVersion: String
     /// Device context information for ML training
     struct DeviceContext: Codable {
-        let osVersion: String
+        let osVersion: Stringg
         let deviceType: String
         let locale: String
-        let appVersion: String
-    }
-    
-    /// Save anonymized data locally for demo purposes
+        let appVersion: Stringocally for demo purposes
+    }rivate func saveAnonymizedData(_ data: Data) -> Bool {
+        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+    /// Save anonymized data locally for demo purposesComponent("anonymized_data_\(Date().timeIntervalSince1970).json")
     private func saveAnonymizedData(_ data: Data) -> Bool {
         let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         let fileURL = documentsDirectory.appendingPathComponent("anonymized_data_\(Date().timeIntervalSince1970).json")
-        
-        do {
+            print("Anonymized data saved to \(fileURL.path)")
+        do {return true
             try data.write(to: fileURL)
             print("Anonymized data saved to \(fileURL.path)")
-            return true
+            return truee
         } catch {
             print("Failed to save anonymized data: \(error)")
             return false
         }
+    }d this class to handle SSL certificate issues
+}lass SSLTrustingDelegate: NSObject, URLSessionDelegate {
+    func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        // Accept any server certificate for the domain
+        if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust {
+            if let serverTrust = challenge.protectionSpace.serverTrust {
+                let credential = URLCredential(trust: serverTrust)
+                completionHandler(.useCredential, credential)
+                return
+            }
+        }
+        completionHandler(.performDefaultHandling, nil)
     }
 }

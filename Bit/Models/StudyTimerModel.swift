@@ -55,6 +55,7 @@ class StudyTimerModel: ObservableObject {
         didSet { saveData() }
     }
     @Published var userEnergyLevel: Int? = nil
+    @Published var showBreakPrompt: Bool = false // Added missing property
     
     var currentLocation: String? {
         return LocationManager.shared.currentLocationName
@@ -73,7 +74,9 @@ class StudyTimerModel: ObservableObject {
     }
     
     var taskDifficulty: Int? {
-        return selectedTopic?.difficulty // You may need to add this property to your Category model
+        // Add a safe way to get difficulty since Category doesn't have this property
+        return 3 // Default medium difficulty
+        // When you add difficulty to Category model, change to: return selectedTopic?.difficulty
     }
     
     // Persistence key
@@ -284,90 +287,61 @@ class StudyTimerModel: ObservableObject {
         )
         if let data = try? JSONEncoder().encode(state) {
             NSUbiquitousKeyValueStore.default.set(data, forKey: studyDataKey)
-            print("DEBUG: Saved StudyTimerState with topic: \(selectedTopic?.name ?? "nil") to iCloud")dailyStreak
-        } else {astStudyDate = state.lastStudyDate
+            print("DEBUG: Saved StudyTimerState with topic: \(selectedTopic?.name ?? "nil") to iCloud")
+        } else {
             print("❌ Failed to encode StudyTimerState")
         }
     }
     
-    internal func loadData() {lt.synchronize()
+    internal func loadData() {
         if let cloudData = NSUbiquitousKeyValueStore.default.data(forKey: studyDataKey),
            let state = try? JSONDecoder().decode(StudyTimerState.self, from: cloudData) {
             earnedRewards = state.earnedRewards
-            totalTimeStudied = state.totalTimeStudiedunc endBackgroundTask() {
-            focusStreak = state.focusStreakf backgroundTaskID != .invalid {
-            selectedTopic = state.selectedTopicApplication.shared.endBackgroundTask(backgroundTaskID)
-            dailyStreak = state.dailyStreak       backgroundTaskID = .invalid
-            lastStudyDate = state.lastStudyDate    }
+            totalTimeStudied = state.totalTimeStudied
+            focusStreak = state.focusStreak
+            selectedTopic = state.selectedTopic
+            dailyStreak = state.dailyStreak
+            lastStudyDate = state.lastStudyDate
         } else if let localData = UserDefaults.standard.data(forKey: studyDataKey),
                   let state = try? JSONDecoder().decode(StudyTimerState.self, from: localData) {
             earnedRewards = state.earnedRewards
             totalTimeStudied = state.totalTimeStudied
             focusStreak = state.focusStreak
-            selectedTopic = state.selectedTopicon: Int, topic: String) {
-            dailyStreak = state.dailyStreak(ActivityKit)
-            lastStudyDate = state.lastStudyDateivityAuthorizationInfo().areActivitiesEnabled {
-        }   guard let endDate = initialEndDate else { return }
+            selectedTopic = state.selectedTopic
+            dailyStreak = state.dailyStreak
+            lastStudyDate = state.lastStudyDate
+        }
     }
-    butes(topic: topic)
-    private func startLiveActivity(duration: Int, topic: String) {t state = StudyTimerAttributes.ContentState(
-        #if os(iOS)           timeRemaining: duration, 
-        guard let endDate = initialEndDate else { return }            endDate: endDate
+    
+    private func startLiveActivity(duration: Int, topic: String) {
+        #if os(iOS)
+        guard let endDate = initialEndDate else { return }
         let attributes = StudyTimerAttributes(topic: topic)
         let state = StudyTimerAttributes.ContentState(
             timeRemaining: duration,
-            endDate: endDate  liveActivity = try Activity<StudyTimerAttributes>.request(
+            endDate: endDate
         )
-        te: state
-        do {       )
-            liveActivity = try Activity<StudyTimerAttributes>.request( catch {
-                attributes: attributes, rt live activity: \(error)")
+        do {
+            liveActivity = try Activity<StudyTimerAttributes>.request(
+                attributes: attributes,
                 contentState: state
-            )   }
-        } catch {       #endif
-            print("Failed to start live activity: \(error)")    }
+            )
+        } catch {
+            print("Failed to start live activity: \(error)")
         }
-        #endiftivity(remaining: Int) {
+        #endif
     }
-    TimerAttributes>, let endDate = initialEndDate else { return }
-    private func updateLiveActivity(remaining: Int) {ask {
-        #if os(iOS)t activity.update(using: StudyTimerAttributes.ContentState(
-        guard let activity = liveActivity as? Activity<StudyTimerAttributes>, let endDate = initialEndDate else { return }           timeRemaining: remaining,
-        Task {               endDate: endDate
-            await activity.update(using: StudyTimerAttributes.ContentState(            ))
-                timeRemaining: remaining,        }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-}    }        return 0        }            return Int(Date().timeIntervalSince(start)) / 60        if let start = timerStartDate {    var studiedMinutes: Int {extension StudyTimerModel {}    }        #endif        // Nothing to stop on macOS.        #else        }            liveActivity = nil            await activity.end(dismissalPolicy: .immediate)        Task {        guard let activity = liveActivity as? Activity<StudyTimerAttributes> else { return }        #if os(iOS)    private func stopLiveActivity() {        }        #endif        // No live activity update on macOS.        #else        }            ))                endDate: endDate        #else
+    
+    private func updateLiveActivity(remaining: Int) {
+        #if os(iOS)
+        guard let activity = liveActivity as? Activity<StudyTimerAttributes>, let endDate = initialEndDate else { return }
+        Task {
+            await activity.update(using: StudyTimerAttributes.ContentState(
+                timeRemaining: remaining,
+                endDate: endDate
+            ))
+        }
+        #else
         // No live activity update on macOS.
         #endif
     }
@@ -381,6 +355,15 @@ class StudyTimerModel: ObservableObject {
         }
         #else
         // Nothing to stop on macOS.
+        #endif
+    }
+    
+    private func endBackgroundTask() {
+        #if os(iOS)
+        if backgroundTaskID != .invalid {
+            UIApplication.shared.endBackgroundTask(backgroundTaskID)
+            backgroundTaskID = .invalid
+        }
         #endif
     }
 }

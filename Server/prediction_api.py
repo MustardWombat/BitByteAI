@@ -4,6 +4,8 @@ import os
 import pickle
 import sys
 
+print("Flask imported successfully!")  # Add this line to confirm Flask is imported
+
 app = Flask(__name__, static_url_path='', static_folder='static')
 
 # Constants
@@ -12,7 +14,8 @@ SKLEARN_MODEL_PATH = "output_models/NotificationTimePredictor.pkl"
 PORT = 5001  # Changed from 5000 to avoid conflict with AirPlay
 
 # Try to load the model - first check if we can use CoreML
-use_coreml = True
+use_coreml = False
+
 try:
     import coremltools as ct
     def load_coreml_model():
@@ -22,45 +25,35 @@ try:
         print(f"Loading CoreML model from {MODEL_PATH}")
         return ct.models.MLModel(MODEL_PATH)
 except ImportError:
-    use_coreml = False
     print("CoreML not available. Will attempt to use scikit-learn model if available.")
 
 # Function to load the appropriate model
 def load_model():
-    """
-    Attempts to load ML models in order of preference:
-    1. First tries CoreML model (iOS/macOS native format)
-    2. Falls back to scikit-learn pickle model if CoreML fails
-    
-    Returns the loaded model or None if all attempts fail
-    """
+    global use_coreml  # Declare use_coreml as global
     if use_coreml:
         try:
-            model = load_coreml_model()
-            if model:
-                print("Successfully loaded CoreML model")
-                return model
+            return load_coreml_model()
         except Exception as e:
             print(f"Error loading CoreML model: {str(e)}")
-            use_coreml = False
+            use_coreml = False  # Update the global variable if CoreML fails
     
     # Fallback to scikit-learn model if CoreML fails
     if os.path.exists(SKLEARN_MODEL_PATH):
         try:
             with open(SKLEARN_MODEL_PATH, 'rb') as f:
-                model = pickle.load(f)
-                print("Successfully loaded scikit-learn model")
-                return model
+                return pickle.load(f)
         except Exception as e:
             print(f"Error loading scikit-learn model: {str(e)}")
             return None
+    
+    return None
 
 model = load_model()
 model_type = "coreml" if use_coreml else "sklearn"
 
 # Serve the web interface
 @app.route('/')
-def index():
+def index():source venv/bin/activatessh -i /Users/james_williams/Documents/AWS/BitByteAI.pem ec2-user@3.135.198.218
     return send_from_directory('static', 'index.html')
 
 @app.route('/predict', methods=['POST'])
