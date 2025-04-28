@@ -133,80 +133,170 @@ struct CategorySelectionSheet: View {
     let categories: [Category]
     @Binding var selected: Category?
     @Binding var isPresented: Bool
-    var onAddCategory: (String) -> Void
+    var onAddCategory: (String, Int) -> Void
     var onDeleteCategory: (Category) -> Void
-    
-    @State private var showCreateAlert = false
+
+    @State private var isShowingCreateTopicView = false
     @State private var newCategoryName = ""
+    @State private var weeklyGoalHours: String = ""
+    @State private var weeklyGoalMinutes: String = ""
     @State private var showDeleteAlert = false
     @State private var categoryToDelete: Category? = nil
-    
+
     var body: some View {
-        NavigationView {
-            List {
-                Button(action: {
-                    showCreateAlert = true
-                }) {
-                    Label("Add New Topic", systemImage: "plus.circle")
-                        .foregroundColor(.blue)
-                }
-                
-                ForEach(categories) { category in
+        ZStack {
+            NavigationView {
+                List {
                     Button(action: {
-                        selected = category
-                        isPresented = false
-                    }) {
-                        HStack {
-                            Circle()
-                                .fill(category.displayColor)
-                                .frame(width: 12, height: 12)
-                            Text(category.name)
-                            Spacer()
-                            if selected?.id == category.id {
-                                Image(systemName: "checkmark")
-                                    .foregroundColor(.green)
-                            }
+                        withAnimation(.spring()) {
+                            isShowingCreateTopicView = true
                         }
-                        .contentShape(Rectangle()) // Makes the entire row tappable
+                    }) {
+                        Label("Add New Topic", systemImage: "plus.circle")
+                            .foregroundColor(.blue)
                     }
-                    .simultaneousGesture(LongPressGesture().onEnded { _ in
-                        categoryToDelete = category
-                        showDeleteAlert = true
-                    })
+
+                    ForEach(categories) { category in
+                        Button(action: {
+                            selected = category
+                            isPresented = false
+                        }) {
+                            HStack {
+                                Circle()
+                                    .fill(category.displayColor)
+                                    .frame(width: 12, height: 12)
+                                Text(category.name)
+                                Spacer()
+                                if selected?.id == category.id {
+                                    Image(systemName: "checkmark")
+                                        .foregroundColor(.green)
+                                }
+                            }
+                            .contentShape(Rectangle()) // Makes the entire row tappable
+                        }
+                        .simultaneousGesture(LongPressGesture().onEnded { _ in
+                            categoryToDelete = category
+                            showDeleteAlert = true
+                        })
+                    }
+                }
+                .navigationTitle("Choose Topic")
+                .toolbar {
+                    ToolbarItem(placement: .automatic) {
+                        Button("Done") {
+                            isPresented = false
+                        }
+                    }
+                }
+                .alert(isPresented: $showDeleteAlert) {
+                    Alert(
+                        title: Text("Delete Topic"),
+                        message: Text("Are you sure you want to delete '\(categoryToDelete?.name ?? "")'?"),
+                        primaryButton: .destructive(Text("Delete")) {
+                            if let category = categoryToDelete {
+                                onDeleteCategory(category)
+                            }
+                        },
+                        secondaryButton: .cancel()
+                    )
                 }
             }
-            .navigationTitle("Choose Topic")
-            .toolbar {
-                ToolbarItem(placement: .automatic) {
-                    Button("Done") {
-                        isPresented = false
-                    }
-                }
-            }
-            .alert(isPresented: $showDeleteAlert) {
-                Alert(
-                    title: Text("Delete Topic"),
-                    message: Text("Are you sure you want to delete '\(categoryToDelete?.name ?? "")'?"),
-                    primaryButton: .destructive(Text("Delete")) {
-                        if let category = categoryToDelete {
-                            onDeleteCategory(category)
+
+            if isShowingCreateTopicView {
+                CreateNewTopicView(
+                    newCategoryName: $newCategoryName,
+                    onCreate: { name, totalMinutes in
+                        onAddCategory(name, totalMinutes)
+                        newCategoryName = ""
+                        weeklyGoalHours = ""
+                        weeklyGoalMinutes = ""
+                        withAnimation(.spring()) {
+                            isShowingCreateTopicView = false
                         }
                     },
-                    secondaryButton: .cancel()
+                    onCancel: {
+                        withAnimation(.spring()) {
+                            isShowingCreateTopicView = false
+                        }
+                    }
                 )
+                .transition(.asymmetric(
+                    insertion: .opacity.combined(with: .move(edge: .bottom)),
+                    removal: .opacity.combined(with: .move(edge: .bottom))
+                )) // Apply consistent animation
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.gray, lineWidth: 2)
+                        .shadow(radius: 10)
+                )
+                .padding()
+                .zIndex(1)
             }
-            .alert("Create New Topic", isPresented: $showCreateAlert, actions: {
-                TextField("Topic Name", text: $newCategoryName)
+        }
+        .background(Color.gray)
+    }
+}
+
+// Custom view for creating a new topic
+struct CreateNewTopicView: View {
+    @Binding var newCategoryName: String
+    @State private var weeklyGoalHours: Int = 0
+    @State private var weeklyGoalMinutes: Int = 0
+    var onCreate: (String, Int) -> Void
+    var onCancel: () -> Void
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("Create New Topic")
+                .font(.headline)
+            TextField("Topic Name", text: $newCategoryName)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .padding()
+
+            // Combined picker for hours and minutes
+            HStack {
+                Picker("Hours", selection: $weeklyGoalHours) {
+                    ForEach(0..<24, id: \.self) { hour in
+                        Text("\(hour) hr").tag(hour)
+                    }
+                }
+                .pickerStyle(WheelPickerStyle())
+                .frame(maxWidth: .infinity)
+
+                Picker("Minutes", selection: $weeklyGoalMinutes) {
+                    ForEach(Array(stride(from: 0, through: 55, by: 5)), id: \.self) { minute in
+                        Text("\(minute) min").tag(minute)
+                    }
+                }
+                .pickerStyle(WheelPickerStyle())
+                .frame(maxWidth: .infinity)
+            }
+            .frame(height: 150) // Adjust height for the wheel pickers
+
+            HStack {
                 Button("Create") {
                     let trimmedName = newCategoryName.trimmingCharacters(in: .whitespaces)
+                    let totalMinutes = weeklyGoalHours * 60 + weeklyGoalMinutes
                     guard !trimmedName.isEmpty else { return }
-                    onAddCategory(trimmedName)
-                    newCategoryName = "" // Clear the input field
+                    onCreate(trimmedName, totalMinutes)
                 }
-                Button("Cancel", role: .cancel) {}
-            }, message: {
-                Text("Enter a name for your new topic.")
-            })
+                .padding()
+                .background(Color.green)
+                .foregroundColor(.white)
+                .cornerRadius(8)
+
+                Button("Cancel") {
+                    onCancel()
+                }
+                .padding()
+                .background(Color.red)
+                .foregroundColor(.white)
+                .cornerRadius(8)
+            }
         }
+        .padding()
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(radius: 10)
     }
 }

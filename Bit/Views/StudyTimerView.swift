@@ -8,6 +8,7 @@ struct StudyTimerView: View {
 
     @State private var isShowingCategorySheet = false
     @State private var showSessionEndedPopup = false
+    @State private var isShowingEditGoalView = false // Replace Apple popup state
 
     var body: some View {
         ZStack {
@@ -34,7 +35,9 @@ struct StudyTimerView: View {
                         .foregroundColor(.white)
 
                     Button(action: {
-                        isShowingCategorySheet = true
+                        withAnimation(.spring()) { // Trigger animation when button is pressed
+                            isShowingCategorySheet = true
+                        }
                     }) {
                         HStack {
                             if let topic = categoriesVM.selectedTopic {
@@ -55,6 +58,7 @@ struct StudyTimerView: View {
                         .background(Color.black.opacity(0.3))
                         .cornerRadius(10)
                     }
+
                 }
                 .padding(.top, 100) // Added top padding for the assets
                 .padding(.horizontal, 20)
@@ -115,40 +119,49 @@ struct StudyTimerView: View {
                 }
             }
 
-            .sheet(isPresented: $isShowingCategorySheet) {
-                CategorySelectionSheet(
+            if isShowingCategorySheet {
+                CategorySelectionOverlay(
                     categories: categoriesVM.categories,
-                    selected: $categoriesVM.selectedTopic, // Use the binding to the view model's selectedTopic
-                    isPresented: $isShowingCategorySheet,
-                    onAddCategory: { name in
-                        categoriesVM.addCategory(name: name)
-                        categoriesVM.selectedTopic = categoriesVM.categories.last // Automatically select the newly added category
-                    },
-                    onDeleteCategory: { category in
-                        categoriesVM.deleteCategory(category)
-                        if categoriesVM.selectedTopic?.id == category.id {
-                            categoriesVM.selectedTopic = nil // Clear the selection if the selected category is deleted
+                    selected: $categoriesVM.selectedTopic,
+                    isPresented: $isShowingCategorySheet
+                )
+                .transition(.asymmetric(
+                    insertion: .opacity.combined(with: .move(edge: .bottom)),
+                    removal: .opacity.combined(with: .move(edge: .bottom))
+                ))
+                .zIndex(2)
+            }
+
+            if isShowingEditGoalView {
+                EditGoalView(
+                    goalInput: String(categoriesVM.selectedTopic?.weeklyGoalMinutes ?? 0 / 60),
+                    onSave: { newGoal in
+                        if let hours = Int(newGoal) {
+                            categoriesVM.selectedTopic?.weeklyGoalMinutes = hours * 60
                         }
+                        isShowingEditGoalView = false
+                    },
+                    onCancel: {
+                        isShowingEditGoalView = false
                     }
                 )
+                .transition(.asymmetric(
+                    insertion: .opacity.combined(with: .move(edge: .bottom)),
+                    removal: .opacity.combined(with: .move(edge: .bottom))
+                )) // Apply consistent animation
+                .zIndex(3)
             }
-        }
-        .sheet(isPresented: $showSessionEndedPopup) {
-            VStack(spacing: 20) {
-                Text("⏰ Time's Up!")
-                    .font(.largeTitle)
-                    .bold()
-                Text("You studied for \(timerModel.studiedMinutes) minutes.")
-                    .multilineTextAlignment(.center)
-                Button("Awesome!") {
-                    showSessionEndedPopup = false
-                }
-                .padding()
-                .background(Color.green)
-                .foregroundColor(.white)
-                .cornerRadius(12)
+
+            if showSessionEndedPopup {
+                SessionEndedOverlay(
+                    studiedMinutes: timerModel.studiedMinutes,
+                    onDismiss: {
+                        showSessionEndedPopup = false
+                    }
+                )
+                .transition(.opacity)
+                .zIndex(4)
             }
-            .padding()
         }
     }
 
@@ -156,5 +169,75 @@ struct StudyTimerView: View {
         let minutes = seconds / 60
         let seconds = seconds % 60
         return String(format: "%02d:%02d", minutes, seconds)
+    }
+}
+
+// Custom view for editing the study goal
+struct EditGoalView: View {
+    @State var goalInput: String
+    var onSave: (String) -> Void
+    var onCancel: () -> Void
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("Edit Study Goal (hours per week)")
+                .font(.headline)
+            TextField("Enter goal in hours", text: $goalInput)
+                .keyboardType(.numberPad)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .padding()
+            HStack {
+                Button("Save") {
+                    onSave(goalInput)
+                }
+                .padding()
+                .background(Color.green)
+                .foregroundColor(.white)
+                .cornerRadius(8)
+                Button("Cancel") {
+                    onCancel()
+                }
+                .padding()
+                .background(Color.red)
+                .foregroundColor(.white)
+                .cornerRadius(8)
+            }
+        }
+        .padding()
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(radius: 10)
+        .padding()
+    }
+}
+
+// Custom overlay for category selection
+
+// Custom overlay for session ended
+struct SessionEndedOverlay: View {
+    let studiedMinutes: Int
+    var onDismiss: () -> Void
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("⏰ Time's Up!")
+                .font(.largeTitle)
+                .bold()
+                .foregroundColor(.white)
+            Text("You studied for \(studiedMinutes) minutes.")
+                .multilineTextAlignment(.center)
+                .foregroundColor(.white)
+            Button("Awesome!") {
+                onDismiss()
+            }
+            .padding()
+            .background(Color.green)
+            .foregroundColor(.white)
+            .cornerRadius(12)
+        }
+        .padding()
+        .background(Color.black.opacity(0.8))
+        .cornerRadius(12)
+        .shadow(radius: 10)
     }
 }

@@ -28,6 +28,22 @@ struct HomeView: View {
     @EnvironmentObject var categoriesVM: CategoriesViewModel
     @EnvironmentObject var xpModel: XPModel
 
+    // New: Automatic claim processing
+    private func autoClaimPlanets() {
+        if Calendar.current.component(.weekday, from: Date()) == 1 {
+            // For each category, process the claim automatically.
+            // For example: update xpModel or shopModel based on progress.
+            for category in categoriesVM.categories {
+                let logs = categoriesVM.weeklyData(for: category.id)
+                let totalMinutes = logs.reduce(0) { $0 + $1.minutes }
+                let progress = category.weeklyGoalMinutes > 0 ? min(Double(totalMinutes) / Double(category.weeklyGoalMinutes), 1.0) : 0.0
+                // Process claiming logic: e.g., award planets or XP based on progress
+                print("Claimed planets for \(category.name): \(Int(progress * 100))% achieved.")
+                // ...insert additional claim logic here...
+            }
+        }
+    }
+
     var body: some View {
         ZStack {
             StarOverlay() // Add the starry background
@@ -52,20 +68,35 @@ struct HomeView: View {
                                 .environmentObject(categoriesVM)
                                 .padding(.top, 20) // Added top padding for the chart
 
-                            // Add Earned Planets section
+                            // Earned Planets section – now using a colored, rounded box
                             VStack(alignment: .leading, spacing: 16) {
                                 Text("Earned Planets")
                                     .font(.title2)
                                     .foregroundColor(.orange)
                                 HStack(spacing: 16) {
-                                    ForEach(0..<4, id: \.self) { index in
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .stroke(Color.gray, lineWidth: 2)
-                                            .background(
-                                                RoundedRectangle(cornerRadius: 10)
-                                                    .fill(Color.black.opacity(0.3))
-                                            )
-                                            .frame(width: 80, height: 80)
+                                    ForEach(categoriesVM.categories, id: \.id) { category in
+                                        // Calculate total minutes and progress for the category
+                                        let logs = categoriesVM.weeklyData(for: category.id)
+                                        let totalMinutes = logs.reduce(0) { $0 + $1.minutes }
+                                        let progress = category.weeklyGoalMinutes > 0 ?
+                                            min(Double(totalMinutes) / Double(category.weeklyGoalMinutes), 1.0) : 0.0
+                                        
+                                        ZStack(alignment: .bottom) {
+                                            RoundedRectangle(cornerRadius: 15)
+                                                .fill(category.displayColor.opacity(0.3))
+                                                .frame(width: 80, height: 80)
+                                            RoundedRectangle(cornerRadius: 15)
+                                                .fill(category.displayColor)
+                                                .frame(width: 80, height: 80 * CGFloat(progress))
+                                                .clipShape(RoundedRectangle(cornerRadius: 15))
+                                        }
+                                        .overlay(
+                                            Text("\(Int(progress * 100))%")
+                                                .foregroundColor(.white)
+                                                .bold()
+                                                .padding(4),
+                                            alignment: .top
+                                        )
                                     }
                                 }
                                 .padding(.vertical, 10)
@@ -114,6 +145,7 @@ struct HomeView: View {
             simTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in
                 // xpModel.addXP(10)
             }
+            autoClaimPlanets() // Automatically claim planets if today is Sunday
         }
         .onDisappear {
             simTimer?.invalidate()
