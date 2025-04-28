@@ -71,6 +71,12 @@ struct CategorySelectionOverlay: View {
                         categories.append(newCategory)
                     }
                 },
+                onDeleteCategory: { category in
+                    // Implement actual category deletion here
+                    if let index = categories.firstIndex(where: { $0.id == category.id }) {
+                        categories.remove(at: index)
+                    }
+                },
                 onCancel: {
                     showCategoryCreationOverlay = false
                 }

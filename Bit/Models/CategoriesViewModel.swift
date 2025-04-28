@@ -62,28 +62,7 @@ class CategoriesViewModel: ObservableObject {
 
         categories[index] = updatedCategory
     }
-
-    // Retrieve last 7 days of data for a given category
-    func weeklyData(for categoryID: UUID) -> [DailyLog] {
-        guard let category = categories.first(where: { $0.id == categoryID }) else { return [] }
-
-        let now = Date()
-        let calendar = Calendar.current
-        var results: [DailyLog] = []
-
-        for offset in 0..<7 {
-            if let day = calendar.date(byAdding: .day, value: -offset, to: now) {
-                let dayStart = calendar.startOfDay(for: day)
-                if let log = category.dailyLogs.first(where: { calendar.isDate($0.date, inSameDayAs: dayStart) }) {
-                    results.append(DailyLog(date: dayStart, minutes: log.minutes))
-                } else {
-                    results.append(DailyLog(date: dayStart, minutes: 0))
-                }
-            }
-        }
-
-        return results.sorted { $0.date < $1.date }
-    }
+   
 
     // Updated method to update the weekly goal using the Category’s change notification
     func updateWeeklyGoal(for category: Category, newGoalMinutes: Int) {

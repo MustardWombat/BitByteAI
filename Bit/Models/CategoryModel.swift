@@ -15,7 +15,7 @@ class Category: ObservableObject, Identifiable, Codable, Hashable {
     @Published var dailyLogs: [DailyLog]        // Each day’s study minutes
     var colorHex: String                        // A persistent color stored as a hex string
 
-    init(name: String, weeklyGoalMinutes: Int = 0, colorHex: String? = nil) {
+    init(name: String, weeklyGoalMinutes: Int = 60, colorHex: String? = nil) {
         self.id = UUID()
         self.name = name
         self.weeklyGoalMinutes = weeklyGoalMinutes
@@ -52,12 +52,23 @@ class Category: ObservableObject, Identifiable, Codable, Hashable {
     }
     
     var weeklyLogs: [DailyLog] {
-        let now = Date()
         let calendar = Calendar.current
+        let now = Date()
         var results: [DailyLog] = []
-
-        for offset in 0..<7 {
-            if let day = calendar.date(byAdding: .day, value: -offset, to: now) {
+        
+        // Find the most recent Sunday (or configured first day of week)
+        let today = calendar.startOfDay(for: now)
+        let weekday = calendar.component(.weekday, from: today)
+        let daysToSubtract = weekday - calendar.firstWeekday
+        
+        // Get the start of the week (Sunday in US calendar)
+        guard let startOfWeek = calendar.date(byAdding: .day, value: -daysToSubtract, to: today) else {
+            return []
+        }
+        
+        // Create array for the full week (Sun-Sat)
+        for dayOffset in 0..<7 {
+            if let day = calendar.date(byAdding: .day, value: dayOffset, to: startOfWeek) {
                 let dayStart = calendar.startOfDay(for: day)
                 if let log = dailyLogs.first(where: { calendar.isDate($0.date, inSameDayAs: dayStart) }) {
                     results.append(DailyLog(date: dayStart, minutes: log.minutes))
@@ -138,8 +149,8 @@ struct CategorySelectionSheet: View {
 
     @State private var isShowingCreateTopicView = false
     @State private var newCategoryName = ""
-    @State private var weeklyGoalHours: String = ""
-    @State private var weeklyGoalMinutes: String = ""
+    @State private var weeklyGoalHours: Int = 1
+    @State private var weeklyGoalMinutes: Int = 0
     @State private var showDeleteAlert = false
     @State private var categoryToDelete: Category? = nil
 
@@ -205,11 +216,13 @@ struct CategorySelectionSheet: View {
             if isShowingCreateTopicView {
                 CreateNewTopicView(
                     newCategoryName: $newCategoryName,
+                    weeklyGoalHours: $weeklyGoalHours,
+                    weeklyGoalMinutes: $weeklyGoalMinutes,
                     onCreate: { name, totalMinutes in
                         onAddCategory(name, totalMinutes)
                         newCategoryName = ""
-                        weeklyGoalHours = ""
-                        weeklyGoalMinutes = ""
+                        weeklyGoalHours = 1
+                        weeklyGoalMinutes = 0
                         withAnimation(.spring()) {
                             isShowingCreateTopicView = false
                         }
@@ -240,8 +253,8 @@ struct CategorySelectionSheet: View {
 // Custom view for creating a new topic
 struct CreateNewTopicView: View {
     @Binding var newCategoryName: String
-    @State private var weeklyGoalHours: Int = 0
-    @State private var weeklyGoalMinutes: Int = 0
+    @Binding var weeklyGoalHours: Int
+    @Binding var weeklyGoalMinutes: Int
     var onCreate: (String, Int) -> Void
     var onCancel: () -> Void
 

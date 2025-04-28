@@ -120,4 +120,14 @@ extension CategoriesViewModel {
             print("Failed to save categories: \(error)")
         }
     }
+
+    // This function ensures consistent Sunday-Saturday data
+    func weeklyData(for categoryId: UUID) -> [DailyLog] {
+        guard let category = categories.first(where: { $0.id == categoryId }) else {
+            return []
+        }
+        
+        // Use the category's weeklyLogs property which now consistently returns Sun-Sat
+        return category.weeklyLogs
+    }
 }
