@@ -154,7 +154,7 @@ struct LayoutShell: View {
     private func dynamicWelcomeText(for view: String) -> String {
         switch view {
         case "Planets": return "Explore the galaxy!"
-        case "Study": return "Focus and achieve greatness!"
+        case "Launch": return "Focus and achieve greatness!" // Updated from "Study"
         case "Shop": return "Upgrade your journey!"
         default: return "Welcome back, Commander!"
         }
@@ -231,11 +231,11 @@ struct BottomBar: View {
                 .frame(maxWidth: .infinity)
             BottomBarButton(iconName: "globe", viewName: "Planets", currentView: $currentView)
                 .frame(maxWidth: .infinity)
-            BottomBarButton(iconName: "gearshape.fill", viewName: "Study", currentView: $currentView)
+            BottomBarButton(iconName: "airplane", viewName: "Launch", currentView: $currentView) // Updated icon to "airplane"
                 .frame(maxWidth: .infinity)
             BottomBarButton(iconName: "cart.fill", viewName: "Shop", currentView: $currentView)
                 .frame(maxWidth: .infinity)
-            BottomBarButton(iconName: "person.2.fill", viewName: "Friends", currentView: $currentView) // Updated to "Friends"
+            BottomBarButton(iconName: "person.2.fill", viewName: "Friends", currentView: $currentView)
                 .frame(maxWidth: .infinity)
         }
         .padding(.horizontal, 20)
