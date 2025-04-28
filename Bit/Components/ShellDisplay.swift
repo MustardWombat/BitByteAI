@@ -50,11 +50,11 @@ struct TopShellSpritePlaceholder: View {
                     .resizable()
                     .scaledToFill()
                     .frame(width: 44, height: 44)
-                    .clipShape(Circle())
-                    .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                    .cornerRadius(8) // Rounded corners
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white, lineWidth: 2))
                     .shadow(radius: 5)
             } else {
-                Circle()
+                RoundedRectangle(cornerRadius: 8)
                     .fill(Color.gray.opacity(0.5))
                     .frame(width: 44, height: 44)
                     .overlay(Text("Add").foregroundColor(.white))
@@ -89,16 +89,16 @@ struct LayoutShell: View {
                         .ignoresSafeArea(edges: .top)
                         .frame(height: topBarHeight)
                     VStack(spacing: 4) {
-                        // --- Info row with sprite placeholder centered between XP and Coin ---
+                        // --- Reordered Info row ---
                         HStack(spacing: 12) {
-                            XPDisplayView()
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            TopShellSpritePlaceholder(currentView: $currentView) // Pass binding
                             CoinDisplay()
                                 .font(.caption.monospaced())
                                 .foregroundColor(Color.green)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             StreakDisplay()
                                 .environmentObject(timerModel)
+                            XPDisplayView()
+                            TopShellSpritePlaceholder(currentView: $currentView) // Profile picture
                         }
                         .padding(.horizontal, 16)
                         .frame(maxWidth: .infinity)
@@ -219,7 +219,7 @@ struct BottomBar: View {
                 .frame(maxWidth: .infinity)
             BottomBarButton(iconName: "cart.fill", viewName: "Shop", currentView: $currentView)
                 .frame(maxWidth: .infinity)
-            BottomBarButton(iconName: "person.crop.circle", viewName: "Profile", currentView: $currentView)
+            BottomBarButton(iconName: "person.2.fill", viewName: "Friends", currentView: $currentView) // Updated to "Friends"
                 .frame(maxWidth: .infinity)
         }
         .padding(.horizontal, 20)

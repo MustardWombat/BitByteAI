@@ -17,7 +17,9 @@ struct MainView: View {
                         return AnyView(SessionView(currentView: $currentView))
                     case "Shop":
                         return AnyView(ShopView(currentView: $currentView))
-                    case "Profile":
+                    case "Friends":
+                        return AnyView(FriendsView())
+                    case "Profile": // Ensure ProfileView is handled
                         return AnyView(ProfileView())
                     default:
                         return AnyView(HomeView(currentView: $currentView))
