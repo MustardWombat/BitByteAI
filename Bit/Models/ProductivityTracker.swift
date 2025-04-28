@@ -431,107 +431,81 @@ class ProductivityTracker: ObservableObject {
     
     /// Send anonymized data to the server
     private func sendDataToServer(_ jsonData: Data) {
-        // Use HTTP instead of HTTPS temporarily
         guard let url = URL(string: "http://bitbyte.lol/api/submit-study-data") else {
             print("Invalid server URL")
             return
         }
         
-        // Create a custom URL session configuration that allows self-signed certificates
-        let sessionConfig = URLSessionConfiguration.defaultelegate: SSLTrustingDelegate(), delegateQueue: nil)
-        sessionConfig.timeoutIntervalForRequest = 30
-        var request = URLRequest(url: url)
-        let session = URLSession(configuration: sessionConfig)
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = jsonData
-                print("Error sending data: \(error)")
+        
+        let session = URLSession(configuration: .default)
         let task = session.dataTask(with: request) { data, response, error in
-            if let error = error {ly as backup since server submission failed
+            if let error = error {
                 print("Error sending data: \(error)")
+                self.saveAnonymizedData(jsonData) // Save locally as backup
                 return
-                // Save data locally as backup since server submission failed
-                self.saveAnonymizedData(jsonData)
-                returnTTP response
-            }f let httpResponse = response as? HTTPURLResponse {
-                if httpResponse.statusCode == 200 {
-            // Check HTTP responseccessfully sent to server")
+            }
+            
             if let httpResponse = response as? HTTPURLResponse {
-                if httpResponse.statusCode == 200 {(httpResponse.statusCode)")
+                if httpResponse.statusCode == 200 {
                     print("Data successfully sent to server")
-                } else {ave data locally as backup since server returned error
+                } else {
                     print("Server returned error: \(httpResponse.statusCode)")
-                    
-                    // Save data locally as backup since server returned error
-                    self.saveAnonymizedData(jsonData)
-                }me()
+                    self.saveAnonymizedData(jsonData) // Save locally as backup
+                }
             }
         }
-        task.resume() the complete data payload
-    }truct DataSharePayload: Codable {
-        let deviceContext: DeviceContext
+        task.resume()
+    }
+    
+    /// Get generic device context information (non-identifying)
+    private func getDeviceContext() -> DeviceContext {
+        #if os(iOS)
+        let deviceType = UIDevice.current.userInterfaceIdiom == .pad ? "tablet" : "phone"
+        #elseif os(macOS)
+        let deviceType = "desktop"
+        #else
+        let deviceType = "unknown"
+        #endif
+        
+        return DeviceContext(
+            osVersion: ProcessInfo.processInfo.operatingSystemVersionString,
+            deviceType: deviceType,
+            locale: Locale.current.languageCode ?? "unknown",
+            appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
+        )
+    }
+    
+    /// Save anonymized data locally for demo purposes
+    private func saveAnonymizedData(_ data: Data) -> Bool {
+        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let fileURL = documentsDirectory.appendingPathComponent("anonymized_data_\(Date().timeIntervalSince1970).json")
+        
+        do {
+            try data.write(to: fileURL)
+            print("Anonymized data saved to: \(fileURL.path)")
+            return true
+        } catch {
+            print("Failed to save anonymized data: \(error)")
+            return false
+        }
+    }
+    
     /// Structure for the complete data payload
     struct DataSharePayload: Codable {
         let deviceContext: DeviceContext
         let sessions: [AnonymizedSession]
         let dataVersion: String
-        let timestamp = Date()text information (non-identifying)
-    }rivate func getDeviceContext() -> DeviceContext {
-        // We only collect information relevant to ML training
-    /// Get generic device context information (non-identifying)
-    private func getDeviceContext() -> DeviceContext {
-        // We only collect information relevant to ML training= .pad ? "tablet" : "phone"
-        // No unique identifiers
-        #if os(iOS)ype = "desktop"
-        let deviceType = UIDevice.current.userInterfaceIdiom == .pad ? "tablet" : "phone"
-        #elseif os(macOS)"unknown"
-        let deviceType = "desktop"
-        #else
-        let deviceType = "unknown"
-        #endifVersion: ProcessInfo.processInfo.operatingSystemVersionString,
-            deviceType: deviceType,
-        return DeviceContext(rrent.languageCode ?? "unknown",
-            osVersion: ProcessInfo.processInfo.operatingSystemVersionString,ing"] as? String ?? "unknown"
-            deviceType: deviceType,
-            locale: Locale.current.languageCode ?? "unknown",
-            appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
-        )evice context information for ML training
-    }truct DeviceContext: Codable {
-        let osVersion: String
+    }
+    
     /// Device context information for ML training
     struct DeviceContext: Codable {
-        let osVersion: Stringg
+        let osVersion: String
         let deviceType: String
         let locale: String
-        let appVersion: Stringocally for demo purposes
-    }rivate func saveAnonymizedData(_ data: Data) -> Bool {
-        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-    /// Save anonymized data locally for demo purposesComponent("anonymized_data_\(Date().timeIntervalSince1970).json")
-    private func saveAnonymizedData(_ data: Data) -> Bool {
-        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let fileURL = documentsDirectory.appendingPathComponent("anonymized_data_\(Date().timeIntervalSince1970).json")
-            print("Anonymized data saved to \(fileURL.path)")
-        do {return true
-            try data.write(to: fileURL)
-            print("Anonymized data saved to \(fileURL.path)")
-            return truee
-        } catch {
-            print("Failed to save anonymized data: \(error)")
-            return false
-        }
-    }d this class to handle SSL certificate issues
-}lass SSLTrustingDelegate: NSObject, URLSessionDelegate {
-    func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
-        // Accept any server certificate for the domain
-        if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust {
-            if let serverTrust = challenge.protectionSpace.serverTrust {
-                let credential = URLCredential(trust: serverTrust)
-                completionHandler(.useCredential, credential)
-                return
-            }
-        }
-        completionHandler(.performDefaultHandling, nil)
+        let appVersion: String
     }
 }

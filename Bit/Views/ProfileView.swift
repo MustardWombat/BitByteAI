@@ -1,6 +1,7 @@
 import SwiftUI
 import CloudKit
 import CoreML
+import PhotosUI // Add for photo picker
 
 #if os(iOS)
 import AuthenticationServices
@@ -15,6 +16,7 @@ struct ProfileView: View {
     @State private var showAlert = false
     @AppStorage("isSignedIn") private var isSignedIn: Bool = false
     @AppStorage("profileName") private var storedName: String = ""
+    @AppStorage("profileImageData") private var profileImageData: Data? // Store profile image in AppStorage
 
     @EnvironmentObject var currencyModel: CurrencyModel
     @EnvironmentObject var xpModel: XPModel
@@ -45,6 +47,11 @@ struct ProfileView: View {
     @State private var showDataSharingInfo = false
     @State private var showDataSharedConfirmation = false
 
+    // Profile picture state
+    @State private var profileImage: UIImage? = nil
+    @State private var showImagePicker = false
+    @State private var selectedPhotoItem: PhotosPickerItem? = nil
+
     var body: some View {
         ScrollView {
             ZStack {
@@ -54,6 +61,28 @@ struct ProfileView: View {
                         .font(.largeTitle)
                         .bold()
                         .padding(.top, 40)
+
+                    // Profile Picture Section
+                    VStack {
+                        if let profileImage = profileImage {
+                            Image(uiImage: profileImage)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 100, height: 100)
+                                .clipShape(Circle())
+                                .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                                .shadow(radius: 5)
+                        } else {
+                            Circle()
+                                .fill(Color.gray.opacity(0.5))
+                                .frame(width: 100, height: 100)
+                                .overlay(Text("Add Photo").foregroundColor(.white))
+                        }
+                        Button("Change Picture") {
+                            showImagePicker = true
+                        }
+                        .padding(.top, 8)
+                    }
 
                     if isSignedIn {
                         VStack(spacing: 16) {
@@ -365,6 +394,22 @@ struct ProfileView: View {
                     reminderTime2UI = Date(timeIntervalSince1970: reminderTime2Interval)
                     updateNotifications()
                     updateMLStatus()
+                }
+            }
+        }
+        .sheet(isPresented: $showImagePicker) {
+            PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                Text("Select a Profile Picture")
+            }
+            .onChange(of: selectedPhotoItem) { newItem in
+                if let newItem = newItem {
+                    Task {
+                        if let data = try? await newItem.loadTransferable(type: Data.self),
+                           let image = UIImage(data: data) {
+                            profileImage = image
+                            profileImageData = data // Save image data to AppStorage
+                        }
+                    }
                 }
             }
         }

@@ -38,17 +38,29 @@ struct BottomBarButton: View {
 
 // MARK: - TopShellSpritePlaceholder
 struct TopShellSpritePlaceholder: View {
+    @AppStorage("profileImageData") private var profileImageData: Data? // Store profile image in AppStorage
+    @Binding var currentView: String // Add binding to navigate to ProfileView
+
     var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(Color.gray.opacity(0.5), lineWidth: 2)
-                .background(RoundedRectangle(cornerRadius: 8).fill(Color.black.opacity(0.2)))
-            Image("BitDefault")
-                .font(.caption2)
-                .foregroundColor(.gray)
+        Button(action: {
+            currentView = "Profile" // Navigate to ProfileView
+        }) {
+            if let imageData = profileImageData, let uiImage = UIImage(data: imageData) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 44, height: 44)
+                    .clipShape(Circle())
+                    .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                    .shadow(radius: 5)
+            } else {
+                Circle()
+                    .fill(Color.gray.opacity(0.5))
+                    .frame(width: 44, height: 44)
+                    .overlay(Text("Add").foregroundColor(.white))
+            }
         }
-        .frame(width: 44, height: 44)
-        .padding(.horizontal, 8)
+        .buttonStyle(PlainButtonStyle()) // Remove default button styling
     }
 }
 
@@ -81,7 +93,7 @@ struct LayoutShell: View {
                         HStack(spacing: 12) {
                             XPDisplayView()
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                            TopShellSpritePlaceholder()
+                            TopShellSpritePlaceholder(currentView: $currentView) // Pass binding
                             CoinDisplay()
                                 .font(.caption.monospaced())
                                 .foregroundColor(Color.green)
