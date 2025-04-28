@@ -18,11 +18,40 @@ struct SpinningPlanetView: View {
     }
 }
 
+// New: Animated water wave shape for wavy fill effect
+struct WaterWave: Shape {
+    var progress: CGFloat // fill percentage (0..1)
+    var phase: CGFloat    // wave phase for animation
+    var amplitude: CGFloat = 5
+    var frequency: CGFloat = 2 * .pi  // one full wave across the available width
+    var animatableData: CGFloat {
+        get { phase }
+        set { phase = newValue }
+    }
+    
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let yOffset = rect.height * (1 - progress)
+        path.move(to: CGPoint(x: rect.minX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: yOffset))
+        for x in stride(from: 0, through: Double(rect.width), by: 1) {
+            let relativeX = CGFloat(x) / rect.width
+            let sine = sin(relativeX * frequency + phase)
+            let y = yOffset + sine * amplitude
+            path.addLine(to: CGPoint(x: rect.minX + CGFloat(x), y: y))
+        }
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.closeSubpath()
+        return path
+    }
+}
+
 // MARK: - HomeView
 struct HomeView: View {
     @Binding var currentView: String
     @State private var path: [String] = []
     @State private var simTimer: Timer? = nil
+    @State private var wavePhase: CGFloat = 0  // new: wave state for animation
 
     @EnvironmentObject var shopModel: ShopModel
     @EnvironmentObject var categoriesVM: CategoriesViewModel
@@ -68,14 +97,14 @@ struct HomeView: View {
                                 .environmentObject(categoriesVM)
                                 .padding(.top, 20) // Added top padding for the chart
 
-                            // Earned Planets section – now using a colored, rounded box
+                            // Earned Planets section – now using wavy fill effect
                             VStack(alignment: .leading, spacing: 16) {
                                 Text("Earned Planets")
                                     .font(.title2)
                                     .foregroundColor(.orange)
                                 HStack(spacing: 16) {
                                     ForEach(categoriesVM.categories, id: \.id) { category in
-                                        // Calculate total minutes and progress for the category
+                                        // Calculate progress based on weekly study minutes
                                         let logs = categoriesVM.weeklyData(for: category.id)
                                         let totalMinutes = logs.reduce(0) { $0 + $1.minutes }
                                         let progress = category.weeklyGoalMinutes > 0 ?
@@ -85,10 +114,12 @@ struct HomeView: View {
                                             RoundedRectangle(cornerRadius: 15)
                                                 .fill(category.displayColor.opacity(0.3))
                                                 .frame(width: 80, height: 80)
-                                            RoundedRectangle(cornerRadius: 15)
+                                            
+                                            WaterWave(progress: CGFloat(progress), phase: wavePhase)
                                                 .fill(category.displayColor)
-                                                .frame(width: 80, height: 80 * CGFloat(progress))
+                                                .frame(width: 80, height: 80)
                                                 .clipShape(RoundedRectangle(cornerRadius: 15))
+                                                .animation(.easeInOut(duration: 0.5), value: progress)
                                         }
                                         .overlay(
                                             Text("\(Int(progress * 100))%")
@@ -146,6 +177,9 @@ struct HomeView: View {
                 // xpModel.addXP(10)
             }
             autoClaimPlanets() // Automatically claim planets if today is Sunday
+            withAnimation(Animation.linear(duration: 2).repeatForever(autoreverses: false)) {
+                wavePhase = .pi * 2
+            }
         }
         .onDisappear {
             simTimer?.invalidate()
