@@ -88,6 +88,14 @@ struct LayoutShell: View {
                     AdaptiveBlurView(style: .regular)
                         .ignoresSafeArea(edges: .top)
                         .frame(height: topBarHeight)
+                        .overlay(
+                            LinearGradient(
+                                gradient: Gradient(colors: [Color.black.opacity(1.0), Color.black.opacity(0.05)]), // Adjusted gradient
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                            .ignoresSafeArea(edges: .top)
+                        ) // Updated fading black effect
                     VStack(spacing: 4) {
                         // --- Reordered Info row ---
                         HStack(spacing: 12) {
