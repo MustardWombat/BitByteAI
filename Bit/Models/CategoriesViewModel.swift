@@ -35,8 +35,8 @@ class CategoriesViewModel: ObservableObject {
         selectedTopic = loadSelectedTopic() ?? categories.first
     }
 
-    // Add a new category
-    func addCategory(name: String, weeklyGoalMinutes: Int = 0) {
+    // Add a new category (default weekly goal now 1 hour)
+    func addCategory(name: String, weeklyGoalMinutes: Int = 60) {
         let newCat = Category(name: name, weeklyGoalMinutes: weeklyGoalMinutes)
         categories.append(newCat)
     }
@@ -85,6 +85,13 @@ class CategoriesViewModel: ObservableObject {
         return results.sorted { $0.date < $1.date }
     }
 
+    // Updated method to update the weekly goal using the Category’s change notification
+    func updateWeeklyGoal(for category: Category, newGoalMinutes: Int) {
+        category.objectWillChange.send()
+        category.weeklyGoalMinutes = newGoalMinutes
+        saveCategories()
+    }
+
     // MARK: - Updated Persistence for Categories
 
     internal func loadCategories() -> [Category] {
@@ -120,7 +127,7 @@ class CategoriesViewModel: ObservableObject {
         let cloudCats = loadCloudCategories()
         self.categories = mergeCategories(local: localCats, cloud: cloudCats)
     }
-
+    
     // MARK: - Selected Topic Persistence
     func saveSelectedTopicID(_ id: UUID?) {
         if let id = id {

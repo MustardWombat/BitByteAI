@@ -134,10 +134,10 @@ struct StudyTimerView: View {
 
             if isShowingEditGoalView {
                 EditGoalView(
-                    goalInput: String(categoriesVM.selectedTopic?.weeklyGoalMinutes ?? 0 / 60),
+                    goalInput: String((categoriesVM.selectedTopic?.weeklyGoalMinutes ?? 60) / 60),
                     onSave: { newGoal in
-                        if let hours = Int(newGoal) {
-                            categoriesVM.selectedTopic?.weeklyGoalMinutes = hours * 60
+                        if let hours = Int(newGoal), let topic = categoriesVM.selectedTopic {
+                            categoriesVM.updateWeeklyGoal(for: topic, newGoalMinutes: hours * 60)
                         }
                         isShowingEditGoalView = false
                     },

@@ -52,6 +52,7 @@ struct HomeView: View {
     @State private var path: [String] = []
     @State private var simTimer: Timer? = nil
     @State private var wavePhase: CGFloat = 0  // new: wave state for animation
+    @State private var selectedCategory: Category? = nil  // new: selected category for detail view
 
     @EnvironmentObject var shopModel: ShopModel
     @EnvironmentObject var categoriesVM: CategoriesViewModel
@@ -121,6 +122,9 @@ struct HomeView: View {
                                                 .clipShape(RoundedRectangle(cornerRadius: 15))
                                                 .animation(.easeInOut(duration: 0.5), value: progress)
                                         }
+                                        .onLongPressGesture {  // new: long press gesture
+                                            selectedCategory = category
+                                        }
                                         .overlay(
                                             Text("\(Int(progress * 100))%")
                                                 .foregroundColor(.white)
@@ -170,6 +174,10 @@ struct HomeView: View {
                 }
                 .scrollContentBackground(.hidden)
                 .navigationBarBackButtonHidden(true)
+                .sheet(item: $selectedCategory) { category in  // new: present detail view sheet
+                    PlanetDetailView(category: category)
+                        .environmentObject(categoriesVM)
+                }
             }
         }
         .onAppear {
@@ -184,6 +192,34 @@ struct HomeView: View {
         .onDisappear {
             simTimer?.invalidate()
         }
+    }
+}
+
+// new: Detail view for planet on long press
+struct PlanetDetailView: View {
+    let category: Category
+    @EnvironmentObject var categoriesVM: CategoriesViewModel
+    @Environment(\.dismiss) var dismiss
+
+    var body: some View {
+        let logs = categoriesVM.weeklyData(for: category.id)
+        let totalMinutes = logs.reduce(0) { $0 + $1.minutes }
+        let minutesLeft = max(Double(category.weeklyGoalMinutes) - Double(totalMinutes), 0)
+        let hoursLeft = minutesLeft / 60
+
+        return VStack(spacing: 16) {
+            Text(category.name)
+                .font(.largeTitle)
+                .foregroundColor(category.displayColor)
+            Text(String(format: "Hours needed to finish: %.1f", hoursLeft))
+                .font(.title2)
+            // ...additional info if needed...
+            Button("Dismiss") {
+                dismiss()
+            }
+            .padding(.top, 20)
+        }
+        .padding()
     }
 }
 
