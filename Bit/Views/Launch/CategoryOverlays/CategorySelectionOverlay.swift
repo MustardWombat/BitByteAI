@@ -1,9 +1,11 @@
 import SwiftUI
 
 struct CategorySelectionOverlay: View {
-    let categories: [Category]
+    @Binding var categories: [Category]  // updated: changed to a binding for mutability
     @Binding var selected: Category?
     @Binding var isPresented: Bool
+    @State private var showCategoryCreationOverlay = false
+    @State private var categoryForEditing: Category? = nil  // To track category being edited.
 
     var body: some View {
         VStack {
@@ -29,12 +31,20 @@ struct CategorySelectionOverlay: View {
                         selected = category
                         isPresented = false
                     }
+                    .onLongPressGesture {  // Long press to edit the category.
+                        categoryForEditing = category
+                        showCategoryCreationOverlay = true
+                    }
                 }
+                Button("Create New Category") {
+                    categoryForEditing = nil
+                    showCategoryCreationOverlay = true
+                }
+                .foregroundColor(.blue)
             }
 
-            Button("Add New Category") {
+            Button("Close") {
                 isPresented = false
-                // Trigger category adder view
             }
             .padding()
             .background(Color.blue)
@@ -42,8 +52,29 @@ struct CategorySelectionOverlay: View {
             .cornerRadius(8)
         }
         .padding()
-        .background(Color.white)
+        .background(Color.black.opacity(0.8))
         .cornerRadius(12)
         .shadow(radius: 10)
+        .sheet(isPresented: $showCategoryCreationOverlay) {
+            CategoryCreationOverlay(
+                isPresented: $showCategoryCreationOverlay,
+                category: categoryForEditing,  // Pass the selected category to edit, or nil for creation.
+                onSaveCategory: { name, goal, color, editingCategory in
+                    if let editingCategory = editingCategory {
+                        // Update an existing category.
+                        editingCategory.name = name
+                        editingCategory.weeklyGoalMinutes = goal
+                        editingCategory.colorHex = color.toHex()
+                    } else {
+                        // Create a new category and add it to the list.
+                        let newCategory = Category(name: name, weeklyGoalMinutes: goal, colorHex: color.toHex())
+                        categories.append(newCategory)
+                    }
+                },
+                onCancel: {
+                    showCategoryCreationOverlay = false
+                }
+            )
+        }
     }
 }

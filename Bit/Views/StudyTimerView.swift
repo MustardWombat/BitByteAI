@@ -121,7 +121,7 @@ struct StudyTimerView: View {
 
             if isShowingCategorySheet {
                 CategorySelectionOverlay(
-                    categories: categoriesVM.categories,
+                    categories: $categoriesVM.categories, // updated: pass binding instead of value
                     selected: $categoriesVM.selectedTopic,
                     isPresented: $isShowingCategorySheet
                 )
