@@ -91,14 +91,22 @@ struct LayoutShell: View {
                     VStack(spacing: 4) {
                         // --- Reordered Info row ---
                         HStack(spacing: 12) {
-                            CoinDisplay()
-                                .font(.caption.monospaced())
-                                .foregroundColor(Color.green)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            StreakDisplay()
-                                .environmentObject(timerModel)
-                            XPDisplayView()
-                            TopShellSpritePlaceholder(currentView: $currentView) // Profile picture
+                            // Left-aligned items
+                            HStack(spacing: 12) {
+                                CoinDisplay()
+                                    .font(.caption.monospaced())
+                                    .foregroundColor(Color.green)
+                                StreakDisplay()
+                                    .environmentObject(timerModel)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                            // Right-aligned items
+                            HStack(spacing: 12) {
+                                XPDisplayView()
+                                TopShellSpritePlaceholder(currentView: $currentView) // Profile picture
+                            }
+                            .frame(maxWidth: .infinity, alignment: .trailing)
                         }
                         .padding(.horizontal, 16)
                         .frame(maxWidth: .infinity)

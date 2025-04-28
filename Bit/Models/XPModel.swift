@@ -139,22 +139,9 @@ struct XPDisplayView: View {
     @EnvironmentObject var xpModel: XPModel
 
     var body: some View {
-        HStack(spacing: 10) { // Horizontal layout for the vertical bar and text
-            // Vertical XP bar
-            ZStack(alignment: .bottom) {
-                // Background bar
-                RoundedRectangle(cornerRadius: 4)
-                    .frame(width: 5, height: 50) // Adjusted size for compactness
-                    .foregroundColor(Color.gray.opacity(0.3))
-
-                // Foreground progress bar
-                RoundedRectangle(cornerRadius: 4)
-                    .frame(width: 5, height: 50 * CGFloat(xpModel.xp) / CGFloat(xpModel.xpForNextLevel)) // Corrected dynamic height
-                    .foregroundColor(Color.blue)
-            }
-
+        HStack(spacing: 10) { // Horizontal layout for the text and vertical bar
             // Level and XP text
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .trailing, spacing: 4) { // Align text to the right
                 Text("Level \(xpModel.level)")
                     .font(.headline)
                     .foregroundColor(.white)
@@ -164,6 +151,19 @@ struct XPDisplayView: View {
                     .foregroundColor(.white)
                     .lineLimit(1) // Ensure text fits within the view
                     .minimumScaleFactor(0.8) // Scale down text if needed
+            }
+
+            // Vertical XP bar
+            ZStack(alignment: .bottom) {
+                // Background bar
+                RoundedRectangle(cornerRadius: 4)
+                    .frame(width: 10, height: 50) // Fixed height for the bar
+                    .foregroundColor(Color.gray.opacity(0.3))
+
+                // Foreground progress bar
+                RoundedRectangle(cornerRadius: 4)
+                    .frame(width: 10, height: 50 * CGFloat(xpModel.xp) / CGFloat(xpModel.xpForNextLevel)) // Dynamic height
+                    .foregroundColor(Color.blue)
             }
         }
         .padding(8) // Add padding for better spacing
