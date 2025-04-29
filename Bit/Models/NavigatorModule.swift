@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct MainView: View {
-    @State private var currentView: String = "Launch" // Updated default tab
+    @State private var currentView: String = "Home" // Updated default tab
 
     var body: some View {
         ZStack {

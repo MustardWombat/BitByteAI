@@ -13,6 +13,7 @@ struct Profile: Codable {
 
 struct ProfileView: View {
     @State private var name: String = ""
+    @State private var username: String = ""  // new state variable for username
     @State private var showAlert = false
     @AppStorage("isSignedIn") private var isSignedIn: Bool = false
     @AppStorage("profileName") private var storedName: String = ""
@@ -90,6 +91,15 @@ struct ProfileView: View {
                                 Text("Name:")
                                 Spacer()
                                 TextField("Your Name", text: $name)
+                                    .multilineTextAlignment(.trailing)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    .frame(width: 180)
+                            }
+                            // New username field
+                            HStack {
+                                Text("Username:")
+                                Spacer()
+                                TextField("Enter your username", text: $username)
                                     .multilineTextAlignment(.trailing)
                                     .textFieldStyle(RoundedBorderTextFieldStyle())
                                     .frame(width: 180)
@@ -422,6 +432,7 @@ struct ProfileView: View {
     private func saveProfileToCloudKit() {
         let record = CKRecord(recordType: recordType, recordID: recordID)
         record["name"] = name as CKRecordValue
+        record["username"] = username as CKRecordValue  // new username field
 
         CKContainer.default().privateCloudDatabase.save(record) { _, error in
             if let error = error {
