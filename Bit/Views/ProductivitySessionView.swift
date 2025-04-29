@@ -6,7 +6,6 @@ struct ProductivitySessionView: View {
     @State private var taskType: String = "Reading"
     @State private var difficulty: Int = 3
     @State private var completionPercentage: Float = 1.0
-    @State private var location: String = "Home"
     @State private var energyLevel: Int = 3
     @State private var isSessionActive = false
     @State private var sessionStartTime: Date?
@@ -14,7 +13,6 @@ struct ProductivitySessionView: View {
     @State private var elapsedTime: TimeInterval = 0
     
     let taskTypes = ["Reading", "Problem Solving", "Memorization", "Writing", "Research", "Practice"]
-    let locations = ["Home", "Library", "School", "Coffee Shop", "Office", "Other"]
     
     var body: some View {
         ScrollView {
@@ -60,14 +58,6 @@ struct ProductivitySessionView: View {
                                 }
                             }
                         }
-                        
-                        // Location
-                        Picker("Location", selection: $location) {
-                            ForEach(locations, id: \.self) {
-                                Text($0)
-                            }
-                        }
-                        .pickerStyle(SegmentedPickerStyle())
                         
                         // Energy Level
                         HStack {
@@ -158,7 +148,6 @@ struct ProductivitySessionView: View {
             taskType: taskType,
             difficulty: difficulty,
             completionPercentage: completionPercentage,
-            location: location,
             userEnergyLevel: energyLevel
         )
         
@@ -191,5 +180,23 @@ struct ProductivitySessionView: View {
         let minutes = Int(totalSeconds) / 60
         let seconds = Int(totalSeconds) % 60
         return String(format: "%02d:%02d", minutes, seconds)
+    }
+    
+    private func recordTestSession() {
+        let now = Date()
+        let calendar = Calendar.current
+        
+        let session = ProductivityTracker.ProductivitySession(
+            timestamp: now,
+            duration: TimeInterval.random(in: 900...3600),
+            dayOfWeek: calendar.component(.weekday, from: now),
+            engagement: Float.random(in: 0.5...1.0),
+            taskType: ["reading", "problem-solving", "memorization"].randomElement(),
+            difficulty: Int.random(in: 1...5),
+            completionPercentage: Float.random(in: 0.5...1.0),
+            userEnergyLevel: Int.random(in: 2...5)
+        )
+        
+        ProductivityTracker.shared.addSession(session)
     }
 }

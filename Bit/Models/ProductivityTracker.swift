@@ -62,7 +62,6 @@ class ProductivityTracker: ObservableObject {
         let taskType: String? // e.g., "reading", "problem-solving", "memorization"
         let difficulty: Int? // 1-5 scale
         let completionPercentage: Float? // 0.0-1.0
-        let location: String? // e.g., "home", "library", "coffee shop"
         let userEnergyLevel: Int? // 1-5 scale
         
         // Computed properties for ML features
@@ -126,7 +125,6 @@ class ProductivityTracker: ObservableObject {
             taskType: "study",
             difficulty: 3,
             completionPercentage: 0.8,
-            location: "home",
             userEnergyLevel: 3
         )
         
@@ -159,7 +157,6 @@ class ProductivityTracker: ObservableObject {
             taskType: taskType,
             difficulty: difficulty,
             completionPercentage: completionPercentage,
-            location: location,
             userEnergyLevel: userEnergyLevel
         )
         
@@ -322,8 +319,6 @@ class ProductivityTracker: ObservableObject {
             let hour = session.hour
             let optimalHour = (hour - 1 + 24) % 24 // 1 hour before productive time
             
-            let row = "\(session.dayOfWeek),\(hour),\(isWeekend),\(session.duration),\(session.engagement),\(session.taskType ?? "unknown"),\(session.difficulty ?? 0),\(session.completionPercentage ?? 0),\(session.location ?? "unknown"),\(session.userEnergyLevel ?? 0),\(optimalHour)\n"
-            csvContent.append(row)
         }
         
         // Save to documents directory
@@ -358,7 +353,6 @@ class ProductivityTracker: ObservableObject {
                 taskType: session.taskType,
                 difficulty: session.difficulty,
                 completionPercentage: session.completionPercentage,
-                location: session.location?.lowercased(),  // Generalize location
                 userEnergyLevel: session.userEnergyLevel
             )
         }
@@ -374,7 +368,6 @@ class ProductivityTracker: ObservableObject {
         let taskType: String?
         let difficulty: Int?
         let completionPercentage: Float?
-        let location: String?
         let userEnergyLevel: Int?
     }
     

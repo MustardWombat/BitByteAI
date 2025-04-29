@@ -57,9 +57,7 @@ class StudyTimerModel: ObservableObject {
     @Published var userEnergyLevel: Int? = nil
     @Published var showBreakPrompt: Bool = false // Added missing property
     
-    var currentLocation: String? {
-        return LocationManager.shared.currentLocationName
-    }
+
     
     // Track the user's focus level
     private var focusCheckCount: Int = 0
@@ -209,9 +207,8 @@ class StudyTimerModel: ObservableObject {
                 dayOfWeek: Calendar.current.component(.weekday, from: Date()),
                 engagement: focusScore, // Use the focus score if you have one
                 taskType: selectedTopic?.name ?? "Unknown",
-                difficulty: taskDifficulty, 
-                completionPercentage: 1.0, // Completed session
-                location: currentLocation, // You need to determine this
+                difficulty: taskDifficulty,
+                completionPercentage: 1.0, // Assuming 100% completion for now
                 userEnergyLevel: nil // Could add a user energy prompt later
             )
             

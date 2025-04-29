@@ -558,7 +558,6 @@ struct ProfileView: View {
             taskType: ["reading", "problem-solving", "memorization"].randomElement(),
             difficulty: Int.random(in: 1...5),
             completionPercentage: Float.random(in: 0.5...1.0),
-            location: ["home", "library", "coffee shop"].randomElement(),
             userEnergyLevel: Int.random(in: 2...5)
         )
         
