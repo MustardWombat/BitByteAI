@@ -20,6 +20,7 @@ struct TaskItem: Identifiable, Codable {
     var difficulty: Int // 1 (easy) to 5 (hard)
     var dueDate: Date?
     var createdAt: Date
+    var completedAt: Date? // Add this property to record completion time
 
     init(title: String, xpReward: Int = 20, coinReward: Int = 10, difficulty: Int = 3, dueDate: Date? = nil) {
         self.id = UUID()
@@ -30,6 +31,7 @@ struct TaskItem: Identifiable, Codable {
         self.difficulty = difficulty
         self.dueDate = dueDate
         self.createdAt = Date()
+        self.completedAt = nil // Initialize as nil
     }
 }
 
@@ -64,6 +66,7 @@ class TaskModel: ObservableObject {
     func completeTask(_ task: TaskItem, xpModel: XPModel, currencyModel: CurrencyModel) {
         if let idx = tasks.firstIndex(where: { $0.id == task.id && !$0.isCompleted }) {
             tasks[idx].isCompleted = true
+            tasks[idx].completedAt = Date() // Mark when the task was completed
             xpModel.addXP(tasks[idx].xpReward)
             currencyModel.earn(amount: tasks[idx].coinReward)
             sortTasks(by: sortOption)
