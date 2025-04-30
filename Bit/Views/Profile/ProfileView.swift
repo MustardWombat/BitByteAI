@@ -13,7 +13,7 @@ struct Profile: Codable {
 
 struct ProfileView: View {
     @State private var name: String = ""
-    @State private var username: String = ""  // new state variable for username
+    @AppStorage("profileUsername") private var username: String = "" // Use AppStorage for username
     @State private var showAlert = false
     @AppStorage("isSignedIn") private var isSignedIn: Bool = false
     @AppStorage("profileName") private var storedName: String = ""
@@ -58,7 +58,7 @@ struct ProfileView: View {
             ZStack {
                 StarOverlay()
                 VStack(spacing: 24) {
-                    Text("Profile")
+                    Text(username.isEmpty ? "Profile" : (username))
                         .font(.largeTitle)
                         .bold()
                         .padding(.top, 40)
@@ -104,12 +104,19 @@ struct ProfileView: View {
                                     .textFieldStyle(RoundedBorderTextFieldStyle())
                                     .frame(width: 180)
                             }
+                            if username.isEmpty {
+                                Text("Username is required")
+                                    .font(.caption)
+                                    .foregroundColor(.red)
+                                    .padding(.leading)
+                            }
                             Button("Save to Cloud") {
                                 saveProfileToCloudKit()
                                 showAlert = true
                             }
+                            .disabled(username.isEmpty) // Disable button if username is empty
                             .padding()
-                            .background(Color.green)
+                            .background(username.isEmpty ? Color.gray : Color.green)
                             .foregroundColor(.white)
                             .cornerRadius(8)
 
@@ -448,8 +455,8 @@ struct ProfileView: View {
                !cloudName.isEmpty {
                 DispatchQueue.main.async {
                     self.name = cloudName
+                    self.username = record["username"] as? String ?? "" // load username from record
                     self.isSignedIn = true
-                    // No local backup is used anymore
                 }
             } else if let ckError = error as? CKError, ckError.code == .unknownItem {
                 print("No CloudKit profile found.")
