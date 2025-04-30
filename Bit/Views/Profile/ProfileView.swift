@@ -152,19 +152,15 @@ struct ProfileView: View {
                         SignInWithAppleButton(
                             .signIn,
                             onRequest: { request in
-                                request.requestedScopes = [.fullName]
+                                // Remove fullName scope since we rely solely on usernames
+                                request.requestedScopes = []
                             },
                             onCompletion: { result in
                                 switch result {
-                                case .success(let auth):
-                                    if let credential = auth.credential as? ASAuthorizationAppleIDCredential {
-                                        let fullName = [credential.fullName?.givenName, credential.fullName?.familyName]
-                                            .compactMap { $0 }
-                                            .joined(separator: " ")
-                                        name = fullName.isEmpty ? name : fullName
-                                        isSignedIn = true // Set the global flag
-                                        saveProfileToCloudKit()
-                                    }
+                                case .success:
+                                    // Do not extract or set the full name; rely on the username field instead
+                                    isSignedIn = true
+                                    saveProfileToCloudKit()
                                 case .failure:
                                     break
                                 }
