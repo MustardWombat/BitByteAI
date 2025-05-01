@@ -1,7 +1,7 @@
 import SwiftUI
 import WidgetKit
 
-struct CosmosAppView: View {
+struct BitAppView: View {
     @StateObject var xpModel: XPModel
     @StateObject var miningModel: MiningModel
     @StateObject var timerModel: StudyTimerModel
@@ -72,10 +72,10 @@ struct CosmosAppView: View {
 }
 
 @main
-struct CosmosApp: App {
+struct BitApp: App {
     var body: some Scene {
         WindowGroup {
-            CosmosAppView()
+            BitAppView()
                 .preferredColorScheme(.dark)  // Forces everything into Dark Mode
                 .onAppear {
                     NSUbiquitousKeyValueStore.default.synchronize()
