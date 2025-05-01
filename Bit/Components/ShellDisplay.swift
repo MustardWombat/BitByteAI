@@ -68,18 +68,17 @@ struct TopShellSpritePlaceholder: View {
 struct LayoutShell: View {
     @Binding var currentView: String
     let content: AnyView
-
+    
     @State private var currentXP: Int = 150 // Example current XP value
     @State private var maxXP: Int = 200 // Example max XP value
     @State private var funFact: String = "Loading fun fact..." // Fun fact state
     @EnvironmentObject var timerModel: StudyTimerModel // Inject StudyTimerModel
-
-    private let openAIService = OpenAIService() // Instance of OpenAIService
-
+    
+    
     // Define fixed heights for overlays
     private let topBarHeight: CGFloat = 100
     private let bottomBarHeight: CGFloat = 90
-
+    
     var body: some View {
         GeometryReader { geo in
             VStack(spacing: 0) {
@@ -108,7 +107,7 @@ struct LayoutShell: View {
                                     .environmentObject(timerModel)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
-
+                            
                             // Right-aligned items
                             HStack(spacing: 12) {
                                 XPDisplayView()
@@ -132,11 +131,11 @@ struct LayoutShell: View {
                 }
                 .frame(height: topBarHeight)
                 .zIndex(2) // Bring the top bar above the main content.
-
+                
                 // Main Content
                 content
                     .frame(maxWidth: .infinity, maxHeight: geo.size.height - topBarHeight - bottomBarHeight)
-
+                
                 // Bottom Bar
                 BottomBar(currentView: $currentView)
                     .frame(height: bottomBarHeight)
@@ -147,10 +146,9 @@ struct LayoutShell: View {
         }
         .onAppear {
             updateXPValues()
-            if currentView == "Home" { fetchFunFact() } // Fetch fun fact for Home
         }
     }
-
+    
     private func dynamicWelcomeText(for view: String) -> String {
         switch view {
         case "Planets": return "Explore the galaxy!"
@@ -159,130 +157,122 @@ struct LayoutShell: View {
         default: return "Welcome back, Commander!"
         }
     }
-
+    
     private func updateXPValues() {
         // Replace with actual logic to fetch or calculate XP values
         currentXP = 150 // Example current XP value
         maxXP = 200 // Example max XP value
     }
-
-    // Fetch fun fact using OpenAIService
-    private func fetchFunFact() {
-        openAIService.fetchAIResponse(prompt: "Tell me a fun fact.") { response in
-            DispatchQueue.main.async {
-                funFact = response ?? "Could not load a fun fact. Try again later!"
+    
+    
+    // Updated MarqueeText view: scrolls until the text’s right edge passes the container’s left edge using a recursive animation
+    struct MarqueeText: View {
+        let text: String
+        @State private var offset: CGFloat = 0
+        @State private var textWidth: CGFloat = 0
+        @State private var containerWidth: CGFloat = 0
+        
+        var body: some View {
+            GeometryReader { geo in
+                let containerW = geo.size.width
+                HStack {
+                    Text(text)
+                        .fixedSize() // ensure full text renders without truncation
+                        .background(GeometryReader { textGeo in
+                            Color.clear.onAppear {
+                                textWidth = textGeo.size.width
+                                containerWidth = containerW
+                                offset = containerW  // start off-screen on the right
+                                startScrolling()
+                            }
+                        })
+                        .offset(x: offset)
+                }
+                .frame(width: containerW, alignment: .leading)
+                .clipped()
             }
         }
-    }
-}
-
-// Updated MarqueeText view: scrolls until the text’s right edge passes the container’s left edge using a recursive animation
-struct MarqueeText: View {
-    let text: String
-    @State private var offset: CGFloat = 0
-    @State private var textWidth: CGFloat = 0
-    @State private var containerWidth: CGFloat = 0
-
-    var body: some View {
-        GeometryReader { geo in
-            let containerW = geo.size.width
-            HStack {
-                Text(text)
-                    .fixedSize() // ensure full text renders without truncation
-                    .background(GeometryReader { textGeo in
-                        Color.clear.onAppear {
-                            textWidth = textGeo.size.width
-                            containerWidth = containerW
-                            offset = containerW  // start off-screen on the right
-                            startScrolling()
-                        }
-                    })
-                    .offset(x: offset)
+        
+        private func startScrolling() {
+            guard textWidth > 0, containerWidth > 0 else { return }
+            let totalDistance = textWidth + containerWidth
+            let duration = Double(totalDistance) / 30.0  // adjust speed (30 points per second)
+            
+            // Animate from the starting offset to the position where the text’s right edge is off-screen
+            withAnimation(Animation.linear(duration: duration)) {
+                offset = -textWidth
             }
-            .frame(width: containerW, alignment: .leading)
-            .clipped()
+            // After the animation completes, reset and start again
+            DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
+                offset = containerWidth
+                startScrolling()
+            }
         }
     }
     
-    private func startScrolling() {
-        guard textWidth > 0, containerWidth > 0 else { return }
-        let totalDistance = textWidth + containerWidth
-        let duration = Double(totalDistance) / 30.0  // adjust speed (30 points per second)
+    // MARK: - BottomBar
+    struct BottomBar: View {
+        @Binding var currentView: String
         
-        // Animate from the starting offset to the position where the text’s right edge is off-screen
-        withAnimation(Animation.linear(duration: duration)) {
-            offset = -textWidth
-        }
-        // After the animation completes, reset and start again
-        DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
-            offset = containerWidth
-            startScrolling()
+        var body: some View {
+            HStack {
+                BottomBarButton(iconName: "house.fill", viewName: "Home", currentView: $currentView)
+                    .frame(maxWidth: .infinity)
+                BottomBarButton(iconName: "globe", viewName: "Planets", currentView: $currentView)
+                    .frame(maxWidth: .infinity)
+                BottomBarButton(iconName: "airplane", viewName: "Launch", currentView: $currentView) // Updated icon to "airplane"
+                    .frame(maxWidth: .infinity)
+                BottomBarButton(iconName: "cart.fill", viewName: "Shop", currentView: $currentView)
+                    .frame(maxWidth: .infinity)
+                BottomBarButton(iconName: "person.2.fill", viewName: "Friends", currentView: $currentView)
+                    .frame(maxWidth: .infinity)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 10)
+            .padding(.bottom, 20)
+            .background(
+                Color.black.opacity(0.65)
+                    .adaptiveCornerRadius(20, corners: [.topLeft, .topRight])
+            )
+            .shadow(color: Color.black.opacity(0.8), radius: 10, x: 0, y: -5)
+            .frame(maxWidth: .infinity)
+            .ignoresSafeArea(edges: .bottom)
         }
     }
-}
-
-// MARK: - BottomBar
-struct BottomBar: View {
-    @Binding var currentView: String
-
-    var body: some View {
-        HStack {
-            BottomBarButton(iconName: "house.fill", viewName: "Home", currentView: $currentView)
-                .frame(maxWidth: .infinity)
-            BottomBarButton(iconName: "globe", viewName: "Planets", currentView: $currentView)
-                .frame(maxWidth: .infinity)
-            BottomBarButton(iconName: "airplane", viewName: "Launch", currentView: $currentView) // Updated icon to "airplane"
-                .frame(maxWidth: .infinity)
-            BottomBarButton(iconName: "cart.fill", viewName: "Shop", currentView: $currentView)
-                .frame(maxWidth: .infinity)
-            BottomBarButton(iconName: "person.2.fill", viewName: "Friends", currentView: $currentView)
-                .frame(maxWidth: .infinity)
-        }
-        .padding(.horizontal, 20)
-        .padding(.top, 10)
-        .padding(.bottom, 20)
-        .background(
-            Color.black.opacity(0.65)
-                .adaptiveCornerRadius(20, corners: [.topLeft, .topRight])
-        )
-        .shadow(color: Color.black.opacity(0.8), radius: 10, x: 0, y: -5)
-        .frame(maxWidth: .infinity)
-        .ignoresSafeArea(edges: .bottom)
-    }
-}
-
-// MARK: - BlurEffect Style (cross-platform)
+    
+    // MARK: - BlurEffect Style (cross-platform)
 #if os(iOS)
-typealias BlurEffectStyle = UIBlurEffect.Style
+    typealias BlurEffectStyle = UIBlurEffect.Style
 #else
-enum BlurEffectStyle {
-    case systemMaterial
-    case systemThinMaterial
-    case systemUltraThinMaterial
-    case systemThickMaterial
-    case systemChromeMaterial
-    case prominent
-    case regular
-}
+    enum BlurEffectStyle {
+        case systemMaterial
+        case systemThinMaterial
+        case systemUltraThinMaterial
+        case systemThickMaterial
+        case systemChromeMaterial
+        case prominent
+        case regular
+    }
 #endif
-
-// MARK: - BlurView
+    
+    // MARK: - BlurView
 #if os(iOS)
-struct BlurView: UIViewRepresentable {
-    var style: BlurEffectStyle
-
-    func makeUIView(context: Context) -> UIVisualEffectView {
-        UIVisualEffectView(effect: UIBlurEffect(style: style))
+    struct BlurView: UIViewRepresentable {
+        var style: BlurEffectStyle
+        
+        func makeUIView(context: Context) -> UIVisualEffectView {
+            UIVisualEffectView(effect: UIBlurEffect(style: style))
+        }
+        
+        func updateUIView(_ uiView: UIVisualEffectView, context: Context) {}
     }
-
-    func updateUIView(_ uiView: UIVisualEffectView, context: Context) {}
-}
 #else
-struct BlurView: View {
-    var style: BlurEffectStyle
-
-    var body: some View {
-        Color.gray.opacity(0.5) // Use a simple gray background as a fallback
+    struct BlurView: View {
+        var style: BlurEffectStyle
+        
+        var body: some View {
+            Color.gray.opacity(0.5) // Use a simple gray background as a fallback
+        }
     }
-}
 #endif
+}
