@@ -48,6 +48,13 @@
 			);
 			target = 4F95C6522DA30C7F00839484 /* StudyTimerWidgetExtensionExtension */;
 		};
+		4FA5A28C2DC435B100B81810 /* Exceptions for "Bit" folder in "Bit" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Config/Info.plist,
+			);
+			target = 4FEA9AFB2D8E205B00D8B37B /* Bit */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -59,6 +66,7 @@
 		4FEA9AFE2D8E205B00D8B37B /* Bit */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
+				4FA5A28C2DC435B100B81810 /* Exceptions for "Bit" folder in "Bit" target */,
 				4F95C6752DA30F4A00839484 /* Exceptions for "Bit" folder in "StudyTimerWidgetExtensionExtension" target */,
 			);
 			path = Bit;
