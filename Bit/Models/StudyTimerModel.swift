@@ -331,7 +331,7 @@ class StudyTimerModel: ObservableObject {
     
     private func updateLiveActivity(remaining: Int) {
         #if os(iOS)
-        guard let activity = liveActivity as? Activity<StudyTimerAttributes>, let endDate = initialEndDate else { return }
+        guard let activity = liveActivity, let endDate = initialEndDate else { return }
         Task {
             await activity.update(using: StudyTimerAttributes.ContentState(
                 timeRemaining: remaining,

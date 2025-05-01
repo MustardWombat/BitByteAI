@@ -104,7 +104,7 @@ public extension View {
 }
 
 // Define a cross-platform corners type
-public struct UIRectCornerType: OptionSet {
+public struct UIRectCornerType: OptionSet, Sendable {
     public let rawValue: Int
     
     public init(rawValue: Int) {

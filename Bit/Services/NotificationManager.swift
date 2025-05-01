@@ -104,6 +104,10 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 willPresent notification: UNNotification,
                                 withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        completionHandler([.alert, .sound])
+        if #available(iOS 14.0, *) {
+            completionHandler([.banner, .sound]) // Use .banner for iOS 14 and later
+        } else {
+            completionHandler([.alert, .sound]) // Fallback for earlier iOS versions
+        }
     }
 }

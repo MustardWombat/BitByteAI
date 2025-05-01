@@ -66,7 +66,7 @@ class ShopModel: ObservableObject {
         let currentDate = Date()
         var updated = false
         
-        for (index, item) in purchasedItems.enumerated() {
+        for (_, item) in purchasedItems.enumerated() {
             if let expiration = item.expirationDate, currentDate > expiration && item.isActive {
                 // Item has expired, remove its effects
                 removeItemEffects(item)

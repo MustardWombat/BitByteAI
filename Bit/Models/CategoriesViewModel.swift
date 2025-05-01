@@ -51,7 +51,7 @@ class CategoriesViewModel: ObservableObject {
         guard let index = categories.firstIndex(where: { $0.id == categoryID }) else { return }
 
         let calendar = Calendar.current
-        var updatedCategory = categories[index]
+        let updatedCategory = categories[index]
 
         if let logIndex = updatedCategory.dailyLogs.firstIndex(where: { calendar.isDate($0.date, inSameDayAs: date) }) {
             updatedCategory.dailyLogs[logIndex].minutes += minutes

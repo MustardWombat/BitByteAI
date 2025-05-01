@@ -382,7 +382,6 @@ class ProductivityTracker: ObservableObject {
         let timePassedSinceLastShare = now.timeIntervalSince(lastShare)
         
         if sessions.count >= minSessionsForAI && (lastDataShareDate == 0 || timePassedSinceLastShare >= dataShareInterval) {
-            shareAnonymizedData()
         }
     }
     
@@ -438,7 +437,6 @@ class ProductivityTracker: ObservableObject {
         let task = session.dataTask(with: request) { data, response, error in
             if let error = error {
                 print("Error sending data: \(error)")
-                self.saveAnonymizedData(jsonData) // Save locally as backup
                 return
             }
             
@@ -447,7 +445,6 @@ class ProductivityTracker: ObservableObject {
                     print("Data successfully sent to server")
                 } else {
                     print("Server returned error: \(httpResponse.statusCode)")
-                    self.saveAnonymizedData(jsonData) // Save locally as backup
                 }
             }
         }
@@ -467,7 +464,7 @@ class ProductivityTracker: ObservableObject {
         return DeviceContext(
             osVersion: ProcessInfo.processInfo.operatingSystemVersionString,
             deviceType: deviceType,
-            locale: Locale.current.languageCode ?? "unknown",
+            locale: Locale.current.language.languageCode?.identifier ?? "unknown",
             appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
         )
     }

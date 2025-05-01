@@ -72,7 +72,7 @@ struct BitAppView: View {
 }
 
 @main
-struct BitApp: App {
+struct CosmosApp: App {
     var body: some Scene {
         WindowGroup {
             BitAppView()

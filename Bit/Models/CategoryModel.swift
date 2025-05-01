@@ -119,7 +119,7 @@ extension Color {
 
 // A simple struct for logging minutes studied on a given date.
 struct DailyLog: Identifiable, Codable, Hashable {
-    let id = UUID()
+    var id = UUID()
     var date: Date
     var minutes: Int
 }
