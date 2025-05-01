@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct PathingContentView: View {
+struct PathingContentView: View {  // Renamed from ContentView to avoid conflict
     var body: some View {
         MainTabView()
     }
