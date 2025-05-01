@@ -1,4 +1,4 @@
 // ...existing rules...
-/Bit/Secrets.plist
-/Bit/SecretsLocal.plist
+/Bit/Config/Secrets.plist
+/Bit/Conig/SecretsLocal.plist
 // ...existing rules...
