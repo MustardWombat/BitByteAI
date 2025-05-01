@@ -41,13 +41,6 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		4F95C66E2DA30C8100839484 /* Exceptions for "StudyTimerWidgetExtension" folder in "StudyTimerWidgetExtensionExtension" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = 4F95C6522DA30C7F00839484 /* StudyTimerWidgetExtensionExtension */;
-		};
 		4F95C6752DA30F4A00839484 /* Exceptions for "Bit" folder in "StudyTimerWidgetExtensionExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -55,28 +48,17 @@
 			);
 			target = 4F95C6522DA30C7F00839484 /* StudyTimerWidgetExtensionExtension */;
 		};
-		4FB6D74F2D92335600EE1D10 /* Exceptions for "Bit" folder in "Bit" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = 4FEA9AFB2D8E205B00D8B37B /* Bit */;
-		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		4F95C6592DA30C7F00839484 /* StudyTimerWidgetExtension */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				4F95C66E2DA30C8100839484 /* Exceptions for "StudyTimerWidgetExtension" folder in "StudyTimerWidgetExtensionExtension" target */,
-			);
 			path = StudyTimerWidgetExtension;
 			sourceTree = "<group>";
 		};
 		4FEA9AFE2D8E205B00D8B37B /* Bit */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				4FB6D74F2D92335600EE1D10 /* Exceptions for "Bit" folder in "Bit" target */,
 				4F95C6752DA30F4A00839484 /* Exceptions for "Bit" folder in "StudyTimerWidgetExtensionExtension" target */,
 			);
 			path = Bit;
@@ -569,7 +551,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Bit/Info.plist;
+				INFOPLIST_FILE = Bit/Config/Info.plist;
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -612,7 +594,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Bit/Info.plist;
+				INFOPLIST_FILE = Bit/Config/Info.plist;
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
