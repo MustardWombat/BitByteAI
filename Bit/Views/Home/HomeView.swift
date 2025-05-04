@@ -76,7 +76,6 @@ struct HomeView: View {
 
     var body: some View {
         ZStack {
-            StarOverlay() // Add the starry background
             NavigationStack(path: $path) {
                 ScrollView {
                     ZStack(alignment: .top) {
@@ -179,6 +178,8 @@ struct HomeView: View {
                         .environmentObject(categoriesVM)
                 }
             }
+            StarOverlay() // Move StarOverlay here to appear above SpaceBG
+                .zIndex(2)
         }
         .onAppear {
             simTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in
