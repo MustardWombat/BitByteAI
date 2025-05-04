@@ -273,7 +273,9 @@ struct CreateNewTopicView: View {
                         Text("\(hour) hr").tag(hour)
                     }
                 }
+                #if os(iOS)
                 .pickerStyle(WheelPickerStyle())
+                #endif
                 .frame(maxWidth: .infinity)
 
                 Picker("Minutes", selection: $weeklyGoalMinutes) {
@@ -281,7 +283,9 @@ struct CreateNewTopicView: View {
                         Text("\(minute) min").tag(minute)
                     }
                 }
-                .pickerStyle(WheelPickerStyle())
+#if os(iOS)
+.pickerStyle(WheelPickerStyle())
+#endif
                 .frame(maxWidth: .infinity)
             }
             .frame(height: 150) // Adjust height for the wheel pickers

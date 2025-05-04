@@ -45,7 +45,9 @@ struct CategoryCreationOverlay: View {
                             Text("\(hour) h").tag(hour)
                         }
                     }
+                    #if os(iOS)
                     .pickerStyle(WheelPickerStyle())
+                    #endif
                     .frame(maxWidth: 100)
 
                     Picker("Minutes", selection: $selectedMinutes) {
@@ -53,8 +55,10 @@ struct CategoryCreationOverlay: View {
                             Text("\(minute) m").tag(minute)
                         }
                     }
-                    .pickerStyle(WheelPickerStyle())
-                    .frame(maxWidth: 100)
+#if os(iOS)
+.pickerStyle(WheelPickerStyle())
+#endif
+.frame(maxWidth: 100)
                 }
             }
 

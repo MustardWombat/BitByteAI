@@ -46,7 +46,7 @@ struct TopShellSpritePlaceholder: View {
             currentView = "Profile" // Navigate to ProfileView
         }) {
             if let imageData = profileImageData, let uiImage = UIImage(data: imageData) {
-                Image(uiImage: uiImage)
+                Image(nsImage: uiImage)
                     .resizable()
                     .scaledToFill()
                     .frame(width: 44, height: 44)

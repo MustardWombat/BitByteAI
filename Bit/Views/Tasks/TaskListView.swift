@@ -111,8 +111,10 @@ struct TaskListView: View {
             .padding(.horizontal, 20)
             .background(Color.black)
             .toolbar { // New Task button now in navigation bar
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    NavigationLink(destination: TaskMakerView().environmentObject(taskModel)) {
+#if os(iOS)
+.pickerStyle(WheelPickerStyle())
+#endif
+                NavigationLink(destination: TaskMakerView().environmentObject(taskModel)) {
                         Label("New Task", systemImage: "plus.circle.fill")
                     }
                 }
@@ -154,7 +156,7 @@ struct TaskListView: View {
         default: return "arrow.up.arrow.down"
         }
     }
-}
+
 
 struct SortButton: View {
     let label: String

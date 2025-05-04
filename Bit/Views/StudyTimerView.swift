@@ -183,7 +183,9 @@ struct EditGoalView: View {
             Text("Edit Study Goal (hours per week)")
                 .font(.headline)
             TextField("Enter goal in hours", text: $goalInput)
+                #if os(iOS)
                 .keyboardType(.numberPad)
+                #endif
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
             HStack {

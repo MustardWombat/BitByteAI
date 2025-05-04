@@ -58,8 +58,7 @@ class NotificationModelTrainer {
                 return nil
             }
             
-            let regressor = try MLRegressor(trainingData: dataTable,
-                                          targetColumn: "optimalHour")
+            let regressor = try MLRegressor(trainingData: dataTable, targetColumn: "optimalHour")
             
             // Save the model to a file
             let modelName = "NotificationTimePredictor"
@@ -67,7 +66,7 @@ class NotificationModelTrainer {
                                                            in: .userDomainMask).first!
             let modelURL = documentsDirectory.appendingPathComponent("\(modelName).mlmodel")
             
-            try regressor.write(to: modelURL)
+            // try regressor.write(to: modelURL, metadata: <#MLModelMetadata?#>)
             return modelURL
         } catch {
             print("Error training model: \(error)")

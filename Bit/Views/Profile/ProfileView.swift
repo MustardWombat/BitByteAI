@@ -1,10 +1,15 @@
 import SwiftUI
 import CloudKit
 import CoreML
-import PhotosUI // Add for photo picker
-
 #if os(iOS)
+import UIKit
 import AuthenticationServices
+import PhotosUI
+#else
+import AppKit
+typealias UIImage = NSImage
+// Added dummy declaration for PhotosPickerItem on non‑iOS platforms.
+struct PhotosPickerItem {}
 #endif
 
 struct Profile: Codable {
@@ -66,7 +71,7 @@ struct ProfileView: View {
                     // Profile Picture Section
                     VStack {
                         if let profileImage = profileImage {
-                            Image(uiImage: profileImage)
+                            Image(nsImage: profileImage)
                                 .resizable()
                                 .scaledToFill()
                                 .frame(width: 100, height: 100)
@@ -408,22 +413,29 @@ struct ProfileView: View {
                     updateNotifications()
                     updateMLStatus()
                 }
-            }
-        }
-        .sheet(isPresented: $showImagePicker) {
-            PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
-                Text("Select a Profile Picture")
-            }
-            .onChange(of: selectedPhotoItem) { newItem in
-                if let newItem = newItem {
-                    Task {
-                        if let data = try? await newItem.loadTransferable(type: Data.self),
-                           let image = UIImage(data: data) {
-                            profileImage = image
-                            profileImageData = data // Save image data to AppStorage
+                // Conditional PhotoPicker Sheet
+                #if os(iOS)
+                .sheet(isPresented: $showImagePicker) {
+                    PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                        Text("Select a Profile Picture")
+                    }
+                    .onChange(of: selectedPhotoItem) { newItem in
+                        if let newItem = newItem {
+                            Task {
+                                if let data = try? await newItem.loadTransferable(type: Data.self),
+                                   let image = UIImage(data: data) {
+                                    profileImage = image
+                                    profileImageData = data // Save image data to AppStorage
+                                }
+                            }
                         }
                     }
                 }
+                #else
+                .sheet(isPresented: $showImagePicker) {
+                    Text("Photo picker not available on this platform")
+                }
+                #endif
             }
         }
         .sheet(isPresented: $showDataSharingInfo) {
@@ -621,6 +633,7 @@ struct DataSharingInfoView: View {
                 }
                 .padding()
             }
+            #if os(iOS)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
@@ -628,6 +641,15 @@ struct DataSharingInfoView: View {
                     }
                 }
             }
+            #else
+            .toolbar {
+                ToolbarItem(placement: .automatic) {
+                    Button("Done") {
+                        isPresented = false
+                    }
+                }
+            }
+            #endif
         }
     }
 }
