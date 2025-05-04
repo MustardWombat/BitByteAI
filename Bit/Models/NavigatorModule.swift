@@ -26,39 +26,7 @@ struct MainView: View {
                 }
             })
             #else
-            // Fallback shell display for non iOS platforms.
-            VStack {
-                Picker("", selection: $currentView) {
-                    Text("Home").tag("Home")
-                    Text("Planets").tag("Planets")
-                    Text("Launch").tag("Launch")
-                    Text("Shop").tag("Shop")
-                    Text("Friends").tag("Friends")
-                    Text("Profile").tag("Profile")
-                }
-                .pickerStyle(SegmentedPickerStyle())
-                .padding()
-
-                Spacer()
-
-                switch currentView {
-                case "Home":
-                    HomeView(currentView: $currentView)
-                case "Planets":
-                    PlanetView(currentView: $currentView)
-                case "Launch":
-                    LaunchView(currentView: $currentView)
-                case "Shop":
-                    ShopView(currentView: $currentView)
-                case "Friends":
-                    FriendsView()
-                case "Profile":
-                    ProfileView()
-                default:
-                    HomeView(currentView: $currentView)
-                }
-            }
-            .padding()
+            MacMainView() // Use the new macOS-specific view
             #endif
         }
     }

@@ -1,23 +1,6 @@
 import SwiftUI
 import Charts
 
-// MARK: - Rotating Planet Sprite
-struct SpinningPlanetView: View {
-    @State private var rotation: Angle = .zero
-
-    var body: some View {
-        Image("planet")
-            .resizable()
-            .frame(width: 300, height: 300)
-            .rotationEffect(rotation)
-            .onAppear {
-                withAnimation(Animation.linear(duration: 20).repeatForever(autoreverses: false)) {
-                    rotation = .degrees(360)
-                }
-            }
-    }
-}
-
 // New: Animated water wave shape for wavy fill effect
 struct WaterWave: Shape {
     var progress: CGFloat // fill percentage (0..1)
@@ -51,25 +34,20 @@ struct HomeView: View {
     @Binding var currentView: String
     @State private var path: [String] = []
     @State private var simTimer: Timer? = nil
-    @State private var wavePhase: CGFloat = 0  // new: wave state for animation
-    @State private var selectedCategory: Category? = nil  // new: selected category for detail view
+    @State private var wavePhase: CGFloat = 0
+    @State private var selectedCategory: Category? = nil
 
     @EnvironmentObject var shopModel: ShopModel
     @EnvironmentObject var categoriesVM: CategoriesViewModel
     @EnvironmentObject var xpModel: XPModel
 
-    // New: Automatic claim processing
     private func autoClaimPlanets() {
         if Calendar.current.component(.weekday, from: Date()) == 1 {
-            // For each category, process the claim automatically.
-            // For example: update xpModel or shopModel based on progress.
             for category in categoriesVM.categories {
                 let logs = categoriesVM.weeklyData(for: category.id)
                 let totalMinutes = logs.reduce(0) { $0 + $1.minutes }
                 let progress = category.weeklyGoalMinutes > 0 ? min(Double(totalMinutes) / Double(category.weeklyGoalMinutes), 1.0) : 0.0
-                // Process claiming logic: e.g., award planets or XP based on progress
                 print("Claimed planets for \(category.name): \(Int(progress * 100))% achieved.")
-                // ...insert additional claim logic here...
             }
         }
     }
@@ -79,7 +57,6 @@ struct HomeView: View {
             NavigationStack(path: $path) {
                 ScrollView {
                     ZStack(alignment: .top) {
-                        // ✅ Background image that scrolls with content
                         Image("SpaceBG")
                             .resizable()
                             .interpolation(.none)
@@ -89,103 +66,40 @@ struct HomeView: View {
                             .zIndex(0)
 
                         VStack(spacing: 20) {
-                            // Add padding to the top of the assets
                             SpinningPlanetView()
-                                .padding(.top, 50) // Added top padding for the spinning planet
+                                .padding(.top, 50)
 
                             WeeklyProgressChart()
                                 .environmentObject(categoriesVM)
-                                .padding(.top, 20) // Added top padding for the chart
+                                .padding(.top, 20)
 
-                            // Earned Planets section – now using wavy fill effect
-                            VStack(alignment: .leading, spacing: 16) {
-                                Text("Earned Planets")
-                                    .font(.title2)
-                                    .foregroundColor(.orange)
-                                HStack(spacing: 16) {
-                                    ForEach(categoriesVM.categories, id: \.id) { category in
-                                        // Calculate progress based on weekly study minutes
-                                        let logs = categoriesVM.weeklyData(for: category.id)
-                                        let totalMinutes = logs.reduce(0) { $0 + $1.minutes }
-                                        let progress = category.weeklyGoalMinutes > 0 ?
-                                            min(Double(totalMinutes) / Double(category.weeklyGoalMinutes), 1.0) : 0.0
-                                        
-                                        ZStack(alignment: .bottom) {
-                                            RoundedRectangle(cornerRadius: 15)
-                                                .fill(category.displayColor.opacity(0.3))
-                                                .frame(width: 80, height: 80)
-                                            
-                                            WaterWave(progress: CGFloat(progress), phase: wavePhase)
-                                                .fill(category.displayColor)
-                                                .frame(width: 80, height: 80)
-                                                .clipShape(RoundedRectangle(cornerRadius: 15))
-                                                .animation(.easeInOut(duration: 0.5), value: progress)
-                                        }
-                                        .onLongPressGesture {  // new: long press gesture
-                                            selectedCategory = category
-                                        }
-                                        .overlay(
-                                            Text("\(Int(progress * 100))%")
-                                                .foregroundColor(.white)
-                                                .bold()
-                                                .padding(4),
-                                            alignment: .top
-                                        )
-                                    }
-                                }
-                                .padding(.vertical, 10)
-                            }
+                            EarnedPlanetsView(wavePhase: $wavePhase, selectedCategory: $selectedCategory)
+                                .environmentObject(categoriesVM)
 
-                            // 🛍 Purchases Section
-                            VStack(alignment: .leading, spacing: 10) {
-                                Text("Your Purchases")
-                                    .font(.title2)
-                                    .bold()
-                                    .foregroundColor(.orange)
-
-                                if shopModel.purchasedItems.isEmpty {
-                                    Text("No items purchased yet.")
-                                        .foregroundColor(.gray)
-                                } else {
-                                    ForEach(shopModel.purchasedItems) { item in
-                                        HStack {
-                                            Text(item.name)
-                                                .foregroundColor(.white)
-                                            Spacer()
-                                            Text("Qty: \(item.quantity)")
-                                                .foregroundColor(.white)
-                                        }
-                                        .padding(.vertical, 4)
-                                    }
-                                }
-                            }
-                            .padding()
-                            .background(Color.black.opacity(0.5))
-                            .cornerRadius(10)
-                            .padding(.top, 20) // Added top padding for the purchases section
+                            PurchasesView()
+                                .environmentObject(shopModel)
+                                .padding(.top, 20)
 
                             Spacer(minLength: 40)
                         }
-                        .padding(.top, 100) // Overall top padding for the VStack
+                        .padding(.top, 100)
                         .padding(.horizontal, 20)
                         .zIndex(1)
                     }
                 }
                 .scrollContentBackground(.hidden)
                 .navigationBarBackButtonHidden(true)
-                .sheet(item: $selectedCategory) { category in  // new: present detail view sheet
+                .sheet(item: $selectedCategory) { category in
                     PlanetDetailView(category: category)
                         .environmentObject(categoriesVM)
                 }
             }
-            StarOverlay() // Move StarOverlay here to appear above SpaceBG
+            StarOverlay()
                 .zIndex(2)
         }
         .onAppear {
-            simTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in
-                // xpModel.addXP(10)
-            }
-            autoClaimPlanets() // Automatically claim planets if today is Sunday
+            simTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in }
+            autoClaimPlanets()
             withAnimation(Animation.linear(duration: 2).repeatForever(autoreverses: false)) {
                 wavePhase = .pi * 2
             }
