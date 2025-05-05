@@ -12,8 +12,8 @@ struct TaskListView: View {
         NavigationView {
             GeometryReader { geometry in
                 VStack(alignment: .leading, spacing: 16) {
-                    // --- Top Row: Sort Dropdown ---
-                    HStack {
+                    // --- Top Row: Sort Dropdown and Add Button ---
+                    HStack(spacing: 20) {
                         // Sort Dropdown
                         Menu {
                             Button {
@@ -34,6 +34,23 @@ struct TaskListView: View {
                                     .foregroundColor(.green)
                                 Image(systemName: "chevron.down")
                                     .font(.caption)
+                                    .foregroundColor(.green)
+                            }
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 12)
+                            .background(Color.green.opacity(0.15))
+                            .cornerRadius(8)
+                        }
+                        .padding(.top, 20)
+                        
+                        // Add New Task Button - Positioned right after the filter button
+                        NavigationLink(destination: TaskMakerView().environmentObject(taskModel)) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.green)
+                                Text("Add Task")
+                                    .fontWeight(.medium)
                                     .foregroundColor(.green)
                             }
                             .padding(.vertical, 6)
@@ -112,18 +129,6 @@ struct TaskListView: View {
             .padding(.horizontal, 20)
             .background(Color.black)
             .toolbar {
-                ToolbarItem(placement: {
-                    #if os(iOS)
-                    return .navigationBarTrailing
-                    #else
-                    return .automatic // Use automatic placement on macOS
-                    #endif
-                }()) {
-                    NavigationLink(destination: TaskMakerView().environmentObject(taskModel)) {
-                        Label("New Task", systemImage: "plus.circle.fill")
-                    }
-                }
-                
                 ToolbarItem(placement: {
                     #if os(iOS)
                     return .navigationBarLeading
