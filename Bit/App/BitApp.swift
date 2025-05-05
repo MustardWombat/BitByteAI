@@ -13,6 +13,7 @@ struct BitAppView: View {
 
     @AppStorage("isSignedIn") private var isSignedIn: Bool = false
     @State private var showSignInPrompt: Bool = false
+    @State private var showSplash = true
 
     init() {
         let xp = XPModel()
@@ -31,43 +32,63 @@ struct BitAppView: View {
     }
 
     var body: some View {
-        AppContentView()  // Updated to use AppContentView
-            .environmentObject(xpModel)
-            .environmentObject(timerModel)
-            .environmentObject(shopModel)
-            .environmentObject(civModel)
-            .environmentObject(miningModel)
-            .environmentObject(categoriesModel)
-            .environmentObject(currencyModel)
-            .environmentObject(taskModel)
-            .onAppear {
-                // Refresh data on startup for all models:
-                NSUbiquitousKeyValueStore.default.synchronize()
-                xpModel.loadData()
-                categoriesModel.categories = categoriesModel.loadCategories() // Explicitly update categories
-                taskModel.loadTasks()
-                currencyModel.fetchFromICloud()
-                shopModel.loadData() // Ensure ShopModel is loaded
-                civModel.updateFromBackground()
-                miningModel.resumeMiningIfNeeded()
+        Group {
+            if showSplash {
+                // Show only the splash screen during initial loading
+                SplashScreenOverlay()
+                    .onAppear {
+                        // Load critical data first
+                        NSUbiquitousKeyValueStore.default.synchronize()
+                        
+                        // Hide splash after animation completes and data is loaded
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                            withAnimation {
+                                showSplash = false
+                            }
+                            
+                            // Load remaining data after splash screen is dismissed
+                            DispatchQueue.main.async {
+                                loadRemainingData()
+                            }
+                        }
+                    }
+            } else {
+                // Show the main app content only after splash is dismissed
+                AppContentView()
+                    .environmentObject(xpModel)
+                    .environmentObject(timerModel)
+                    .environmentObject(shopModel)
+                    .environmentObject(civModel)
+                    .environmentObject(miningModel)
+                    .environmentObject(categoriesModel)
+                    .environmentObject(currencyModel)
+                    .environmentObject(taskModel)
             }
-            .sheet(isPresented: $showSignInPrompt, onDismiss: {
-                // On dismiss, if now signed in, trigger a merge-sync of local with iCloud
-                if isSignedIn {
-                    categoriesModel.mergeWithICloudData()
-                }
-            }) {
-                SignInPromptView(onSignIn: {
-                    // Present your actual sign‑in flow here.
-                    // Once complete, set isSignedIn = true and update the cloud merge.
-                    isSignedIn = true
-                    showSignInPrompt = false
-                    categoriesModel.mergeWithICloudData()
-                }, onSkip: {
-                    // User chooses to skip; use local data only.
-                    showSignInPrompt = false
-                })
+        }
+        .sheet(isPresented: $showSignInPrompt, onDismiss: {
+            if isSignedIn {
+                categoriesModel.mergeWithICloudData()
             }
+        }) {
+            SignInPromptView(onSignIn: {
+                isSignedIn = true
+                showSignInPrompt = false
+                categoriesModel.mergeWithICloudData()
+            }, onSkip: {
+                showSignInPrompt = false
+            })
+        }
+    }
+    
+    // Move data loading to a separate function to defer non-critical operations
+    private func loadRemainingData() {
+        xpModel.loadData()
+        categoriesModel.categories = categoriesModel.loadCategories()
+        taskModel.loadTasks()
+        currencyModel.fetchFromICloud()
+        shopModel.loadData()
+        civModel.updateFromBackground()
+        miningModel.resumeMiningIfNeeded()
     }
 }
 

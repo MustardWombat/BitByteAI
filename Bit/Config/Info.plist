@@ -27,5 +27,7 @@
 	<array>
 		<string>com.jameswilliams.Bit.backgroundTask</string>
 	</array>
+	<key>UILaunchStoryboardName</key>
+	<string>Launch Screen</string>
 </dict>
 </plist>
