@@ -29,7 +29,7 @@ struct WaterWave: Shape {
     }
 }
 
-// MARK: - HomeView
+#if os(iOS)
 struct HomeView: View {
     @Binding var currentView: String
     @State private var path: [String] = []
@@ -53,62 +53,173 @@ struct HomeView: View {
     }
 
     var body: some View {
-        ZStack {
-            NavigationStack(path: $path) {
-                ScrollView {
-                    ZStack(alignment: .top) {
-                        Image("SpaceBG")
-                            .resizable()
-                            .interpolation(.none)
-                            .aspectRatio(contentMode: .fill)
-                            .frame(maxWidth: .infinity)
-                            .ignoresSafeArea()
-                            .zIndex(0)
+        GeometryReader { geometry in
+            ZStack {
+                NavigationStack(path: $path) {
+                    ScrollView {
+                        ZStack(alignment: .top) {
+                            Image("SpaceBG")
+                                .resizable()
+                                .interpolation(.none)
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: geometry.size.width, height: geometry.size.height)
+                                .ignoresSafeArea()
+                                .zIndex(0)
 
-                        VStack(spacing: 20) {
-                            SpinningPlanetView()
-                                .padding(.top, 50)
+                            VStack(spacing: 20) {
+                                SpinningPlanetView()
+                                    .padding(.top, 50)
 
-                            WeeklyProgressChart()
-                                .environmentObject(categoriesVM)
-                                .padding(.top, 20)
+                                WeeklyProgressChart()
+                                    .environmentObject(categoriesVM)
+                                    .padding(.top, 20)
 
-                            EarnedPlanetsView(wavePhase: $wavePhase, selectedCategory: $selectedCategory)
-                                .environmentObject(categoriesVM)
+                                EarnedPlanetsView(wavePhase: $wavePhase, selectedCategory: $selectedCategory)
+                                    .environmentObject(categoriesVM)
 
-                            PurchasesView()
-                                .environmentObject(shopModel)
-                                .padding(.top, 20)
+                                PurchasesView()
+                                    .environmentObject(shopModel)
+                                    .padding(.top, 20)
 
-                            Spacer(minLength: 40)
+                                Spacer(minLength: 40)
+                            }
+                            .padding(.top, 100)
+                            .padding(.horizontal, 20)
+                            .zIndex(1)
                         }
-                        .padding(.top, 100)
-                        .padding(.horizontal, 20)
-                        .zIndex(1)
+                    }
+                    .scrollContentBackground(.hidden)
+                    .navigationBarBackButtonHidden(true)
+                    .sheet(item: $selectedCategory) { category in
+                        PlanetDetailView(category: category)
+                            .environmentObject(categoriesVM)
                     }
                 }
-                .scrollContentBackground(.hidden)
-                .navigationBarBackButtonHidden(true)
-                .sheet(item: $selectedCategory) { category in
-                    PlanetDetailView(category: category)
-                        .environmentObject(categoriesVM)
+                StarOverlay()
+                    .zIndex(2)
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height) // Fill the entire window
+            .onAppear {
+                simTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in }
+                autoClaimPlanets()
+                withAnimation(Animation.linear(duration: 2).repeatForever(autoreverses: false)) {
+                    wavePhase = .pi * 2
                 }
             }
-            StarOverlay()
-                .zIndex(2)
-        }
-        .onAppear {
-            simTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in }
-            autoClaimPlanets()
-            withAnimation(Animation.linear(duration: 2).repeatForever(autoreverses: false)) {
-                wavePhase = .pi * 2
+            .onDisappear {
+                simTimer?.invalidate()
             }
-        }
-        .onDisappear {
-            simTimer?.invalidate()
         }
     }
 }
+#else
+struct HomeView: View {
+    @Binding var currentView: String
+    @EnvironmentObject var categoriesVM: CategoriesViewModel
+    @EnvironmentObject var xpModel: XPModel
+    @EnvironmentObject var shopModel: ShopModel
+    @EnvironmentObject var taskModel: TaskModel
+    @EnvironmentObject var timerModel: StudyTimerModel
+    @State private var wavePhase: CGFloat = 0
+    @State private var selectedCategory: Category? = nil
+
+    var body: some View {
+        GeometryReader { geometry in
+            ScrollView(.vertical, showsIndicators: true) {
+                VStack(spacing: 15) {
+                    // First row: Planet upgrades and Tasks
+                    HStack(spacing: 20) {
+                        // Left: EarnedPlanetsView (Planet upgrades)
+                        VStack(spacing: 5) {
+                            Text("Planet Progress")
+                                .font(.headline)
+                                .padding(.bottom, 2) // Reduced bottom padding
+                            
+                            SpinningPlanetView()
+                                .frame(height: 110) // Slightly smaller
+                                .padding(.bottom, 2) // Reduced bottom padding
+                            
+                            EarnedPlanetsView(wavePhase: $wavePhase, selectedCategory: $selectedCategory)
+                                .environmentObject(categoriesVM)
+                        }
+                        .frame(width: geometry.size.width * 0.5 - 10)
+                        .padding(.vertical, 5) // Less vertical padding
+                        .padding(.horizontal, 10)
+                        .background(Color.black.opacity(0.1))
+                        .cornerRadius(10)
+
+                        // Right: Task List
+                        VStack(spacing: 5) {
+                            Text("Tasks")
+                                .font(.headline)
+                                .padding(.bottom, 2) // Reduced bottom padding
+                            
+                            TaskListView()
+                                .environmentObject(taskModel)
+                                .environmentObject(xpModel)
+                                .environmentObject(shopModel)
+                                .frame(height: 300)
+                        }
+                        .frame(width: geometry.size.width * 0.5 - 10)
+                        .padding(.vertical, 5) // Less vertical padding
+                        .padding(.horizontal, 10)
+                        .background(Color.black.opacity(0.1))
+                        .cornerRadius(10)
+                    }
+
+                    // Second row: Chart and Study Timer
+                    HStack(spacing: 20) {
+                        // Left: Chart View
+                        VStack(spacing: 5) {
+                            Text("Weekly Progress")
+                                .font(.headline)
+                                .padding(.bottom, 2) // Reduced bottom padding
+                            
+                            WeeklyProgressChart()
+                                .environmentObject(categoriesVM)
+                                .frame(height: 220)
+                        }
+                        .frame(width: geometry.size.width * 0.5 - 10)
+                        .padding(.vertical, 5) // Less vertical padding
+                        .padding(.horizontal, 10)
+                        .background(Color.black.opacity(0.1))
+                        .cornerRadius(10)
+
+                        // Right: Study Timer
+                        VStack(spacing: 5) {
+                            Text("Study Timer")
+                                .font(.headline)
+                                .padding(.bottom, 2) // Reduced bottom padding
+                            
+                            StudyTimerView()
+                                .environmentObject(timerModel)
+                                .environmentObject(categoriesVM)
+                                .frame(height: 220)
+                        }
+                        .frame(width: geometry.size.width * 0.5 - 10)
+                        .padding(.vertical, 5) // Less vertical padding
+                        .padding(.horizontal, 10)
+                        .background(Color.black.opacity(0.1))
+                        .cornerRadius(10)
+                    }
+                }
+                .padding(.top, 5) // Minimal top padding
+                .padding(.horizontal, 15)
+                .padding(.bottom, 10)
+            }
+            .sheet(item: $selectedCategory) { category in
+                PlanetDetailView(category: category)
+                    .environmentObject(categoriesVM)
+            }
+            .onAppear {
+                withAnimation(Animation.linear(duration: 2).repeatForever(autoreverses: false)) {
+                    wavePhase = .pi * 2
+                }
+            }
+        }
+    }
+}
+#endif
 
 // new: Detail view for planet on long press
 struct PlanetDetailView: View {

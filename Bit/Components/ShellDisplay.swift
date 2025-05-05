@@ -2,6 +2,8 @@ import SwiftUI
 
 #if os(iOS)
 import UIKit
+#elseif os(macOS)
+import AppKit
 #endif
 
 // MARK: - BottomBarButton
@@ -45,14 +47,28 @@ struct TopShellSpritePlaceholder: View {
         Button(action: {
             currentView = "Profile" // Navigate to ProfileView
         }) {
-            if let imageData = profileImageData, let uiImage = UIImage(data: imageData) {
-                Image(nsImage: uiImage)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 44, height: 44)
-                    .cornerRadius(8) // Rounded corners
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white, lineWidth: 2))
-                    .shadow(radius: 5)
+            if let imageData = profileImageData {
+                #if os(iOS)
+                if let uiImage = UIImage(data: imageData) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 44, height: 44)
+                        .cornerRadius(8) // Rounded corners
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white, lineWidth: 2))
+                        .shadow(radius: 5)
+                }
+                #elseif os(macOS)
+                if let nsImage = NSImage(data: imageData) {
+                    Image(nsImage: nsImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 44, height: 44)
+                        .cornerRadius(8) // Rounded corners
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white, lineWidth: 2))
+                        .shadow(radius: 5)
+                }
+                #endif
             } else {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Color.gray.opacity(0.5))

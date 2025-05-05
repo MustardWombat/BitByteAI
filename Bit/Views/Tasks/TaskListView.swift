@@ -1,12 +1,13 @@
 import SwiftUI
 
 struct TaskListView: View {
+    
     @EnvironmentObject var taskModel: TaskModel
     @EnvironmentObject var xpModel: XPModel
     @EnvironmentObject var currencyModel: CurrencyModel
-
+    
     @State private var showSortMenu: Bool = false
-
+    
     var body: some View {
         NavigationView {
             GeometryReader { geometry in
@@ -41,7 +42,7 @@ struct TaskListView: View {
                             .cornerRadius(8)
                         }
                         .padding(.top, 20)
-
+                        
                         Spacer()
                     }
                     
@@ -110,18 +111,36 @@ struct TaskListView: View {
             }
             .padding(.horizontal, 20)
             .background(Color.black)
-            .toolbar { // New Task button now in navigation bar
-#if os(iOS)
-.pickerStyle(WheelPickerStyle())
-#endif
-                NavigationLink(destination: TaskMakerView().environmentObject(taskModel)) {
+            .toolbar {
+                ToolbarItem(placement: {
+                    #if os(iOS)
+                    return .navigationBarTrailing
+                    #else
+                    return .automatic // Use automatic placement on macOS
+                    #endif
+                }()) {
+                    NavigationLink(destination: TaskMakerView().environmentObject(taskModel)) {
                         Label("New Task", systemImage: "plus.circle.fill")
                     }
+                }
+                
+                ToolbarItem(placement: {
+                    #if os(iOS)
+                    return .navigationBarLeading
+                    #else
+                    return .automatic // Use automatic placement on macOS
+                    #endif
+                }()) {
+                    Picker("Sort", selection: $taskModel.sortOption) {
+                        Text("Due Date").tag(TaskSortOption.dueDate)
+                        Text("Difficulty").tag(TaskSortOption.difficulty)
+                    }
+                    .pickerStyle(.segmented)
                 }
             }
         }
     }
-
+    
     func dueDateDisplay(_ due: Date) -> String {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
@@ -140,7 +159,7 @@ struct TaskListView: View {
             return due.formatted(date: .abbreviated, time: .omitted)
         }
     }
-
+    
     func sortLabel(for option: TaskSortOption) -> String {
         switch option {
         case .dueDate: return "Due Date"
@@ -148,7 +167,7 @@ struct TaskListView: View {
         default: return "Sort"
         }
     }
-
+    
     func sortIcon(for option: TaskSortOption) -> String {
         switch option {
         case .dueDate: return "calendar"
@@ -156,29 +175,30 @@ struct TaskListView: View {
         default: return "arrow.up.arrow.down"
         }
     }
-
-
-struct SortButton: View {
-    let label: String
-    let isSelected: Bool
-    let systemImage: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                Image(systemName: systemImage)
-                    .foregroundColor(isSelected ? .green : .gray)
-                Text(label)
-                    .font(.caption)
-                    .foregroundColor(isSelected ? .green : .gray)
+    
+    
+    struct SortButton: View {
+        let label: String
+        let isSelected: Bool
+        let systemImage: String
+        let action: () -> Void
+        
+        var body: some View {
+            Button(action: action) {
+                HStack(spacing: 6) {
+                    Image(systemName: systemImage)
+                        .foregroundColor(isSelected ? .green : .gray)
+                    Text(label)
+                        .font(.caption)
+                        .foregroundColor(isSelected ? .green : .gray)
+                }
+                .padding(.vertical, 6)
+                .padding(.horizontal, 10)
+                .background(isSelected ? Color.green.opacity(0.15) : Color.clear)
+                .cornerRadius(8)
             }
-            .padding(.vertical, 6)
-            .padding(.horizontal, 10)
-            .background(isSelected ? Color.green.opacity(0.15) : Color.clear)
-            .cornerRadius(8)
+            .buttonStyle(PlainButtonStyle())
         }
-        .buttonStyle(PlainButtonStyle())
-    }
-}
+    } // Close SortButton struct
+} // Close TaskListView struct
 

@@ -71,7 +71,7 @@ struct ProfileView: View {
                     // Profile Picture Section
                     VStack {
                         if let profileImage = profileImage {
-                            Image(nsImage: profileImage)
+                            Image(uiImage: profileImage)
                                 .resizable()
                                 .scaledToFill()
                                 .frame(width: 100, height: 100)
