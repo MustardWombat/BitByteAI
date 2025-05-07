@@ -13,6 +13,7 @@ class RewardCalculator {
         
         if let planet = miningModel?.getPlanet(ofType: planetType) {
             miningModel?.availablePlanets.append(planet)
+            // Removed the savePlanets call since we don't save planets anymore
             print("Added planet: \(planet.name)")
         }
         
@@ -23,16 +24,16 @@ class RewardCalculator {
     static func calculateCoinReward(using seconds: Int) -> Int {
         let minutes = Double(seconds) / 60.0
         
-        // Tiered reward system:
-        // - Short sessions: 1 coin per minute
-        // - Medium sessions: 1.5 coins per minute
-        // - Long sessions: 2 coins per minute
+        // Enhanced reward system (since rewards are permanent):
+        // - Short sessions: 2 coins per minute
+        // - Medium sessions: 3 coins per minute
+        // - Long sessions: 4 coins per minute
         if seconds >= 1800 { // 30+ minutes
-            return Int(minutes * 2.0)
+            return Int(minutes * 4.0)
         } else if seconds >= 900 { // 15-30 minutes
-            return Int(minutes * 1.5)
+            return Int(minutes * 3.0)
         } else {
-            return Int(minutes * 1.0)
+            return Int(minutes * 2.0)
         }
     }
 }

@@ -240,4 +240,18 @@ class ShopModel: ObservableObject {
             )
         }
     }
+    
+    /// Debug function to reset all purchases
+    func resetPurchases() {
+        purchasedItems = []
+        
+        // Clear any persistent storage
+        UserDefaults.standard.removeObject(forKey: shopKey)
+        
+        // Notify observers that data has changed
+        objectWillChange.send()
+        
+        // Print confirmation message
+        print("DEBUG: All purchases have been reset")
+    }
 }

@@ -31,20 +31,6 @@ class CurrencyModel: ObservableObject {
             object: nil
         )
         
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(resetCoinBoost),
-            name: Notification.Name("ResetCoinBoost"),
-            object: nil
-        )
-        
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(resetAllBoosts),
-            name: Notification.Name("ResetAllBoosts"),
-            object: nil
-        )
-        
         // Add the missing observer for DepositCoins notification
         NotificationCenter.default.addObserver(
             self,
@@ -57,22 +43,10 @@ class CurrencyModel: ObservableObject {
     @objc private func handleCoinBoost(notification: Notification) {
         if let multiplier = notification.userInfo?["multiplier"] as? Double {
             coinMultiplier *= multiplier
+            saveToICloud() // Save the multiplier to ensure it persists
         }
-    }
-    
-    @objc private func resetCoinBoost(notification: Notification) {
-        if let newMultiplier = notification.userInfo?["multiplier"] as? Double {
-            coinMultiplier = newMultiplier
-        } else {
-            coinMultiplier = 1.0
-        }
-    }
-    
-    @objc private func resetAllBoosts(notification: Notification) {
-        coinMultiplier = 1.0
     }
 
-    // Add handler for coin deposit notification
     @objc private func handleCoinDeposit(notification: Notification) {
         if let amount = notification.userInfo?["amount"] as? Int {
             print("CurrencyModel: Received \(amount) coins from notification")

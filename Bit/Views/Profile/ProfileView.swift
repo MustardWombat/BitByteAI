@@ -208,6 +208,15 @@ struct ProfileView: View {
                         .background(Color.orange)
                         .foregroundColor(.white)
                         .cornerRadius(8)
+                        
+                        // Debug button to reset purchases
+                        Button("Reset Purchases") {
+                            shopModel.resetPurchases()
+                        }
+                        .padding()
+                        .background(Color.red)
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
                     }
                     .padding()
                     

@@ -23,58 +23,44 @@ struct ShopItem: Identifiable, Codable {
         }
     }
     
-    // Duration description
+    // Duration description - modified to always return permanent
     var durationDescription: String {
-        guard let hours = durationInHours else {
-            return "Permanent effect"
-        }
-        if hours >= 24 {
-            let days = hours / 24
-            return "\(days) day\(days > 1 ? "s" : "")"
-        }
-        return "\(hours) hour\(hours > 1 ? "s" : "")"
+        return "Permanent effect"
     }
 }
 
 // Predefined shop catalog
 extension ShopItem {
     static let catalog: [ShopItem] = [
-        ShopItem(name: "XP Boost I", 
+        ShopItem(name: "Satelite", 
                 type: .xpBooster, 
-                description: "A small boost to your XP gains", 
+                description: "A permanent boost to your XP gains", 
                 price: 100, 
                 effectValue: 1.25, 
-                durationInHours: 24),
+                durationInHours: nil),
         
         ShopItem(name: "XP Boost II", 
                 type: .xpBooster, 
-                description: "A significant boost to your XP gains", 
+                description: "A significant permanent boost to your XP gains", 
                 price: 250, 
                 effectValue: 1.5, 
-                durationInHours: 24),
+                durationInHours: nil),
         
         ShopItem(name: "Coin Magnet I", 
                 type: .coinBooster, 
-                description: "Increases the coins you earn", 
+                description: "Permanently increases the coins you earn", 
                 price: 150, 
                 effectValue: 1.25, 
-                durationInHours: 24),
+                durationInHours: nil),
         
         ShopItem(name: "Coin Magnet II", 
                 type: .coinBooster, 
-                description: "Significantly increases the coins you earn", 
+                description: "Significantly and permanently increases the coins you earn", 
                 price: 300, 
                 effectValue: 1.5, 
-                durationInHours: 24),
-                
-        ShopItem(name: "Permanent XP Boost", 
-                type: .xpBooster, 
-                description: "Permanently increases your XP gains", 
-                price: 1000, 
-                effectValue: 1.1, 
                 durationInHours: nil),
                 
-        ShopItem(name: "Permanent Coin Boost", 
+        ShopItem(name: "Deluxe Coin Boost", 
                 type: .coinBooster, 
                 description: "Permanently increases your coin gains", 
                 price: 1000, 
