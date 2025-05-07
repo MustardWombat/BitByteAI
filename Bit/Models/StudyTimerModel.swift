@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import SwiftUI
+import CloudKit
 
 #if os(iOS)
 import UIKit
@@ -26,6 +27,7 @@ struct StudyTimerState: Codable {
     let selectedTopic: Category?  // Persist selected topic
     let dailyStreak: Int
     let lastStudyDate: Date?
+    let weeklyStudyMinutes: Int // Add weekly study minutes tracking
 }
 
 class StudyTimerModel: ObservableObject {
@@ -56,8 +58,9 @@ class StudyTimerModel: ObservableObject {
     }
     @Published var userEnergyLevel: Int? = nil
     @Published var showBreakPrompt: Bool = false // Added missing property
-    
-
+    @Published var weeklyStudyMinutes: Int = 0 {
+        didSet { saveData() }
+    }
     
     // Track the user's focus level
     private var focusCheckCount: Int = 0
@@ -79,6 +82,8 @@ class StudyTimerModel: ObservableObject {
     
     // Persistence key
     private let studyDataKey = "StudyTimerModelData"
+    private let weeklyDataKey = "WeeklyStudyData"
+    private let weekStartDateKey = "WeekStartDate"
     
     var xpModel: XPModel?
     var miningModel: MiningModel?
@@ -101,6 +106,7 @@ class StudyTimerModel: ObservableObject {
         self.miningModel = miningModel
         self.categoriesVM = categoriesVM
         loadData()
+        checkAndResetWeeklyData()
         // Attempt to load the selected topic from CategoriesViewModel if not already loaded.
         if selectedTopic == nil, let cat = categoriesVM?.loadSelectedTopic() {
             selectedTopic = cat
@@ -179,6 +185,9 @@ class StudyTimerModel: ObservableObject {
                 object: nil,
                 userInfo: ["amount": coinReward]
             )
+            
+            // Update weekly study minutes
+            updateWeeklyStudyMinutes(minutes: studiedTimeMinutes)
         }
         
         if let topic = selectedTopic, let vm = categoriesVM {
@@ -280,7 +289,8 @@ class StudyTimerModel: ObservableObject {
             focusStreak: focusStreak,
             selectedTopic: selectedTopic,
             dailyStreak: dailyStreak,
-            lastStudyDate: lastStudyDate
+            lastStudyDate: lastStudyDate,
+            weeklyStudyMinutes: weeklyStudyMinutes  // Add this
         )
         if let data = try? JSONEncoder().encode(state) {
             NSUbiquitousKeyValueStore.default.set(data, forKey: studyDataKey)
@@ -299,6 +309,7 @@ class StudyTimerModel: ObservableObject {
             selectedTopic = state.selectedTopic
             dailyStreak = state.dailyStreak
             lastStudyDate = state.lastStudyDate
+            weeklyStudyMinutes = state.weeklyStudyMinutes  // Add this
         } else if let localData = UserDefaults.standard.data(forKey: studyDataKey),
                   let state = try? JSONDecoder().decode(StudyTimerState.self, from: localData) {
             earnedRewards = state.earnedRewards
@@ -307,6 +318,104 @@ class StudyTimerModel: ObservableObject {
             selectedTopic = state.selectedTopic
             dailyStreak = state.dailyStreak
             lastStudyDate = state.lastStudyDate
+            weeklyStudyMinutes = state.weeklyStudyMinutes  // Add this
+        }
+    }
+    
+    private func checkAndResetWeeklyData() {
+        let calendar = Calendar.current
+        let today = Date()
+        
+        // Get the start of the current week
+        guard let currentWeekStart = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: today)) else {
+            return
+        }
+        
+        // Get the saved week start date
+        if let savedWeekStartDate = UserDefaults.standard.object(forKey: weekStartDateKey) as? Date {
+            // If we're in a new week, reset weekly study minutes
+            if !calendar.isDate(savedWeekStartDate, inSameDayAs: currentWeekStart) {
+                weeklyStudyMinutes = 0
+                UserDefaults.standard.set(currentWeekStart, forKey: weekStartDateKey)
+                saveData()
+            }
+        } else {
+            // If no start date is saved, save the current week's start date
+            UserDefaults.standard.set(currentWeekStart, forKey: weekStartDateKey)
+        }
+    }
+    
+    private func updateWeeklyStudyMinutes(minutes: Int) {
+        weeklyStudyMinutes += minutes
+        saveData()
+        
+        // Sync to CloudKit
+        syncWeeklyStudyDataToCloudKit(minutes: weeklyStudyMinutes)
+    }
+    
+    private func syncWeeklyStudyDataToCloudKit(minutes: Int) {
+        guard minutes > 0 else { return }
+        
+        // Get or create UserID
+        let defaultID = UUID().uuidString
+        #if os(iOS)
+        let deviceID = UIDevice.current.identifierForVendor?.uuidString ?? defaultID
+        #else
+        let deviceID = "mac-user-\(UUID().uuidString)"
+        #endif
+        
+        let userID = UserDefaults.standard.string(forKey: "UserID") ?? deviceID
+        
+        // Save userID if not already saved
+        if UserDefaults.standard.string(forKey: "UserID") == nil {
+            UserDefaults.standard.set(userID, forKey: "UserID")
+        }
+        
+        // Get the current week's start date
+        let calendar = Calendar.current
+        guard let weekStartDate = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date())) else {
+            return
+        }
+        
+        // Get username or use device name
+        #if os(iOS)
+        let deviceName = UIDevice.current.name
+        #else
+        let deviceName = Host.current().localizedName ?? "Mac User"
+        #endif
+        
+        let username = UserDefaults.standard.string(forKey: "Username") ?? deviceName
+        
+        // Create record ID with a deterministic key to avoid duplicates
+        let weekString = DateFormatter.localizedString(from: weekStartDate, dateStyle: .short, timeStyle: .none)
+        let recordID = CKRecord.ID(recordName: "\(userID)-\(weekString)")
+        let record = CKRecord(recordType: "weekly_Study_Data", recordID: recordID)
+        
+        // Use exact field names from CloudKit schema
+        record["userID"] = userID as CKRecordValue
+        record["weekStartDate"] = weekStartDate as CKRecordValue
+        record["totalMinutes"] = minutes as CKRecordValue
+        
+        // Create a proper daily_Minutes array (required field)
+        let today = Calendar.current.component(.weekday, from: Date()) - 1 // 0-based index (0 = Sunday)
+        var dailyMinutes = [0, 0, 0, 0, 0, 0, 0] // Initialize with zeros for each day
+        dailyMinutes[today] = minutes // Put all minutes on today
+        record["daily_Minutes"] = dailyMinutes as CKRecordValue
+        
+        print("DEBUG: Saving record with fields: userID=\(userID), totalMinutes=\(minutes), daily_Minutes=\(dailyMinutes)")
+        
+        // Save to CloudKit public database - use the correct container
+        let bundleID = Bundle.main.bundleIdentifier ?? "com.jameswilliams.Bit"
+        let containerID = "iCloud.\(bundleID)"
+        let container = CKContainer(identifier: containerID)
+        let publicDB = container.publicCloudDatabase
+        
+        publicDB.save(record) { (savedRecord, error) in
+            if let error = error {
+                print("Error saving weekly study data to CloudKit: \(error.localizedDescription)")
+            } else {
+                print("Successfully saved weekly study data to CloudKit: \(minutes) minutes")
+            }
         }
     }
     

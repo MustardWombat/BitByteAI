@@ -1,11 +1,14 @@
 import SwiftUI
-import CloudKit  // Ensure CloudKit is imported
+import CloudKit
 
 struct FriendsView: View {
-    @State private var allUsers: [CKRecord] = []  // Stores fetched user records
+    @State private var allUsers: [CKRecord] = []
     @State private var isLoadingUsers: Bool = false
-    @State private var weeklyStudyData: [String: Int] = [:] // Map userID to totalMinutes
-    private let friendsManager = FriendsManager()
+    @State private var weeklyStudyData: [String: Int] = [:]
+    @State private var username: String = ""
+    @State private var showingUsernamePrompt = false
+    @State private var errorMessage: String?
+    private let friendsManager = CloudFriendsManager()  // Changed from FriendsManager to CloudFriendsManager
     
     var body: some View {
         VStack {
@@ -14,76 +17,151 @@ struct FriendsView: View {
                 .bold()
                 .padding()
             
-            Text("Manage your friends and view all accounts:")
-                .font(.body)
-                .multilineTextAlignment(.center)
-                .padding()
+            if let errorMessage = errorMessage {
+                Text(errorMessage)
+                    .foregroundColor(.red)
+                    .padding()
+            }
             
             if isLoadingUsers {
-                ProgressView("Loading users...")
+                ProgressView("Loading friends data...")
             } else {
                 List {
-                    ForEach(allUsers, id: \.recordID) { record in
+                    // Show current user at the top
+                    if let userID = UserDefaults.standard.string(forKey: "UserID"), 
+                       let minutes = weeklyStudyData[userID] {
                         VStack(alignment: .leading) {
-                            Text(record["username"] as? String ?? "No Username")
+                            Text("\(UserDefaults.standard.string(forKey: "Username") ?? "You") (You)")
                                 .font(.headline)
-                            if let userID = record["userID"] as? String,
-                               let minutes = weeklyStudyData[userID] {
-                                Text("Weekly Study: \(minutes) minutes")
-                                    .font(.subheadline)
-                                    .foregroundColor(.gray)
-                            } else {
-                                Text("No study data available")
-                                    .font(.subheadline)
-                                    .foregroundColor(.red)
+                            Text("Weekly Study: \(minutes) minutes")
+                                .font(.subheadline)
+                                .foregroundColor(.green)
+                        }
+                        .padding(.vertical, 8)
+                    }
+                    
+                    // Show other users
+                    ForEach(allUsers, id: \.recordID) { record in
+                        if let userID = record["userID"] as? String, 
+                           UserDefaults.standard.string(forKey: "UserID") != userID {
+                            VStack(alignment: .leading) {
+                                Text(record["username"] as? String ?? "Unknown")
+                                    .font(.headline)
+                                if let minutes = weeklyStudyData[userID] {
+                                    Text("Weekly Study: \(minutes) minutes")
+                                        .font(.subheadline)
+                                        .foregroundColor(.gray)
+                                } else {
+                                    Text("No study data this week")
+                                        .font(.subheadline)
+                                        .foregroundColor(.gray)
+                                }
                             }
+                            .padding(.vertical, 8)
                         }
                     }
                 }
+                
+                Button(action: {
+                    fetchAllData()
+                }) {
+                    Label("Refresh Data", systemImage: "arrow.clockwise")
+                        .padding()
+                        .background(Color.blue.opacity(0.2))
+                        .cornerRadius(10)
+                }
+                .padding()
             }
-            
-            Spacer()
         }
         .background(Color.black.ignoresSafeArea())
         .foregroundColor(.white)
         .onAppear {
-            // Add yourself as an example user
-            let exampleUser = CKRecord(recordType: "User")
-            exampleUser["username"] = "James Williams" as CKRecordValue
-            exampleUser["userID"] = "example-user-id" as CKRecordValue
-            allUsers.append(exampleUser)
-
-            // Fetch real users from CloudKit
-            isLoadingUsers = true
-            friendsManager.fetchAllUsers { records, error in
-                DispatchQueue.main.async {
-                    isLoadingUsers = false
-                    if let records = records {
-                        allUsers.append(contentsOf: records)
-                        fetchStudyData()
-                    } else if let error = error {
-                        print("Error fetching users: \(error)")
+            checkUserRegistration()
+        }
+        .alert("Enter Your Username", isPresented: $showingUsernamePrompt) {
+            TextField("Username", text: $username)
+            Button("Save") {
+                createUser()
+            }
+        } message: {
+            Text("Please enter a username to identify yourself to other users.")
+        }
+    }
+    
+    private func checkUserRegistration() {
+        // First test CloudKit connection
+        isLoadingUsers = true
+        errorMessage = "Testing CloudKit connection..."
+        
+        friendsManager.testConnection { success, error in
+            DispatchQueue.main.async {
+                if success {
+                    errorMessage = nil
+                    if UserDefaults.standard.string(forKey: "UserID") == nil {
+                        showingUsernamePrompt = true
+                        isLoadingUsers = false
+                    } else {
+                        fetchAllData()
                     }
+                } else {
+                    isLoadingUsers = false
+                    errorMessage = "CloudKit error: \(error?.localizedDescription ?? "Unknown error")"
                 }
             }
         }
     }
-
-    private func fetchStudyData() {
+    
+    private func createUser() {
+        guard !username.isEmpty else {
+            showingUsernamePrompt = true
+            return
+        }
+        
+        isLoadingUsers = true
+        friendsManager.createUserRecord(username: username) { success, error in
+            DispatchQueue.main.async {
+                isLoadingUsers = false
+                if success {
+                    fetchAllData()
+                } else {
+                    errorMessage = "Failed to create user: \(error?.localizedDescription ?? "Unknown error")"
+                }
+            }
+        }
+    }
+    
+    private func fetchAllData() {
+        isLoadingUsers = true
+        fetchUsers {
+            fetchStudyData {
+                isLoadingUsers = false
+            }
+        }
+    }
+    
+    private func fetchUsers(completion: @escaping () -> Void) {
+        friendsManager.fetchAllUsers { records, error in
+            DispatchQueue.main.async {
+                if let records = records {
+                    allUsers = records
+                } else if let error = error {
+                    errorMessage = "Error fetching users: \(error.localizedDescription)"
+                }
+                completion()
+            }
+        }
+    }
+    
+    private func fetchStudyData(completion: @escaping () -> Void) {
         friendsManager.fetchWeeklyStudyData { data, error in
             DispatchQueue.main.async {
                 if let data = data {
                     weeklyStudyData = Dictionary(uniqueKeysWithValues: data.map { ($0.userID, $0.totalMinutes) })
                 } else if let error = error {
-                    print("Error fetching study data: \(error)")
+                    errorMessage = "Error fetching study data: \(error.localizedDescription)"
                 }
+                completion()
             }
         }
-    }
-}
-
-struct FriendsView_Previews: PreviewProvider {
-    static var previews: some View {
-        FriendsView()
     }
 }
