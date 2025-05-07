@@ -44,6 +44,14 @@ class CurrencyModel: ObservableObject {
             name: Notification.Name("ResetAllBoosts"),
             object: nil
         )
+        
+        // Add the missing observer for DepositCoins notification
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleCoinDeposit),
+            name: Notification.Name("DepositCoins"),
+            object: nil
+        )
     }
     
     @objc private func handleCoinBoost(notification: Notification) {
@@ -62,6 +70,14 @@ class CurrencyModel: ObservableObject {
     
     @objc private func resetAllBoosts(notification: Notification) {
         coinMultiplier = 1.0
+    }
+
+    // Add handler for coin deposit notification
+    @objc private func handleCoinDeposit(notification: Notification) {
+        if let amount = notification.userInfo?["amount"] as? Int {
+            print("CurrencyModel: Received \(amount) coins from notification")
+            deposit(amount)
+        }
     }
 
     func earn(amount: Int) {

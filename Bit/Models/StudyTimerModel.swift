@@ -166,7 +166,19 @@ class StudyTimerModel: ObservableObject {
         xpModel?.addXP(studiedTimeSeconds)
         
         if studiedTimeSeconds >= 300 {
+            // Award planet rewards
             calculateReward(using: studiedTimeSeconds)
+            
+            // Award coin rewards based on study time
+            let coinReward = RewardCalculator.calculateCoinReward(using: studiedTimeSeconds)
+            print("Awarding \(coinReward) coins for studying \(studiedTimeMinutes) minutes")
+            
+            // Use notification pattern to deposit coins - more decoupled approach
+            NotificationCenter.default.post(
+                name: Notification.Name("DepositCoins"),
+                object: nil,
+                userInfo: ["amount": coinReward]
+            )
         }
         
         if let topic = selectedTopic, let vm = categoriesVM {
@@ -223,22 +235,10 @@ class StudyTimerModel: ObservableObject {
     
     func calculateReward(using seconds: Int) {
         totalTimeStudied += seconds
-        var planetType: PlanetType
-        if seconds >= 1800 {
-            planetType = .rare
-        } else if seconds >= 900 {
-            planetType = .common
-        } else {
-            planetType = .tiny
-        }
+        let planetType = RewardCalculator.calculateReward(using: seconds, miningModel: miningModel)
         
         reward = planetType.rawValue
         earnedRewards.append(planetType.rawValue)
-        
-        if let planet = miningModel?.getPlanet(ofType: planetType) {
-            miningModel?.availablePlanets.append(planet)
-            print("Added planet: \(planet.name)")
-        }
     }
     
     func harvestRewards() -> Int {
