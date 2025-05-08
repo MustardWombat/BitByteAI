@@ -58,6 +58,12 @@ struct ProfileView: View {
     @State private var showImagePicker = false
     @State private var selectedPhotoItem: PhotosPickerItem? = nil
 
+    // Debugging state
+    @State private var showDebugInfo: Bool = false
+    @State private var userProfileData: [String: String] = [:]
+    @State private var userProgressData: [String: String] = [:]
+    @State private var isLoadingDebugData: Bool = false
+
     var body: some View {
         ScrollView {
             ZStack {
@@ -410,6 +416,102 @@ struct ProfileView: View {
                         .cornerRadius(8)
                     }
                     .padding()
+                    
+                    // Debug section
+                    VStack {
+                        HStack {
+                            Text("CloudKit Debug Info")
+                                .font(.headline)
+                            
+                            Spacer()
+                            
+                            Button(action: {
+                                withAnimation {
+                                    showDebugInfo.toggle()
+                                    if showDebugInfo {
+                                        loadDebugData()
+                                    }
+                                }
+                            }) {
+                                Image(systemName: showDebugInfo ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
+                                    .imageScale(.large)
+                            }
+                        }
+                        
+                        if showDebugInfo {
+                            if isLoadingDebugData {
+                                ProgressView("Loading data...")
+                            } else {
+                                VStack(alignment: .leading) {
+                                    Group {
+                                        Text("User Profile")
+                                            .font(.subheadline)
+                                            .bold()
+                                            .padding(.top, 4)
+                                        
+                                        if userProfileData.isEmpty {
+                                            Text("No profile data found")
+                                                .font(.caption)
+                                                .foregroundColor(.gray)
+                                        } else {
+                                            ForEach(Array(userProfileData.keys.sorted()), id: \.self) { key in
+                                                HStack {
+                                                    Text(key + ":")
+                                                        .font(.caption)
+                                                        .foregroundColor(.gray)
+                                                    Spacer()
+                                                    Text(userProfileData[key] ?? "")
+                                                        .font(.caption)
+                                                        .multilineTextAlignment(.trailing)
+                                                }
+                                                .padding(.vertical, 2)
+                                            }
+                                        }
+                                    }
+                                    
+                                    Divider()
+                                        .padding(.vertical, 8)
+                                    
+                                    Group {
+                                        Text("User Progress")
+                                            .font(.subheadline)
+                                            .bold()
+                                            .padding(.top, 4)
+                                        
+                                        if userProgressData.isEmpty {
+                                            Text("No progress data found")
+                                                .font(.caption)
+                                                .foregroundColor(.gray)
+                                        } else {
+                                            ForEach(Array(userProgressData.keys.sorted()), id: \.self) { key in
+                                                HStack {
+                                                    Text(key + ":")
+                                                        .font(.caption)
+                                                        .foregroundColor(.gray)
+                                                    Spacer()
+                                                    Text(userProgressData[key] ?? "")
+                                                        .font(.caption)
+                                                        .multilineTextAlignment(.trailing)
+                                                }
+                                                .padding(.vertical, 2)
+                                            }
+                                        }
+                                    }
+                                    
+                                    Button("Refresh Debug Data") {
+                                        loadDebugData()
+                                    }
+                                    .font(.caption)
+                                    .padding(.top, 8)
+                                }
+                            }
+                        }
+                    }
+                    .padding()
+                    .background(Color.black.opacity(0.1))
+                    .cornerRadius(8)
+                    .padding(.horizontal)
+                    .padding(.bottom, 40) // Extra padding at bottom
                 }
                 .alert(isPresented: $showAlert) {
                     Alert(title: Text("Profile Saved"), message: Text("Your profile info is saved to CloudKit."), dismissButton: .default(Text("OK")))
@@ -454,33 +556,82 @@ struct ProfileView: View {
 
     // --- CloudKit Sync ---
     private func saveProfileToCloudKit() {
-        let record = CKRecord(recordType: recordType, recordID: recordID)
-        record["name"] = name as CKRecordValue
-        record["username"] = username as CKRecordValue  // new username field
+        // Create a record with the right record type
+        let record = CKRecord(recordType: "UserProfile")
+        let userID = CloudKitManager.shared.getUserID()
+        
+        // Set the fields to match your CloudKit schema
+        record["userID"] = userID as CKRecordValue
+        record["username"] = username as CKRecordValue
+        record["displayName"] = name as CKRecordValue
+        record["lastLoginDate"] = Date() as CKRecordValue
+        
+        // Set creation date only if this is a new record
+        if isNewProfile() {
+            record["creationDate"] = Date() as CKRecordValue
+        }
+        
+        // Save profile image if available
+        if let profileImage = profileImage {
+            #if os(iOS)
+            if let imageData = profileImage.jpegData(compressionQuality: 0.7) {
+                let tempURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString + ".jpg")
+                try? imageData.write(to: tempURL)
+                
+                let imageAsset = CKAsset(fileURL: tempURL)
+                record["profileImage"] = imageAsset
+                
+                // Clean up the temp file after upload
+                DispatchQueue.global().async {
+                    try? FileManager.default.removeItem(at: tempURL)
+                }
+            }
+            #endif
+        }
 
         CKContainer.default().privateCloudDatabase.save(record) { _, error in
             if let error = error {
                 print("CloudKit save error: \(error)")
+            } else {
+                DispatchQueue.main.async {
+                    self.showAlert = true
+                }
             }
         }
     }
 
     private func loadProfileFromCloudKit() {
-        CKContainer.default().privateCloudDatabase.fetch(withRecordID: recordID) { record, error in
-            if let record = record,
-               let cloudName = record["name"] as? String,
-               !cloudName.isEmpty {
+        let userID = CloudKitManager.shared.getUserID()
+        let predicate = NSPredicate(format: "userID == %@", userID)
+        let query = CKQuery(recordType: "UserProfile", predicate: predicate)
+        
+        CKContainer.default().privateCloudDatabase.perform(query, inZoneWith: nil) { records, error in
+            if let records = records, let record = records.first {
                 DispatchQueue.main.async {
-                    self.name = cloudName
-                    self.username = record["username"] as? String ?? "" // load username from record
+                    self.name = record["displayName"] as? String ?? ""
+                    self.username = record["username"] as? String ?? ""
+                    
+                    // Load profile image if available - Fix the URL handling
+                    if let profileAsset = record["profileImage"] as? CKAsset,
+                       let fileURL = profileAsset.fileURL, // Safely unwrap the optional URL
+                       let imageData = try? Data(contentsOf: fileURL) {
+                        #if os(iOS)
+                        self.profileImage = UIImage(data: imageData)
+                        self.profileImageData = imageData
+                        #endif
+                    }
+                    
                     self.isSignedIn = true
                 }
-            } else if let ckError = error as? CKError, ckError.code == .unknownItem {
-                print("No CloudKit profile found.")
-            } else if let error = error {
-                print("CloudKit fetch error: \(error)")
+            } else if let ckError = error as? CKError {
+                print("CloudKit fetch error: \(ckError)")
             }
         }
+    }
+    
+    private func isNewProfile() -> Bool {
+        // Check if we've saved this profile before
+        return !UserDefaults.standard.bool(forKey: "hasCreatedCloudProfile")
     }
 
     private func signOut() {
@@ -491,23 +642,42 @@ struct ProfileView: View {
     }
 
     private func deleteProfileFromCloudKit() {
-        CKContainer.default().privateCloudDatabase.delete(withRecordID: recordID) { _, error in
-            if let error = error {
-                print("Error deleting CloudKit profile: \(error)")
-            } else {
-                print("CloudKit profile deleted.")
+        let userID = CloudKitManager.shared.getUserID()
+        let predicate = NSPredicate(format: "userID == %@", userID)
+        let query = CKQuery(recordType: "UserProfile", predicate: predicate)
+        
+        CKContainer.default().privateCloudDatabase.perform(query, inZoneWith: nil) { records, error in
+            if let records = records, let record = records.first {
+                CKContainer.default().privateCloudDatabase.delete(withRecordID: record.recordID) { _, error in
+                    if let error = error {
+                        print("Error deleting CloudKit profile: \(error)")
+                    } else {
+                        print("CloudKit profile deleted.")
+                        
+                        // Also delete progress data
+                        self.deleteProgressFromCloudKit()
+                    }
+                }
             }
         }
     }
-
-    private func signIn() {
-        #if os(iOS)
-        // iOS-specific Sign In with Apple implementation
-        #else
-        // Mac-specific implementation or fallback
-        isSignedIn = true
-        saveProfileToCloudKit()
-        #endif
+    
+    private func deleteProgressFromCloudKit() {
+        let userID = CloudKitManager.shared.getUserID()
+        let predicate = NSPredicate(format: "userID == %@", userID)
+        let query = CKQuery(recordType: "UserProgress", predicate: predicate)
+        
+        CKContainer.default().privateCloudDatabase.perform(query, inZoneWith: nil) { records, error in
+            if let records = records, let record = records.first {
+                CKContainer.default().privateCloudDatabase.delete(withRecordID: record.recordID) { _, error in
+                    if let error = error {
+                        print("Error deleting progress data: \(error)")
+                    } else {
+                        print("Progress data deleted.")
+                    }
+                }
+            }
+        }
     }
 
     private func updateNotifications() {
@@ -587,6 +757,110 @@ struct ProfileView: View {
         
         ProductivityTracker.shared.addSession(session)
         updateMLStatus()
+    }
+    
+    // Debug data loading functions
+    private func loadDebugData() {
+        isLoadingDebugData = true
+        userProfileData.removeAll()
+        userProgressData.removeAll()
+        
+        let userID = CloudKitManager.shared.getUserID()
+        loadUserProfileDebugData(userID: userID) {
+            loadUserProgressDebugData(userID: userID) {
+                DispatchQueue.main.async {
+                    self.isLoadingDebugData = false
+                }
+            }
+        }
+    }
+    
+    private func loadUserProfileDebugData(userID: String, completion: @escaping () -> Void) {
+        let predicate = NSPredicate(format: "userID == %@", userID)
+        let query = CKQuery(recordType: "UserProfile", predicate: predicate)
+        
+        CKContainer.default().privateCloudDatabase.perform(query, inZoneWith: nil) { records, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    self.userProfileData["Error"] = error.localizedDescription
+                    completion()
+                    return
+                }
+                
+                if let record = records?.first {
+                    // Convert all fields to string representation
+                    for (key, value) in record.allValues() {
+                        if key == "profileImage", let asset = value as? CKAsset {
+                            self.userProfileData[key] = "[Image Asset: \(asset.fileURL?.lastPathComponent)]"
+                        } else {
+                            self.userProfileData[key] = String(describing: value)
+                        }
+                    }
+                    
+                    // Add record metadata
+                    self.userProfileData["recordID"] = record.recordID.recordName
+                    self.userProfileData["creationDate"] = record.creationDate?.description ?? "N/A"
+                    self.userProfileData["modificationDate"] = record.modificationDate?.description ?? "N/A"
+                } else {
+                    self.userProfileData["Status"] = "No profile record found"
+                }
+                
+                completion()
+            }
+        }
+    }
+    
+    private func loadUserProgressDebugData(userID: String, completion: @escaping () -> Void) {
+        let predicate = NSPredicate(format: "userID == %@", userID)
+        let query = CKQuery(recordType: "UserProgress", predicate: predicate)
+        
+        CKContainer.default().privateCloudDatabase.perform(query, inZoneWith: nil) { records, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    self.userProgressData["Error"] = error.localizedDescription
+                    completion()
+                    return
+                }
+                
+                if let record = records?.first {
+                    // Convert all fields to string representation
+                    for (key, value) in record.allValues() {
+                        if key == "daily_Minutes", let minutes = value as? [Int] {
+                            let daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+                            var formattedMinutes = ""
+                            for (index, min) in minutes.enumerated() {
+                                if index < daysOfWeek.count {
+                                    formattedMinutes += "\(daysOfWeek[index]): \(min)min "
+                                }
+                            }
+                            self.userProgressData[key] = formattedMinutes
+                        } else {
+                            self.userProgressData[key] = String(describing: value)
+                        }
+                    }
+                    
+                    // Add record metadata
+                    self.userProgressData["recordID"] = record.recordID.recordName
+                    self.userProgressData["creationDate"] = record.creationDate?.description ?? "N/A"
+                    self.userProgressData["modificationDate"] = record.modificationDate?.description ?? "N/A"
+                } else {
+                    self.userProgressData["Status"] = "No progress record found"
+                }
+                
+                completion()
+            }
+        }
+    }
+}
+
+// Add extension to help with CloudKit record values
+extension CKRecord {
+    func allValues() -> [String: Any] {
+        var result: [String: Any] = [:]
+        for key in allKeys() {
+            result[key] = self[key]
+        }
+        return result
     }
 }
 
