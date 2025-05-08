@@ -41,16 +41,10 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		4F95C6752DA30F4A00839484 /* Exceptions for "Bit" folder in "StudyTimerWidgetExtensionExtension" target */ = {
+		4FC244CD2DCD76C60068ABC0 /* Exceptions for "Bit" folder in "Bit" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Shared/StudyTimerAttributes.swift,
-			);
-			target = 4F95C6522DA30C7F00839484 /* StudyTimerWidgetExtensionExtension */;
-		};
-		4FA5A28C2DC435B100B81810 /* Exceptions for "Bit" folder in "Bit" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
+				App/Config/Info.plist,
 				Config/Info.plist,
 			);
 			target = 4FEA9AFB2D8E205B00D8B37B /* Bit */;
@@ -66,8 +60,7 @@
 		4FEA9AFE2D8E205B00D8B37B /* Bit */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				4FA5A28C2DC435B100B81810 /* Exceptions for "Bit" folder in "Bit" target */,
-				4F95C6752DA30F4A00839484 /* Exceptions for "Bit" folder in "StudyTimerWidgetExtensionExtension" target */,
+				4FC244CD2DCD76C60068ABC0 /* Exceptions for "Bit" folder in "Bit" target */,
 			);
 			path = Bit;
 			sourceTree = "<group>";
@@ -554,7 +547,7 @@
 				CODE_SIGN_ENTITLEMENTS = Bit/Bit.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"Bit/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = T2QU3K3AV8;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -567,6 +560,7 @@
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = "Launch Screen";
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -597,7 +591,7 @@
 				CODE_SIGN_ENTITLEMENTS = Bit/Bit.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"Bit/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = T2QU3K3AV8;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -610,6 +604,7 @@
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = "Launch Screen";
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";

@@ -1,3 +1,9 @@
+//  ContentView.swift
+//  BitByteAI
+//
+//  Last edited 05/08/25.
+//
+
 import SwiftUI
 import WidgetKit
 import CloudKit
