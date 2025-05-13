@@ -556,64 +556,144 @@ struct ProfileView: View {
 
     // --- CloudKit Sync ---
     private func saveProfileToCloudKit() {
-        // Create a record with the right record type
-        let record = CKRecord(recordType: "UserProfile")
-        let userID = CloudKitManager.shared.getUserID()
-        
-        // Set the fields to match your CloudKit schema
-        record["userID"] = userID as CKRecordValue
-        record["username"] = username as CKRecordValue
-        record["displayName"] = name as CKRecordValue
-        record["lastLoginDate"] = Date() as CKRecordValue
-        
-        // Set creation date only if this is a new record
-        if isNewProfile() {
-            record["creationDate"] = Date() as CKRecordValue
-        }
-        
-        // Save profile image if available
-        if let profileImage = profileImage {
-            #if os(iOS)
-            if let imageData = profileImage.jpegData(compressionQuality: 0.7) {
-                let tempURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString + ".jpg")
-                try? imageData.write(to: tempURL)
-                
-                let imageAsset = CKAsset(fileURL: tempURL)
-                record["profileImage"] = imageAsset
-                
-                // Clean up the temp file after upload
-                DispatchQueue.global().async {
-                    try? FileManager.default.removeItem(at: tempURL)
-                }
-            }
-            #endif
-        }
-
-        CKContainer.default().privateCloudDatabase.save(record) { _, error in
-            if let error = error {
-                print("CloudKit save error: \(error)")
+        // First check if signed into iCloud
+        CKContainer.default().accountStatus { status, error in
+            if status == .available {
+                self.fetchUserRecordIDAndSaveProfile()
             } else {
+                print("❌ iCloud account not available")
+                self.showAlert = true // Update alert message
+            }
+        }
+    }
+    
+    private func fetchUserRecordIDAndSaveProfile() {
+        print("🌩️ Starting profile save to CloudKit...")
+        
+        // Get the default CloudKit container
+        let container = CKContainer.default()
+        
+        // Fetch the user's record ID directly from CloudKit
+        container.fetchUserRecordID { recordID, error in
+            guard let recordID = recordID else {
+                print("🌩️❌ Error fetching user record ID: \(error?.localizedDescription ?? "Unknown error")")
+                return
+            }
+            
+            let userID = recordID.recordName
+            let privateDB = container.privateCloudDatabase
+            
+            // Create a record with the right record type
+            let record = CKRecord(recordType: "UserProfile")
+            
+            // Set the fields
+            record["userID"] = userID as CKRecordValue
+            record["username"] = self.username as CKRecordValue
+            record["displayName"] = self.name as CKRecordValue
+            record["lastLoginDate"] = Date() as CKRecordValue
+            
+            // Save profile image
+            if let profileImage = self.profileImage {
+                #if os(iOS)
+                if let imageData = profileImage.jpegData(compressionQuality: 0.7) {
+                    let tempURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString + ".jpg")
+                    try? imageData.write(to: tempURL)
+                    
+                    let imageAsset = CKAsset(fileURL: tempURL)
+                    record["profileImage"] = imageAsset
+                    
+                    // Clean up the temp file after upload
+                    DispatchQueue.global().async {
+                        try? FileManager.default.removeItem(at: tempURL)
+                    }
+                }
+                #endif
+            }
+            
+            print("🌩️ Using container: \(container.containerIdentifier ?? "unknown")")
+            
+            // Update retry mechanism to be more robust
+            self.performCloudKitSave(record, on: privateDB, attempts: 0)
+        }
+    }
+    
+    private func performCloudKitSave(_ record: CKRecord, on database: CKDatabase, attempts: Int) {
+        if attempts >= 3 {
+            DispatchQueue.main.async {
+                print("🌩️❌ Failed to save profile after 3 attempts")
+            }
+            return
+        }
+        
+        database.save(record) { savedRecord, error in
+            if let error = error {
+                let ckError = error as NSError
+                print("🌩️❌ CloudKit save error: \(error.localizedDescription), code: \(ckError.code)")
+                
+                // Retry for specific errors
+                if [CKError.networkUnavailable.rawValue, 
+                    CKError.serviceUnavailable.rawValue].contains(ckError.code) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                        print("🌩️ Retrying save, attempt \(attempts + 1)")
+                        self.performCloudKitSave(record, on: database, attempts: attempts + 1)
+                    }
+                }
+            } else {
+                print("🌩️✅ Profile saved successfully!")
                 DispatchQueue.main.async {
                     self.showAlert = true
+                    UserDefaults.standard.set(true, forKey: "hasCreatedCloudProfile")
+                    // Also cache the record ID for faster access
+                    UserDefaults.standard.set(record["userID"] as? String, forKey: "cachedCloudKitUserID")
                 }
             }
         }
     }
 
     private func loadProfileFromCloudKit() {
-        let userID = CloudKitManager.shared.getUserID()
+        CKContainer.default().accountStatus { (status, error) in
+            if status == .available {
+                self.fetchUserRecordIDAndLoadProfile()
+            } else {
+                print("🌩️❌ iCloud account not available for profile loading: \(status)")
+            }
+        }
+    }
+    
+    private func fetchUserRecordIDAndLoadProfile() {
+        // Try to use cached ID first for performance
+        if let cachedID = UserDefaults.standard.string(forKey: "cachedCloudKitUserID") {
+            self.queryProfileWithUserID(cachedID)
+            return
+        }
+        
+        // Otherwise fetch from CloudKit
+        CKContainer.default().fetchUserRecordID { recordID, error in
+            guard let recordID = recordID else {
+                print("🌩️❌ Error fetching user record ID: \(error?.localizedDescription ?? "Unknown error")")
+                return
+            }
+            
+            let userID = recordID.recordName
+            // Cache the ID for future use
+            UserDefaults.standard.set(userID, forKey: "cachedCloudKitUserID")
+            self.queryProfileWithUserID(userID)
+        }
+    }
+    
+    private func queryProfileWithUserID(_ userID: String) {
         let predicate = NSPredicate(format: "userID == %@", userID)
         let query = CKQuery(recordType: "UserProfile", predicate: predicate)
         
         CKContainer.default().privateCloudDatabase.perform(query, inZoneWith: nil) { records, error in
-            if let records = records, let record = records.first {
-                DispatchQueue.main.async {
+            DispatchQueue.main.async {
+                if let records = records, let record = records.first {
                     self.name = record["displayName"] as? String ?? ""
                     self.username = record["username"] as? String ?? ""
                     
-                    // Load profile image if available - Fix the URL handling
+                    // Load profile image if available
                     if let profileAsset = record["profileImage"] as? CKAsset,
-                       let fileURL = profileAsset.fileURL, // Safely unwrap the optional URL
+                       let fileURL = profileAsset.fileURL,
                        let imageData = try? Data(contentsOf: fileURL) {
                         #if os(iOS)
                         self.profileImage = UIImage(data: imageData)
@@ -622,27 +702,33 @@ struct ProfileView: View {
                     }
                     
                     self.isSignedIn = true
+                } else if let ckError = error as? CKError {
+                    print("🌩️❌ CloudKit fetch error: \(ckError)")
                 }
-            } else if let ckError = error as? CKError {
-                print("CloudKit fetch error: \(ckError)")
             }
         }
     }
-    
-    private func isNewProfile() -> Bool {
-        // Check if we've saved this profile before
-        return !UserDefaults.standard.bool(forKey: "hasCreatedCloudProfile")
-    }
-
-    private func signOut() {
-        // Delete cloud-saved profile so that login state is cleared on relaunch.
-        deleteProfileFromCloudKit()
-        isSignedIn = false
-        name = ""
-    }
 
     private func deleteProfileFromCloudKit() {
-        let userID = CloudKitManager.shared.getUserID()
+        // Use the cached ID if available
+        if let cachedID = UserDefaults.standard.string(forKey: "cachedCloudKitUserID") {
+            self.queryAndDeleteProfileWithUserID(cachedID)
+            return
+        }
+        
+        // Otherwise fetch from CloudKit
+        CKContainer.default().fetchUserRecordID { recordID, error in
+            guard let recordID = recordID else {
+                print("🌩️❌ Error fetching user record ID for deletion: \(error?.localizedDescription ?? "Unknown error")")
+                return
+            }
+            
+            let userID = recordID.recordName
+            self.queryAndDeleteProfileWithUserID(userID)
+        }
+    }
+    
+    private func queryAndDeleteProfileWithUserID(_ userID: String) {
         let predicate = NSPredicate(format: "userID == %@", userID)
         let query = CKQuery(recordType: "UserProfile", predicate: predicate)
         
@@ -650,9 +736,12 @@ struct ProfileView: View {
             if let records = records, let record = records.first {
                 CKContainer.default().privateCloudDatabase.delete(withRecordID: record.recordID) { _, error in
                     if let error = error {
-                        print("Error deleting CloudKit profile: \(error)")
+                        print("🌩️❌ Error deleting CloudKit profile: \(error)")
                     } else {
-                        print("CloudKit profile deleted.")
+                        print("🌩️✅ CloudKit profile deleted.")
+                        
+                        // Clear cached user ID
+                        UserDefaults.standard.removeObject(forKey: "cachedCloudKitUserID")
                         
                         // Also delete progress data
                         self.deleteProgressFromCloudKit()
@@ -661,9 +750,9 @@ struct ProfileView: View {
             }
         }
     }
-    
+
     private func deleteProgressFromCloudKit() {
-        let userID = CloudKitManager.shared.getUserID()
+        let userID = UserDefaults.standard.string(forKey: "cachedCloudKitUserID") ?? ""
         let predicate = NSPredicate(format: "userID == %@", userID)
         let query = CKQuery(recordType: "UserProgress", predicate: predicate)
         
@@ -765,7 +854,7 @@ struct ProfileView: View {
         userProfileData.removeAll()
         userProgressData.removeAll()
         
-        let userID = CloudKitManager.shared.getUserID()
+        let userID = UserDefaults.standard.string(forKey: "cachedCloudKitUserID") ?? ""
         loadUserProfileDebugData(userID: userID) {
             loadUserProgressDebugData(userID: userID) {
                 DispatchQueue.main.async {
@@ -797,10 +886,10 @@ struct ProfileView: View {
                         }
                     }
                     
-                    // Add record metadata
+                    // Add record metadata - use the system property not a custom field
                     self.userProfileData["recordID"] = record.recordID.recordName
-                    self.userProfileData["creationDate"] = record.creationDate?.description ?? "N/A"
-                    self.userProfileData["modificationDate"] = record.modificationDate?.description ?? "N/A"
+                    self.userProfileData["systemCreationDate"] = record.creationDate?.description ?? "N/A"
+                    self.userProfileData["systemModificationDate"] = record.modificationDate?.description ?? "N/A"
                 } else {
                     self.userProfileData["Status"] = "No profile record found"
                 }
@@ -850,6 +939,26 @@ struct ProfileView: View {
                 completion()
             }
         }
+    }
+    
+    private func signOut() {
+        // Reset sign-in state
+        isSignedIn = false
+        
+        // Clear user data
+        name = ""
+        username = ""
+        profileImage = nil
+        profileImageData = nil
+        
+        // Clear cached data
+        UserDefaults.standard.removeObject(forKey: "cachedCloudKitUserID")
+        UserDefaults.standard.removeObject(forKey: "hasCreatedCloudProfile")
+        
+        // Optionally delete profile from CloudKit
+        deleteProfileFromCloudKit()
+        
+        showAlert = true // Show confirmation
     }
 }
 

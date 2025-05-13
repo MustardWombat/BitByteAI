@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 import Combine
+import CloudKit
 
 #if canImport(AppKit)
 import AppKit
@@ -105,26 +106,88 @@ class XPModel: ObservableObject {
     }
 
     func fetchFromICloud() {
+        print("🔍 XP: Starting XP fetch from iCloud...")
+        
+        // First try NSUbiquitousKeyValueStore
         let store = NSUbiquitousKeyValueStore.default
-        let cloudXP = store.object(forKey: xpKey) as? Int ?? 0
-        let cloudLevel = max(1, store.object(forKey: levelKey) as? Int ?? 1)
-        let cloudXPForNext = store.object(forKey: xpForNextLevelKey) as? Int ?? 0
+        store.synchronize()
         
-        // Merge local and cloud values by taking the higher ones
-        let mergedXP = max(xp, cloudXP)
-        let mergedLevel = max(level, cloudLevel)
-        let mergedXPForNext = max(xpForNextLevel, cloudXPForNext)
+        if let cloudXP = store.object(forKey: xpKey) as? Int {
+            print("🔍 XP: Found XP value in key-value store: \(cloudXP)")
+            
+            // Merge with local
+            let mergedXP = max(xp, cloudXP)
+            xp = mergedXP
+            
+            print("🔍 XP: Updated local XP to \(xp)")
+        } else {
+            print("🔍 XP: No XP found in key-value store")
+        }
         
-        xp = mergedXP
-        level = mergedLevel
-        xpForNextLevel = mergedXPForNext
+        // Also try CloudKit for testing
+        testCloudKitXPAccess()
+    }
+
+    private func testCloudKitXPAccess() {
+        print("🔍 XP: Testing CloudKit XP access...")
         
-        // Write back the merged values to both iCloud and local storage
-        saveToICloud()
-        let defaults = UserDefaults.standard
-        defaults.set(mergedXP, forKey: xpKey)
-        defaults.set(mergedLevel, forKey: levelKey)
-        defaults.set(mergedXPForNext, forKey: xpForNextLevelKey)
+        let container = CKContainer.default()
+        print("🔍 XP: Using container: \(container.containerIdentifier ?? "unknown")")
+        
+        let privateDB = container.privateCloudDatabase
+        
+        // 1. Try to create a simple test record for XP
+        let testXPRecord = CKRecord(recordType: "UserXP")
+        testXPRecord["xpValue"] = self.xp as CKRecordValue
+        testXPRecord["note"] = "Simple XP test" as CKRecordValue
+        
+        print("🔍 XP: Attempting to save XP record with value: \(self.xp)")
+        
+        privateDB.save(testXPRecord) { record, error in
+            if let error = error {
+                print("🔍 XP: CloudKit save error: \(error.localizedDescription)")
+                if let ckError = error as? CKError {
+                    print("🔍 XP: CKError code: \(ckError.errorCode)")
+                    
+                    // Print more specific error details
+                    switch ckError.errorCode {
+                    case CKError.serverRejectedRequest.rawValue:
+                        print("🔍 XP: Server rejected request - check your schema")
+                    case CKError.notAuthenticated.rawValue:
+                        print("🔍 XP: Not authenticated - check iCloud login")
+                    case CKError.zoneNotFound.rawValue:
+                        print("🔍 XP: Zone not found - check zone configuration")
+                    case CKError.permissionFailure.rawValue:
+                        print("🔍 XP: Permission failure - check entitlements")
+                    case CKError.networkUnavailable.rawValue:
+                        print("🔍 XP: Network unavailable - check connectivity")
+                    default:
+                        print("🔍 XP: Other error code: \(ckError.errorCode)")
+                    }
+                }
+            } else {
+                print("🔍 XP: Successfully saved XP record to CloudKit!")
+                
+                // Try to fetch it back immediately
+                privateDB.fetch(withRecordID: testXPRecord.recordID) { fetchedRecord, error in
+                    if let error = error {
+                        print("🔍 XP: Error fetching XP record: \(error.localizedDescription)")
+                    } else if let record = fetchedRecord,
+                              let xpValue = record["xpValue"] as? Int {
+                        print("🔍 XP: Successfully fetched XP value: \(xpValue)")
+                        
+                        // Clean up the test record
+                        privateDB.delete(withRecordID: record.recordID) { _, error in
+                            if let error = error {
+                                print("🔍 XP: Error cleaning up XP record: \(error.localizedDescription)")
+                            } else {
+                                print("🔍 XP: Successfully deleted test XP record")
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     func loadData() {

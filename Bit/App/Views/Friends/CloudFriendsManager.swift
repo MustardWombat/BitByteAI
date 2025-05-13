@@ -7,14 +7,8 @@ class CloudFriendsManager {
     private let isCloudAvailable: Bool
     
     init(containerIdentifier: String? = nil) {
-        // Determine the app's real bundle ID and use it for the container
-        let bundleID = Bundle.main.bundleIdentifier ?? "com.jameswilliams.Bit"
-        let containerID = containerIdentifier ?? "iCloud.\(bundleID)"
-        
-        print("DEBUG: App bundle ID: \(bundleID)")
-        print("DEBUG: Using container ID: \(containerID)")
-        
-        container = CKContainer(identifier: containerID)
+        // Always use the default container from entitlements
+        container = CKContainer.default()
         
         // Check if CloudKit is available
         isCloudAvailable = FileManager.default.ubiquityIdentityToken != nil
@@ -262,5 +256,14 @@ class CloudFriendsManager {
             }
             return (userID, totalMinutes)
         }
+    }
+    
+    private func syncWeeklyStudyDataToCloudKit(minutes: Int) {
+        // Use the default container directly
+        let container = CKContainer.default()
+        let publicDB = container.publicCloudDatabase
+        
+        // Implementation for syncing weekly study data to CloudKit
+        // Add your logic here
     }
 }

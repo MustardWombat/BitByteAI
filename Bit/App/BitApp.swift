@@ -229,14 +229,120 @@ struct BitAppView: View {
 
 @main
 struct CosmosApp: App {
+    init() {
+        // Initialize CloudKit properly at app launch
+        setupCloudKit()
+    }
+    
     var body: some Scene {
         WindowGroup {
             BitAppView()
                 .preferredColorScheme(.dark)  // Forces everything into Dark Mode
                 .onAppear {
-                    NSUbiquitousKeyValueStore.default.synchronize()
+                    // Test CloudKit specifically
+                    testCloudKitAccess()
                 }
         }
+    }
+    
+    private func testCloudKitAccess() {
+        print("🔍 CLOUDKIT TEST: Starting test...")
+        
+        // 1. Verify container access
+        let container = CKContainer.default()
+        print("🔍 CLOUDKIT TEST: Using default container: \(container.containerIdentifier ?? "unknown")")
+        
+        // 2. Check account status
+        container.accountStatus { status, error in
+            if let error = error {
+                print("🔍 CLOUDKIT TEST: Account error: \(error.localizedDescription)")
+            } else {
+                print("🔍 CLOUDKIT TEST: Account status: \(status.rawValue) - \(status)")
+                
+                // 3. Test private database access
+                let privateDB = container.privateCloudDatabase
+                print("🔍 CLOUDKIT TEST: Got private database")
+                
+                // 4. Create a simple test record
+                let testRecord = CKRecord(recordType: "TestRecord")
+                testRecord["testValue"] = "Testing CloudKit access" as CKRecordValue
+                testRecord["timestamp"] = Date() as CKRecordValue
+                
+                // 5. Save the test record
+                privateDB.save(testRecord) { record, error in
+                    if let error = error {
+                        print("🔍 CLOUDKIT TEST: Error saving test record: \(error.localizedDescription)")
+                        if let ckError = error as? CKError {
+                            print("🔍 CLOUDKIT TEST: CKError code: \(ckError.errorCode)")
+                        }
+                    } else {
+                        print("🔍 CLOUDKIT TEST: Successfully saved test record!")
+                        
+                        // 6. Fetch the test record back
+                        privateDB.fetch(withRecordID: testRecord.recordID) { fetchedRecord, error in
+                            if let error = error {
+                                print("🔍 CLOUDKIT TEST: Error fetching test record: \(error.localizedDescription)")
+                            } else if let record = fetchedRecord {
+                                print("🔍 CLOUDKIT TEST: Successfully fetched test record: \(record["testValue"] ?? "no value")")
+                                
+                                // 7. Delete the test record to clean up
+                                privateDB.delete(withRecordID: record.recordID) { _, error in
+                                    if let error = error {
+                                        print("🔍 CLOUDKIT TEST: Error deleting test record: \(error.localizedDescription)")
+                                    } else {
+                                        print("🔍 CLOUDKIT TEST: Successfully deleted test record!")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    private func setupCloudKit() {
+        print("🌩️ CloudKit initialization starting...")
+        
+        // Clear any potential cached references
+        UserDefaults.standard.removeObject(forKey: "com.apple.cloudkit.containers")
+        
+        // Use the default container - don't specify a custom identifier
+        let container = CKContainer.default()
+        print("🌩️ Container identifier: \(container.containerIdentifier ?? "unknown")")
+        
+        // Check account status to verify CloudKit is working
+        container.accountStatus { status, error in
+            if let error = error {
+                print("🌩️❌ CloudKit error: \(error.localizedDescription)")
+            } else {
+                print("🌩️✅ CloudKit status: \(status.rawValue)")
+                
+                // Initialize our shared container reference
+                _ = CloudKitContainer.shared
+                print("🌩️ CloudKitContainer.shared initialized")
+            }
+        }
+        
+        // Initialize key-value store
+        let store = NSUbiquitousKeyValueStore.default
+        store.synchronize()
+        print("🌩️ Key-value store initialized")
+    }
+}
+
+// Update the CloudKitContainer class to use the default container
+class CloudKitContainer {
+    static let shared = CloudKitContainer()
+    
+    let container: CKContainer
+    let privateDB: CKDatabase
+    
+    private init() {
+        // Use the default container from the entitlements file
+        self.container = CKContainer.default()
+        self.privateDB = container.privateCloudDatabase
+        print("🌩️ CloudKitContainer initialized with: \(container.containerIdentifier ?? "unknown")")
     }
 }
 

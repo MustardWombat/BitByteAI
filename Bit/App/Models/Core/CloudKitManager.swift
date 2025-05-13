@@ -9,8 +9,40 @@ import AppKit
 class CloudKitManager {
     static let shared = CloudKitManager()
     
-    // Use the default container
-    let container = CKContainer.default()
+    // Use CloudKitContainer.shared instead of creating a new container
+    let container: CKContainer
+    
+    private init() {
+        // Use shared container to ensure consistency with what's in the entitlements
+        self.container = CKContainer.default()
+        print("🌩️ CloudKitManager initialized using default container: \(container.containerIdentifier ?? "unknown")")
+        
+        // Make sure a user ID exists
+        let _ = getUserID()
+        
+        // Check and report the container's status
+        checkContainerAvailability()
+    }
+    
+    // Add a method to check container availability
+    private func checkContainerAvailability() {
+        container.accountStatus { status, error in
+            if let error = error {
+                print("CloudKit container error: \(error.localizedDescription)")
+                return
+            }
+            
+            print("CloudKit account status: \(status)")
+            
+            // Check container permissions too
+            self.container.requestApplicationPermission(.userDiscoverability) { status, error in
+                print("CloudKit permission status: \(status.rawValue)")
+                if let error = error {
+                    print("CloudKit permission error: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
     
     // Get or create a user ID that remains consistent
     func getUserID() -> String {
@@ -130,7 +162,7 @@ class CloudKitManager {
         record["userID"] = userID as CKRecordValue
         record["username"] = username as CKRecordValue
         record["displayName"] = displayName as CKRecordValue
-        record["creationDate"] = Date() as CKRecordValue
+        // Remove creationDate - use CloudKit's system property instead
         record["lastLoginDate"] = Date() as CKRecordValue
         
         // Save profile image if available
@@ -143,7 +175,11 @@ class CloudKitManager {
         
         container.privateCloudDatabase.save(record) { (savedRecord, error) in
             if let error = error {
-                print("Error saving user profile: \(error)")
+                print("Error saving user profile: \(error.localizedDescription)")
+                // Print more detailed error info
+                let nsError = error as NSError
+                print("Error domain: \(nsError.domain), code: \(nsError.code)")
+                print("Error userInfo: \(nsError.userInfo)")
             } else {
                 print("User profile saved successfully")
             }
@@ -204,6 +240,95 @@ class CloudKitManager {
         }
     }
     #endif
+    
+    // Add a retry mechanism for container operations
+    func performWithRetry<T>(
+        operation: @escaping (CKDatabase, @escaping (T?, Error?) -> Void) -> Void,
+        completion: @escaping (T?, Error?) -> Void
+    ) {
+        // Get private database from shared container
+        let privateDB = container.privateCloudDatabase
+        
+        // Perform the operation with a retry mechanism
+        operation(privateDB) { result, error in
+            if let error = error as? CKError {
+                print("🌩️ CloudKit error: \(error.localizedDescription), code: \(error.errorCode)")
+                
+                switch error.errorCode {
+                case CKError.serviceUnavailable.rawValue,
+                     CKError.requestRateLimited.rawValue,
+                     CKError.zoneBusy.rawValue,
+                     CKError.networkUnavailable.rawValue:
+                    // These errors are retryable
+                    print("🌩️ Retrying CloudKit operation in 2 seconds...")
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        self.performWithRetry(operation: operation, completion: completion)
+                    }
+                default:
+                    // Non-retryable error
+                    completion(nil, error)
+                }
+            } else {
+                completion(result, error)
+            }
+        }
+    }
+    
+    // Add a focused XP-only sync method
+    func fetchOnlyXP(completion: @escaping (Int?, Error?) -> Void) {
+        print("🔍 CLOUDKIT: Starting focused XP fetch...")
+        
+        let userID = getUserID()
+        print("🔍 CLOUDKIT: Using user ID: \(userID)")
+        
+        let container = CKContainer.default()
+        print("🔍 CLOUDKIT: Using container: \(container.containerIdentifier ?? "unknown")")
+        
+        let privateDB = container.privateCloudDatabase
+        
+        // Create a query that looks for user progress records with this user ID
+        let predicate = NSPredicate(format: "userID == %@", userID)
+        let query = CKQuery(recordType: "UserProgress", predicate: predicate)
+        
+        print("🔍 CLOUDKIT: Executing query for UserProgress records...")
+        privateDB.perform(query, inZoneWith: nil) { records, error in
+            if let error = error {
+                print("🔍 CLOUDKIT: Error fetching XP: \(error.localizedDescription)")
+                if let ckError = error as? CKError {
+                    print("🔍 CLOUDKIT: Error code: \(ckError.errorCode)")
+                    
+                    if ckError.errorCode == CKError.unknownItem.rawValue {
+                        print("🔍 CLOUDKIT: Record type 'UserProgress' might not exist")
+                    }
+                }
+                completion(nil, error)
+                return
+            }
+            
+            if let records = records {
+                print("🔍 CLOUDKIT: Found \(records.count) UserProgress records")
+                
+                if let record = records.first {
+                    // List all available fields in the record
+                    print("🔍 CLOUDKIT: Available fields: \(record.allKeys().joined(separator: ", "))")
+                    
+                    if let xp = record["xp"] as? Int {
+                        print("🔍 CLOUDKIT: Found XP value: \(xp)")
+                        completion(xp, nil)
+                    } else {
+                        print("🔍 CLOUDKIT: No 'xp' field found in record")
+                        completion(nil, NSError(domain: "CloudKitManager", code: 100, userInfo: [NSLocalizedDescriptionKey: "No xp field in record"]))
+                    }
+                } else {
+                    print("🔍 CLOUDKIT: No records found")
+                    completion(nil, NSError(domain: "CloudKitManager", code: 101, userInfo: [NSLocalizedDescriptionKey: "No records found"]))
+                }
+            } else {
+                print("🔍 CLOUDKIT: No records returned")
+                completion(nil, NSError(domain: "CloudKitManager", code: 102, userInfo: [NSLocalizedDescriptionKey: "No records returned"]))
+            }
+        }
+    }
 }
 
 // Updated extension with proper methods for StudyTimerModel 
