@@ -90,13 +90,13 @@ struct LayoutShell: View {
     @State private var funFact: String = "Loading fun fact..." // Fun fact state
     @EnvironmentObject var timerModel: StudyTimerModel // Inject StudyTimerModel
     
-    
     // Define fixed heights for overlays
     private let topBarHeight: CGFloat = 100
     private let bottomBarHeight: CGFloat = 90
     
     var body: some View {
-        GeometryReader { geo in
+        ZStack {
+            // Main content including top bar
             VStack(spacing: 0) {
                 // Top Bar
                 ZStack {
@@ -105,12 +105,12 @@ struct LayoutShell: View {
                         .frame(height: topBarHeight)
                         .overlay(
                             LinearGradient(
-                                gradient: Gradient(colors: [Color.black.opacity(1.0), Color.black.opacity(0.05)]), // Adjusted gradient
+                                gradient: Gradient(colors: [Color.black.opacity(1.0), Color.black.opacity(0.05)]),
                                 startPoint: .top,
                                 endPoint: .bottom
                             )
                             .ignoresSafeArea(edges: .top)
-                        ) // Updated fading black effect
+                        )
                     VStack(spacing: 4) {
                         // --- Reordered Info row ---
                         HStack(spacing: 12) {
@@ -146,22 +146,40 @@ struct LayoutShell: View {
                     }
                 }
                 .frame(height: topBarHeight)
-                .zIndex(2) // Bring the top bar above the main content.
+                .zIndex(2)
                 
                 // Main Content
                 content
-                    .frame(maxWidth: .infinity, maxHeight: geo.size.height - topBarHeight - bottomBarHeight)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.bottom, bottomBarHeight) // Add padding to prevent content from being hidden behind bottom bar
+            }
+            
+            // Bottom bar overlay - positioned using VStack and Spacer
+            VStack {
+                Spacer() // Pushes the bottom bar to the bottom
                 
-                // Bottom Bar
                 BottomBar(currentView: $currentView)
                     .frame(height: bottomBarHeight)
-                    .ignoresSafeArea(edges: .bottom)
-                    .zIndex(2) // Ensure the bottom bar stays above the content.
+                    .background(
+                        Color.black.opacity(0.65)
+                            .adaptiveCornerRadius(20, corners: [.topLeft, .topRight])
+                            .shadow(color: Color.black.opacity(0.8), radius: 10, x: 0, y: -5)
+                    )
             }
-            .frame(width: geo.size.width, height: geo.size.height)
+            .ignoresSafeArea(.keyboard, edges: .bottom) // This is key - ignore keyboard adjustments
         }
+        .edgesIgnoringSafeArea(.bottom)
         .onAppear {
             updateXPValues()
+            
+            #if os(iOS)
+            // Set up keyboard avoidance behavior
+            NotificationCenter.default.addObserver(
+                forName: UIApplication.keyboardWillShowNotification,
+                object: nil, queue: .main) { _ in
+                    // Do nothing - let the bar stay fixed
+            }
+            #endif
         }
     }
     
@@ -179,7 +197,6 @@ struct LayoutShell: View {
         currentXP = 150 // Example current XP value
         maxXP = 200 // Example max XP value
     }
-    
     
     // Updated MarqueeText view: scrolls until the text’s right edge passes the container’s left edge using a recursive animation
     struct MarqueeText: View {
@@ -225,70 +242,64 @@ struct LayoutShell: View {
             }
         }
     }
-    
-    // MARK: - BottomBar
-    struct BottomBar: View {
-        @Binding var currentView: String
-        
-        var body: some View {
-            HStack {
-                BottomBarButton(iconName: "house.fill", viewName: "Home", currentView: $currentView)
-                    .frame(maxWidth: .infinity)
-                BottomBarButton(iconName: "globe", viewName: "Planets", currentView: $currentView)
-                    .frame(maxWidth: .infinity)
-                BottomBarButton(iconName: "airplane", viewName: "Launch", currentView: $currentView) // Updated icon to "airplane"
-                    .frame(maxWidth: .infinity)
-                BottomBarButton(iconName: "cart.fill", viewName: "Shop", currentView: $currentView)
-                    .frame(maxWidth: .infinity)
-                BottomBarButton(iconName: "person.2.fill", viewName: "Friends", currentView: $currentView)
-                    .frame(maxWidth: .infinity)
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 10)
-            .padding(.bottom, 20)
-            .background(
-                Color.black.opacity(0.65)
-                    .adaptiveCornerRadius(20, corners: [.topLeft, .topRight])
-            )
-            .shadow(color: Color.black.opacity(0.8), radius: 10, x: 0, y: -5)
-            .frame(maxWidth: .infinity)
-            .ignoresSafeArea(edges: .bottom)
-        }
-    }
-    
-    // MARK: - BlurEffect Style (cross-platform)
-#if os(iOS)
-    typealias BlurEffectStyle = UIBlurEffect.Style
-#else
-    enum BlurEffectStyle {
-        case systemMaterial
-        case systemThinMaterial
-        case systemUltraThinMaterial
-        case systemThickMaterial
-        case systemChromeMaterial
-        case prominent
-        case regular
-    }
-#endif
-    
-    // MARK: - BlurView
-#if os(iOS)
-    struct BlurView: UIViewRepresentable {
-        var style: BlurEffectStyle
-        
-        func makeUIView(context: Context) -> UIVisualEffectView {
-            UIVisualEffectView(effect: UIBlurEffect(style: style))
-        }
-        
-        func updateUIView(_ uiView: UIVisualEffectView, context: Context) {}
-    }
-#else
-    struct BlurView: View {
-        var style: BlurEffectStyle
-        
-        var body: some View {
-            Color.gray.opacity(0.5) // Use a simple gray background as a fallback
-        }
-    }
-#endif
 }
+
+// MARK: - BottomBar
+struct BottomBar: View {
+    @Binding var currentView: String
+    
+    var body: some View {
+        HStack {
+            BottomBarButton(iconName: "house.fill", viewName: "Home", currentView: $currentView)
+                .frame(maxWidth: .infinity)
+            BottomBarButton(iconName: "globe", viewName: "Planets", currentView: $currentView)
+                .frame(maxWidth: .infinity)
+            BottomBarButton(iconName: "airplane", viewName: "Launch", currentView: $currentView) 
+                .frame(maxWidth: .infinity)
+            BottomBarButton(iconName: "cart.fill", viewName: "Shop", currentView: $currentView)
+                .frame(maxWidth: .infinity)
+            BottomBarButton(iconName: "person.2.fill", viewName: "Friends", currentView: $currentView)
+                .frame(maxWidth: .infinity)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 10)
+        .padding(.bottom, 20)
+        .frame(maxWidth: .infinity)
+    }
+}
+
+// MARK: - BlurEffect Style (cross-platform)
+#if os(iOS)
+typealias BlurEffectStyle = UIBlurEffect.Style
+#else
+enum BlurEffectStyle {
+    case systemMaterial
+    case systemThinMaterial
+    case systemUltraThinMaterial
+    case systemThickMaterial
+    case systemChromeMaterial
+    case prominent
+    case regular
+}
+#endif
+
+// MARK: - BlurView
+#if os(iOS)
+struct BlurView: UIViewRepresentable {
+    var style: BlurEffectStyle
+    
+    func makeUIView(context: Context) -> UIVisualEffectView {
+        UIVisualEffectView(effect: UIBlurEffect(style: style))
+    }
+    
+    func updateUIView(_ uiView: UIVisualEffectView, context: Context) {}
+}
+#else
+struct BlurView: View {
+    var style: BlurEffectStyle
+    
+    var body: some View {
+        Color.gray.opacity(0.5) // Use a simple gray background as a fallback
+    }
+}
+#endif
