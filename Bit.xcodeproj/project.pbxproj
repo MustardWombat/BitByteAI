@@ -46,6 +46,7 @@
 			membershipExceptions = (
 				App/Config/Info.plist,
 				Config/Info.plist,
+				"Launch Screen.storyboard",
 			);
 			target = 4FEA9AFB2D8E205B00D8B37B /* Bit */;
 		};

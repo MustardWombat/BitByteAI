@@ -77,7 +77,7 @@ struct ProfileView: View {
                     // Profile Picture Section
                     VStack {
                         if let profileImage = profileImage {
-                            Image(uiImage: profileImage)
+                            Image(nsImage: profileImage)
                                 .resizable()
                                 .scaledToFill()
                                 .frame(width: 100, height: 100)
@@ -959,6 +959,23 @@ struct ProfileView: View {
         deleteProfileFromCloudKit()
         
         showAlert = true // Show confirmation
+    }
+    
+    private func signIn() {
+        // Check if signed into iCloud
+        CKContainer.default().accountStatus { status, error in
+            DispatchQueue.main.async {
+                if status == .available {
+                    // User is signed in to iCloud
+                    isSignedIn = true
+                    saveProfileToCloudKit()
+                
+                } else {
+                    // Show an alert or handle the error
+                    print("❌ iCloud sign-in failed: \(error?.localizedDescription ?? "Unknown error")")
+                }
+            }
+        }
     }
 }
 
