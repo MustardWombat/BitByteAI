@@ -136,11 +136,11 @@ struct TaskListView: View {
                     return .automatic // Use automatic placement on macOS
                     #endif
                 }()) {
-                    Picker("Sort", selection: $taskModel.sortOption) {
-                        Text("Due Date").tag(TaskSortOption.dueDate)
-                        Text("Difficulty").tag(TaskSortOption.difficulty)
+                   // Picker("Sort", selection: $taskModel.sortOption) {
+                    //    Text("Due Date").tag(TaskSortOption.dueDate)
+                    //    Text("Difficulty").tag(TaskSortOption.difficulty)
                     }
-                    .pickerStyle(.segmented)
+                   // .pickerStyle(.segmented)
                 }
             }
         }
@@ -204,6 +204,5 @@ struct TaskListView: View {
             }
             .buttonStyle(PlainButtonStyle())
         }
-    } // Close SortButton struct
-} // Close TaskListView struct
+    }
 
