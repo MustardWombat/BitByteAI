@@ -24,7 +24,7 @@ struct MacMainView: View {
                     }
                     
                     NavigationLink(value: "Study") {
-                        Label("Study Timer", systemImage: "timer")
+                        Label("Study", systemImage: "timer")
                     }
                 }
                 
@@ -59,8 +59,8 @@ struct MacMainView: View {
                         HomeView(currentView: $selectedSection)
                     case "Planet":
                         PlanetView(currentView: $selectedSection)
-                   // case "Study":
-                        //  StudyView()
+                   case "Study":
+                        StudyTimerView()
                     case "Shop":
                         ShopView(currentView: $selectedSection)
                     case "Profile":
