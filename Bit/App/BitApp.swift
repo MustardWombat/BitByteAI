@@ -242,7 +242,15 @@ struct CosmosApp: App {
                     // Test CloudKit specifically
                     testCloudKitAccess()
                 }
+                // Set minimum window size
+                #if os(macOS)
+                .frame(minWidth: 800, minHeight: 600)
+                #endif
         }
+        #if os(macOS)
+        .windowResizability(.contentSize) // Respects the minimum content size
+        .defaultSize(width: 1000, height: 800) // Default window size on launch
+        #endif
     }
     
     private func testCloudKitAccess() {
