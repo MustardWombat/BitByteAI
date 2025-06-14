@@ -12,8 +12,8 @@ struct MainView: View {
                     switch currentView {
                     case "Home":
                         HomeView(currentView: $currentView)
-                    case "Planets":
-                        PlanetView(currentView: $currentView)
+                   // case "Planets":
+                     //   PlanetView(currentView: $currentView)
                     case "Launch":
                         LaunchView(currentView: $currentView) // Updated from "StudyView"
                     case "Shop":

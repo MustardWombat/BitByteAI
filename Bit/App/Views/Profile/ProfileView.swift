@@ -77,6 +77,15 @@ struct ProfileView: View {
                     // Profile Picture Section
                     VStack {
                         if let profileImage = profileImage {
+                            #if os(iOS)
+                            Image(uiImage: profileImage)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 100, height: 100)
+                                .clipShape(Circle())
+                                .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                                .shadow(radius: 5)
+                            #else
                             Image(nsImage: profileImage)
                                 .resizable()
                                 .scaledToFill()
@@ -84,6 +93,7 @@ struct ProfileView: View {
                                 .clipShape(Circle())
                                 .overlay(Circle().stroke(Color.white, lineWidth: 2))
                                 .shadow(radius: 5)
+                            #endif
                         } else {
                             Circle()
                                 .fill(Color.gray.opacity(0.5))

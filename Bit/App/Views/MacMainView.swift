@@ -1,5 +1,6 @@
 import SwiftUI
 
+#if os(macOS)
 struct MacMainView: View {
     @EnvironmentObject var categoriesVM: CategoriesViewModel
     @EnvironmentObject var xpModel: XPModel
@@ -19,7 +20,7 @@ struct MacMainView: View {
                         Label("Home", systemImage: "house")
                     }
                     
-                    NavigationLink(value: "Planet") {
+                    NavigationLink(value: "Tasks") {
                         Label("Tasks", systemImage: "list.bullet")
                     }
                     
@@ -57,8 +58,11 @@ struct MacMainView: View {
                     switch selectedSection {
                     case "Home":
                         HomeView(currentView: $selectedSection)
-                    case "Planet":
-                        PlanetView(currentView: $selectedSection)
+                    case "Tasks":
+                        TaskListView()
+                            .environmentObject(taskModel)
+                            .environmentObject(xpModel)
+                            .environmentObject(currencyModel)
                    case "Study":
                         StudyTimerView()
                     case "Shop":
@@ -86,3 +90,17 @@ struct MacMainView_Previews: PreviewProvider {
             .environmentObject(CurrencyModel())
     }
 }
+#else
+// Stub for non-macOS platforms
+struct MacMainView: View {
+    var body: some View {
+        Text("MacMainView is only available on macOS")
+    }
+}
+
+struct MacMainView_Previews: PreviewProvider {
+    static var previews: some View {
+        MacMainView()
+    }
+}
+#endif
