@@ -74,67 +74,73 @@ struct TaskListView: View {
                         }
                         
                         // --- Task List ---
-                        List {
-                            ForEach(taskModel.tasks.filter { task in
-                                if task.isCompleted, let done = task.completedAt {
-                                    return Date().timeIntervalSince(done) < 86400 // hide if completed over 1 day ago
-                                }
-                                return true
-                            }) { task in
-                                HStack {
-                                    // Replace the static image with a button for incomplete tasks
-                                    if task.isCompleted {
-                                        Image(systemName: "checkmark.circle.fill")
-                                            .foregroundColor(.green)
-                                    } else {
-                                        Button {
-                                            taskModel.completeTask(task, xpModel: xpModel, currencyModel: currencyModel)
-                                        } label: {
-                                            Image(systemName: "circle")
-                                                .foregroundColor(.gray)
-                                        }
-                                        .buttonStyle(PlainButtonStyle())
+                        ScrollView {
+                            LazyVStack(alignment: .leading, spacing: 8) {
+                                ForEach(taskModel.tasks.filter { task in
+                                    if task.isCompleted, let done = task.completedAt {
+                                        return Date().timeIntervalSince(done) < 86400 // hide if completed over 1 day ago
                                     }
-                                    VStack(alignment: .leading) {
-                                        Text(task.title)
-                                            .strikethrough(task.isCompleted)
-                                            .foregroundColor(task.isCompleted ? .gray : .white)
-                                        HStack(spacing: 8) {
-                                            // Difficulty
-                                            Text("⭐️\(task.difficulty)")
-                                                .font(.caption)
-                                                .foregroundColor(.yellow)
-                                            // Due Date (custom display)
-                                            if let due = task.dueDate {
-                                                Text(dueDateDisplay(due))
-                                                    .font(.caption)
-                                                    .foregroundColor(.orange)
+                                    return true
+                                }) { task in
+                                    HStack {
+                                        // Replace the static image with a button for incomplete tasks
+                                        if task.isCompleted {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .foregroundColor(.green)
+                                        } else {
+                                            Button {
+                                                taskModel.completeTask(task, xpModel: xpModel, currencyModel: currencyModel)
+                                            } label: {
+                                                Image(systemName: "circle")
+                                                    .foregroundColor(.gray)
                                             }
-                                            // XP/Coins for incomplete tasks
-                                            if !task.isCompleted {
-                                                Text("+\(task.xpReward) XP, +\(task.coinReward) Coins")
+                                            .buttonStyle(PlainButtonStyle())
+                                        }
+                                        VStack(alignment: .leading) {
+                                            Text(task.title)
+                                                .strikethrough(task.isCompleted)
+                                                .foregroundColor(task.isCompleted ? .gray : .white)
+                                            HStack(spacing: 8) {
+                                                // Difficulty
+                                                Text("⭐️\(task.difficulty)")
                                                     .font(.caption)
-                                                    .foregroundColor(.orange)
+                                                    .foregroundColor(.yellow)
+                                                // Due Date (custom display)
+                                                if let due = task.dueDate {
+                                                    Text(dueDateDisplay(due))
+                                                        .font(.caption)
+                                                        .foregroundColor(.orange)
+                                                }
+                                                // XP/Coins for incomplete tasks
+                                                if !task.isCompleted {
+                                                    Text("+\(task.xpReward) XP, +\(task.coinReward) Coins")
+                                                        .font(.caption)
+                                                        .foregroundColor(.orange)
+                                                }
                                             }
                                         }
-                                    }
-                                    Spacer()
-                                    // For completed tasks, show Delete button
-                                    if task.isCompleted {
-                                        Button(action: { taskModel.removeTask(task) }) {
-                                            Image(systemName: "trash")
-                                                .foregroundColor(.red)
+                                        Spacer()
+                                        // For completed tasks, show Delete button
+                                        if task.isCompleted {
+                                            Button(action: { taskModel.removeTask(task) }) {
+                                                Image(systemName: "trash")
+                                                    .foregroundColor(.red)
+                                            }
+                                            .buttonStyle(TransparentButtonStyle())
                                         }
-                                        .buttonStyle(TransparentButtonStyle())
                                     }
+                                    .padding(.vertical, 4)
+                                    .padding(.horizontal, 12)
+                                    .background(Color.black.opacity(0.3))
+                                    .cornerRadius(8)
                                 }
-                                .padding(.vertical, 4)
                             }
+                            .padding(.horizontal, 10)
                         }
-                        .listStyle(PlainListStyle())
+                        .background(Color.black)
                     }
-                    .padding(.vertical, 50)
-                    .frame(width: 800, height: 600) // Set default size to a normal rectangle
+                    .padding(.vertical, 20)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity) // Dynamic sizing
                 }
                 .padding(.horizontal, 5)
                 .background(Color.black) // Changed from .white to .black to match app theme
