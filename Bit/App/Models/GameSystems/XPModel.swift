@@ -27,6 +27,7 @@ class XPModel: ObservableObject {
 
     init() {
         loadData()
+        checkForLevelUp() // Add level-up check at startup
         isInitialLoadComplete = true
         fetchFromICloud() // new: load cloud data
         setupNotifications()
@@ -76,6 +77,11 @@ class XPModel: ObservableObject {
     func addXP(_ amount: Int) {
         let boostedAmount = Int(Double(amount) * upgradeMultiplier)
         xp += boostedAmount
+        checkForLevelUp()
+    }
+
+    // New method to check if XP exceeds requirement for level-up
+    func checkForLevelUp() {
         while xp >= xpForNextLevel {
             xp -= xpForNextLevel
             level += 1
