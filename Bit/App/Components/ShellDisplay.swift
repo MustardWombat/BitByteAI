@@ -133,16 +133,10 @@ struct LayoutShell: View {
                         }
                         .padding(.horizontal, 16)
                         .frame(maxWidth: .infinity)
-                        // Replace static text with scrolling fun fact for Home view
-                        if currentView == "Home" {
-                            MarqueeText(text: funFact)
-                                .font(.subheadline)
-                                .foregroundColor(.white)
-                        } else {
-                            Text(dynamicWelcomeText(for: currentView))
-                                .font(.subheadline)
-                                .foregroundColor(.white)
-                        }
+                        // Use MarqueeText for all views with the appropriate message
+                        MarqueeText(text: currentView == "Home" ? funFact : dynamicWelcomeText(for: currentView))
+                            .font(.subheadline)
+                            .foregroundColor(.white)
                     }
                 }
                 .frame(height: topBarHeight)
