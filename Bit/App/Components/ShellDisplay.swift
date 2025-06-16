@@ -179,7 +179,7 @@ struct LayoutShell: View {
     
     private func dynamicWelcomeText(for view: String) -> String {
         switch view {
-        case "Planets": return "Explore the galaxy!"
+        case "Tasks": return "Explore the galaxy!"
         case "Launch": return "Focus and achieve greatness!" // Updated from "Study"
         case "Shop": return "Upgrade your journey!"
         default: return "Welcome back, Commander!"
@@ -246,7 +246,7 @@ struct BottomBar: View {
         HStack {
             BottomBarButton(iconName: "house.fill", viewName: "Home", currentView: $currentView)
                 .frame(maxWidth: .infinity)
-            BottomBarButton(iconName: "globe", viewName: "Planets", currentView: $currentView)
+            BottomBarButton(iconName: "globe", viewName: "Tasks", currentView: $currentView)
                 .frame(maxWidth: .infinity)
             BottomBarButton(iconName: "airplane", viewName: "Launch", currentView: $currentView) 
                 .frame(maxWidth: .infinity)

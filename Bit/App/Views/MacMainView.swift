@@ -59,7 +59,7 @@ struct MacMainView: View {
                     case "Home":
                         HomeView(currentView: $selectedSection)
                     case "Tasks":
-                        TaskListView()
+                        TaskListView(currentView: $selectedSection)
                             .environmentObject(taskModel)
                             .environmentObject(xpModel)
                             .environmentObject(currencyModel)
