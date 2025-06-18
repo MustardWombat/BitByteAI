@@ -9,11 +9,11 @@ struct StudyTimerView: View {
     @State private var isShowingCategorySheet = false
     @State private var showSessionEndedPopup = false
     @State private var isShowingEditGoalView = false // Replace Apple popup state
+    @State private var isRocketOverlayActive = false   // New state flag for rocket overlay
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
-
+            // Main content wrapped with disabled modifier to lock interactions during focus mode
             VStack(spacing: 20) {
                 // Add padding to the top of the assets
                 VStack(alignment: .leading, spacing: 10) {
@@ -69,8 +69,9 @@ struct StudyTimerView: View {
                         timerModel.selectedTopic = categoriesVM.selectedTopic
                         timerModel.categoriesVM = categoriesVM
                         timerModel.startTimer(for: 25 * 60)
+                        isRocketOverlayActive = true // Activate rocket overlay on launch
                     }) {
-                        Text("Add 25 Min")
+                        Text("Launch")
                             .padding()
                             .frame(maxWidth: .infinity)
                             .background(categoriesVM.selectedTopic == nil ? Color.gray : Color.green)
@@ -96,6 +97,7 @@ struct StudyTimerView: View {
                 Spacer()
             }
             .padding()
+            .allowsHitTesting(!isRocketOverlayActive) // Disable hit testing when rocket overlay is active
             .onAppear {
                 if categoriesVM.selectedTopic == nil {
                     categoriesVM.selectedTopic = categoriesVM.loadSelectedTopic()
@@ -117,6 +119,56 @@ struct StudyTimerView: View {
                 if newValue == 0 && !timerModel.isTimerRunning {
                     showSessionEndedPopup = true
                 }
+            }
+
+            // Rocket overlay: full-screen pop-up window that covers the shell and locks interactions.
+            if isRocketOverlayActive {
+                ZStack {
+                    Color.black.edgesIgnoringSafeArea(.all) // Set background to black
+                    VStack {
+                        // Draggable handle similar to the sign-in screen style
+                        Capsule()
+                            .fill(Color.gray.opacity(0.5))
+                            .frame(width: 40, height: 6)
+                            .padding(.top, 16)
+                        
+                        Spacer()
+                        
+                        VStack(spacing: 20) {
+                            Image(systemName: "rocket.fill")
+                                .font(.system(size: 80))
+                                .foregroundColor(.blue)
+                                .scaleEffect(1.3)
+                                .transition(.scale)
+                            Text(formatTime(timerModel.timeRemaining))
+                                .font(.system(size: 64, weight: .bold, design: .monospaced))
+                                .foregroundColor(timerModel.isTimerRunning ? .green : .red)
+                            Button(action: {
+                                withAnimation(.spring()) {
+                                    timerModel.stopTimer()
+                                    isRocketOverlayActive = false
+                                }
+                            }) {
+                                Text("Land")
+                                    .padding()
+                                    .frame(maxWidth: .infinity)
+                                    .background(Color.red)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(10)
+                            }
+                        }
+                        
+                        Spacer()
+                    }
+                    .padding()
+                    .background(Color.black) // Set inner overlay background to black
+                    .cornerRadius(20)
+                    .shadow(radius: 10)
+                    .transition(.move(edge: .bottom))
+                }
+                .animation(.spring(), value: isRocketOverlayActive)
+                .zIndex(1000000) // Ensure it covers the shell
+                .allowsHitTesting(true) // Ensure the overlay intercepts all touches.
             }
 
             if isShowingCategorySheet {
