@@ -202,6 +202,18 @@ class CloudFriendsManager {
         }
     }
     
+    // Save weekly study data to CloudKit
+    func saveWeeklyStudyData(for userID: String, totalMinutes: Int, completion: @escaping (Error?) -> Void) {
+        let record = CKRecord(recordType: "WeeklyStudyData")
+        record["userID"] = userID as CKRecordValue
+        record["weekStartDate"] = Calendar.current.startOfDay(for: Date()) as CKRecordValue
+        record["totalMinutes"] = totalMinutes as CKRecordValue
+
+        container.publicCloudDatabase.save(record) { _, error in
+            completion(error)
+        }
+    }
+
     // MARK: - Cache Management
     
     private let usersCacheKey = "CachedUsers"

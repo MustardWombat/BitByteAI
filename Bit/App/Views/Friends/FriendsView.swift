@@ -8,7 +8,8 @@ struct FriendsView: View {
     @State private var username: String = ""
     @State private var showingUsernamePrompt = false
     @State private var errorMessage: String?
-    private let friendsManager = CloudFriendsManager()  // Changed from FriendsManager to CloudFriendsManager
+    @State private var showMine: Bool = false  // new toggle
+    private let friendsManager = CloudFriendsManager()
     
     var body: some View {
         VStack {
@@ -17,60 +18,87 @@ struct FriendsView: View {
                 .bold()
                 .padding()
             
-            if let errorMessage = errorMessage {
-                Text(errorMessage)
-                    .foregroundColor(.red)
-                    .padding()
+            // new segmented picker
+            Picker("", selection: $showMine) {
+                Text("Friends").tag(false)
+                Text("My Stats").tag(true)
             }
+            .pickerStyle(SegmentedPickerStyle())
+            .padding(.horizontal)
             
-            if isLoadingUsers {
-                ProgressView("Loading friends data...")
-            } else {
-                List {
-                    // Show current user at the top
-                    if let userID = UserDefaults.standard.string(forKey: "UserID"), 
-                       let minutes = weeklyStudyData[userID] {
-                        VStack(alignment: .leading) {
-                            Text("\(UserDefaults.standard.string(forKey: "Username") ?? "You") (You)")
-                                .font(.headline)
-                            Text("Weekly Study: \(minutes) minutes")
-                                .font(.subheadline)
-                                .foregroundColor(.green)
-                        }
-                        .padding(.vertical, 8)
+            if showMine {
+                // show only current user's stats, default to 0 if no record yet
+                if let userID = UserDefaults.standard.string(forKey: "UserID") {
+                    let minutes = weeklyStudyData[userID] ?? 0
+                    VStack(spacing: 16) {
+                        Text(UserDefaults.standard.string(forKey: "Username") ?? "You")
+                            .font(.title2)
+                            .bold()
+                        Text("Weekly Study: \(minutes) minutes")
+                            .font(.headline)
                     }
-                    
-                    // Show other users
-                    ForEach(allUsers, id: \.recordID) { record in
-                        if let userID = record["userID"] as? String, 
-                           UserDefaults.standard.string(forKey: "UserID") != userID {
+                    .padding()
+                } else {
+                    Text("No user registered")
+                        .foregroundColor(.gray)
+                        .padding()
+                }
+            } else {
+                if let errorMessage = errorMessage {
+                    Text(errorMessage)
+                        .foregroundColor(.red)
+                        .padding()
+                }
+                
+                if isLoadingUsers {
+                    ProgressView("Loading friends data...")
+                } else {
+                    List {
+                        // Show current user at the top
+                        if let userID = UserDefaults.standard.string(forKey: "UserID"), 
+                           let minutes = weeklyStudyData[userID] {
                             VStack(alignment: .leading) {
-                                Text(record["username"] as? String ?? "Unknown")
+                                Text("\(UserDefaults.standard.string(forKey: "Username") ?? "You") (You)")
                                     .font(.headline)
-                                if let minutes = weeklyStudyData[userID] {
-                                    Text("Weekly Study: \(minutes) minutes")
-                                        .font(.subheadline)
-                                        .foregroundColor(.gray)
-                                } else {
-                                    Text("No study data this week")
-                                        .font(.subheadline)
-                                        .foregroundColor(.gray)
-                                }
+                                Text("Weekly Study: \(minutes) minutes")
+                                    .font(.subheadline)
+                                    .foregroundColor(.green)
                             }
                             .padding(.vertical, 8)
                         }
+                        
+                        // Show other users
+                        ForEach(allUsers, id: \.recordID) { record in
+                            if let userID = record["userID"] as? String, 
+                               UserDefaults.standard.string(forKey: "UserID") != userID {
+                                VStack(alignment: .leading) {
+                                    Text(record["username"] as? String ?? "Unknown")
+                                        .font(.headline)
+                                    if let minutes = weeklyStudyData[userID] {
+                                        Text("Weekly Study: \(minutes) minutes")
+                                            .font(.subheadline)
+                                            .foregroundColor(.gray)
+                                    } else {
+                                        Text("No study data this week")
+                                            .font(.subheadline)
+                                            .foregroundColor(.gray)
+                                    }
+                                }
+                                .padding(.vertical, 8)
+                            }
+                        }
                     }
+                    
+                    Button(action: {
+                        fetchAllData()
+                    }) {
+                        Label("Refresh Data", systemImage: "arrow.clockwise")
+                            .padding()
+                            .background(Color.blue.opacity(0.2))
+                            .cornerRadius(10)
+                    }
+                    .padding()
                 }
-                
-                Button(action: {
-                    fetchAllData()
-                }) {
-                    Label("Refresh Data", systemImage: "arrow.clockwise")
-                        .padding()
-                        .background(Color.blue.opacity(0.2))
-                        .cornerRadius(10)
-                }
-                .padding()
             }
         }
         .background(Color.black.ignoresSafeArea())
@@ -122,7 +150,14 @@ struct FriendsView: View {
             DispatchQueue.main.async {
                 isLoadingUsers = false
                 if success {
-                    fetchAllData()
+                    // seed a zero-minute entry for the new user
+                    if let userID = UserDefaults.standard.string(forKey: "UserID") {
+                        friendsManager.saveWeeklyStudyData(for: userID, totalMinutes: 0) { _ in
+                            fetchAllData()
+                        }
+                    } else {
+                        fetchAllData()
+                    }
                 } else {
                     errorMessage = "Failed to create user: \(error?.localizedDescription ?? "Unknown error")"
                 }
