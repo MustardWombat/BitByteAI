@@ -69,7 +69,9 @@ struct StudyTimerView: View {
                         timerModel.selectedTopic = categoriesVM.selectedTopic
                         timerModel.categoriesVM = categoriesVM
                         timerModel.startTimer(for: 25 * 60)
-                        isRocketOverlayActive = true // Activate rocket overlay on launch
+                        withAnimation(.spring()) { // Activate rocket overlay on session button press
+                            isRocketOverlayActive = true
+                        }
                     }) {
                         Text("Launch")
                             .padding()
@@ -121,56 +123,6 @@ struct StudyTimerView: View {
                 }
             }
 
-            // Rocket overlay: full-screen pop-up window that covers the shell and locks interactions.
-            if isRocketOverlayActive {
-                ZStack {
-                    Color.black.edgesIgnoringSafeArea(.all) // Set background to black
-                    VStack {
-                        // Draggable handle similar to the sign-in screen style
-                        Capsule()
-                            .fill(Color.gray.opacity(0.5))
-                            .frame(width: 40, height: 6)
-                            .padding(.top, 16)
-                        
-                        Spacer()
-                        
-                        VStack(spacing: 20) {
-                            Image(systemName: "rocket.fill")
-                                .font(.system(size: 80))
-                                .foregroundColor(.blue)
-                                .scaleEffect(1.3)
-                                .transition(.scale)
-                            Text(formatTime(timerModel.timeRemaining))
-                                .font(.system(size: 64, weight: .bold, design: .monospaced))
-                                .foregroundColor(timerModel.isTimerRunning ? .green : .red)
-                            Button(action: {
-                                withAnimation(.spring()) {
-                                    timerModel.stopTimer()
-                                    isRocketOverlayActive = false
-                                }
-                            }) {
-                                Text("Land")
-                                    .padding()
-                                    .frame(maxWidth: .infinity)
-                                    .background(Color.red)
-                                    .foregroundColor(.white)
-                                    .cornerRadius(10)
-                            }
-                        }
-                        
-                        Spacer()
-                    }
-                    .padding()
-                    .background(Color.black) // Set inner overlay background to black
-                    .cornerRadius(20)
-                    .shadow(radius: 10)
-                    .transition(.move(edge: .bottom))
-                }
-                .animation(.spring(), value: isRocketOverlayActive)
-                .zIndex(1000000) // Ensure it covers the shell
-                .allowsHitTesting(true) // Ensure the overlay intercepts all touches.
-            }
-
             if isShowingCategorySheet {
                 CategorySelectionOverlay(
                     categories: $categoriesVM.categories, // updated: pass binding instead of value
@@ -213,6 +165,38 @@ struct StudyTimerView: View {
                 )
                 .transition(.opacity)
                 .zIndex(4)
+            }
+
+            if isRocketOverlayActive {
+                ZStack {
+                    Color.black.edgesIgnoringSafeArea(.all) // Full-screen background
+                    VStack(spacing: 20) {
+                        Image(systemName: "rocket.fill")
+                            .font(.system(size: 80))
+                            .foregroundColor(.blue)
+                            .scaleEffect(1.3)
+                        Text(formatTime(timerModel.timeRemaining))
+                            .font(.system(size: 64, weight: .bold, design: .monospaced))
+                            .foregroundColor(timerModel.isTimerRunning ? .green : .red)
+                        Button(action: {
+                            withAnimation(.spring()) {
+                                timerModel.stopTimer()
+                                isRocketOverlayActive = false
+                            }
+                        }) {
+                            Text("Land")
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                                .background(Color.red)
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
+                        }
+                    }
+                    .padding()
+                }
+                .animation(.spring(), value: isRocketOverlayActive)
+                .zIndex(1000000)
+                .allowsHitTesting(true)
             }
         }
     }
