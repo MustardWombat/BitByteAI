@@ -115,9 +115,7 @@ struct TaskCreationOverlay: View {
             }
         }
         .padding()
-        .background(Color.gray.opacity(0.9))
-        .cornerRadius(12)
-        .shadow(radius: 10)
-        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.black.opacity(0.8).edgesIgnoringSafeArea(.all))
     }
 }
