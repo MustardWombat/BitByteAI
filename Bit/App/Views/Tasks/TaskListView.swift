@@ -166,12 +166,6 @@ struct TaskListView: View {
             // Standard navigation for iOS
             NavigationView {
                 VStack(spacing: 16) {
-                    // Debug element to confirm content is visible
-                    Text("Tasks")
-                        .font(.largeTitle)
-                        .foregroundColor(.white)
-                        .padding(.top, 10)
-                    
                     let _ = print("🔍 DEBUG: Rendering iOS task content")
                     
                     // --- Top Row: Sort Dropdown and Add Button ---
@@ -200,8 +194,8 @@ struct TaskListView: View {
                             }
                             .padding(.vertical, 6)
                             .padding(.horizontal, 12)
-                            .background(Color.green.opacity(0.15))
-                            .cornerRadius(8)
+                            .background(Color.clear) // frame is transparent
+                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.green, lineWidth: 1))
                         }
                         .padding(.top, 10) // Reduced from 20
                         
@@ -221,15 +215,15 @@ struct TaskListView: View {
                             }
                             .padding(.vertical, 6)
                             .padding(.horizontal, 12)
-                            .background(Color.green.opacity(0.15))
-                            .cornerRadius(8)
+                            .background(Color.clear) // frame is transparent
+                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.green, lineWidth: 1))
                         }
                         .padding(.top, 10) // Reduced from 20
                         
                         Spacer()
                     }
                     .padding(.horizontal, 16)
-                    .background(Color.gray.opacity(0.2)) // Add background for visibility
+                    .background(Color.clear) // removed gray background behind buttons
                     
                     // --- Task List ---
                     List {
@@ -289,14 +283,13 @@ struct TaskListView: View {
                         }
                     }
                     .listStyle(PlainListStyle())
-                    .background(Color.black) // Explicit background
+                    .background(Color.clear) // Set transparent background
                     .onAppear {
                         print("🔍 DEBUG: List appeared with \(taskModel.tasks.count) tasks")
                     }
                 }
                 .padding(.horizontal, 10)
-                .background(Color.black.opacity(0.9)) // Make slightly transparent for debugging
-                .navigationBarTitle("Tasks", displayMode: .inline) // Add a title
+                .background(Color.clear) // Set transparent background
                 .toolbar {
                     ToolbarItem(placement: {
                         #if os(iOS)
