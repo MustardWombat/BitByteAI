@@ -84,10 +84,12 @@ struct TopShellSpritePlaceholder: View {
 struct LayoutShell: View {
     @Binding var currentView: String
     let content: AnyView
-    
-    @State private var currentXP: Int = 150 // Example current XP value
-    @State private var maxXP: Int = 200 // Example max XP value
-    @State private var funFact: String = "Loading fun fact..." // Fun fact state
+
+    // State for marquee text and XP display
+    @State private var funFact: String = "Loading fun fact..."
+    @State private var currentXP: Int = 0    // will be set in updateXPValues()
+    @State private var maxXP: Int = 0        // will be set in updateXPValues()
+
     @EnvironmentObject var timerModel: StudyTimerModel // Inject StudyTimerModel
     
     // Define fixed heights for overlays
@@ -161,6 +163,15 @@ struct LayoutShell: View {
                     )
             }
             .ignoresSafeArea(.keyboard, edges: .bottom) // This is key - ignore keyboard adjustments
+
+            // show rocket overlay when model flag is set
+            if timerModel.isRocketOverlayActive {
+                FocusOverlayView(isActive: $timerModel.isRocketOverlayActive,
+                                 timerModel: timerModel)
+                    .animation(.spring(), value: timerModel.isRocketOverlayActive)
+                    .zIndex(9999)
+                    .ignoresSafeArea()
+            }
         }
         .edgesIgnoringSafeArea(.bottom)
         .onAppear {

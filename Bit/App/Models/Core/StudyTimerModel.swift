@@ -61,6 +61,7 @@ class StudyTimerModel: ObservableObject {
     @Published var weeklyStudyMinutes: Int = 0 {
         didSet { saveData() }
     }
+    @Published var isRocketOverlayActive: Bool = false   // New shared rocket overlay flag
     
     // Track the user's focus level
     private var focusCheckCount: Int = 0

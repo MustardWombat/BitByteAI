@@ -9,7 +9,6 @@ struct StudyTimerView: View {
     @State private var isShowingCategorySheet = false
     @State private var showSessionEndedPopup = false
     @State private var isShowingEditGoalView = false // Replace Apple popup state
-    @State private var isRocketOverlayActive = false   // New state flag for rocket overlay
 
     var body: some View {
         ZStack {
@@ -69,8 +68,8 @@ struct StudyTimerView: View {
                         timerModel.selectedTopic = categoriesVM.selectedTopic
                         timerModel.categoriesVM = categoriesVM
                         timerModel.startTimer(for: 25 * 60)
-                        withAnimation(.spring()) { // Activate rocket overlay on session button press
-                            isRocketOverlayActive = true
+                        withAnimation(.spring()) {
+                            timerModel.isRocketOverlayActive = true
                         }
                     }) {
                         Text("Launch")
@@ -81,25 +80,13 @@ struct StudyTimerView: View {
                             .cornerRadius(10)
                     }
                     .disabled(categoriesVM.selectedTopic == nil) // Disable if no topic is selected
-
-                    Button(action: {
-                        timerModel.stopTimer()
-                    }) {
-                        Text("Land")
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(Color.red)
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
-                    }
-                    .disabled(!timerModel.isTimerRunning)
                 }
                 .padding()
 
                 Spacer()
             }
             .padding()
-            .allowsHitTesting(!isRocketOverlayActive) // Disable hit testing when rocket overlay is active
+            .allowsHitTesting(!timerModel.isRocketOverlayActive) // Disable hit testing when rocket overlay is active
             .onAppear {
                 if categoriesVM.selectedTopic == nil {
                     categoriesVM.selectedTopic = categoriesVM.loadSelectedTopic()
@@ -167,36 +154,12 @@ struct StudyTimerView: View {
                 .zIndex(4)
             }
 
-            if isRocketOverlayActive {
-                ZStack {
-                    Color.black.edgesIgnoringSafeArea(.all) // Full-screen background
-                    VStack(spacing: 20) {
-                        Image(systemName: "rocket.fill")
-                            .font(.system(size: 80))
-                            .foregroundColor(.blue)
-                            .scaleEffect(1.3)
-                        Text(formatTime(timerModel.timeRemaining))
-                            .font(.system(size: 64, weight: .bold, design: .monospaced))
-                            .foregroundColor(timerModel.isTimerRunning ? .green : .red)
-                        Button(action: {
-                            withAnimation(.spring()) {
-                                timerModel.stopTimer()
-                                isRocketOverlayActive = false
-                            }
-                        }) {
-                            Text("Land")
-                                .padding()
-                                .frame(maxWidth: .infinity)
-                                .background(Color.red)
-                                .foregroundColor(.white)
-                                .cornerRadius(10)
-                        }
-                    }
-                    .padding()
-                }
-                .animation(.spring(), value: isRocketOverlayActive)
-                .zIndex(1000000)
-                .allowsHitTesting(true)
+            if timerModel.isRocketOverlayActive {
+                FocusOverlayView(isActive: $timerModel.isRocketOverlayActive,
+                                 timerModel: timerModel)
+                    .animation(.spring(), value: timerModel.isRocketOverlayActive)
+                    .zIndex(1000000)
+                    .allowsHitTesting(true)
             }
         }
     }
