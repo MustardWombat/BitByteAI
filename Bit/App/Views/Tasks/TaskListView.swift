@@ -15,16 +15,192 @@ struct TaskListView: View {
         #endif
         
         ZStack {
-            #if os(macOS)
-            // Single column layout for macOS
-            NavigationView {
-                // Add this placeholder sidebar view to prevent the empty split view
-                Color.clear.frame(width: 1)
-                
-                GeometryReader { geometry in
-                    VStack(alignment: .leading, spacing: 16) {
+            // --- Empty state when no tasks exist ---
+            if taskModel.tasks.isEmpty {
+                VStack(spacing: 20) {
+                    Spacer()
+                    Text("No Tasks Yet")
+                        .font(.title)
+                        .foregroundColor(.white)
+                    Button {
+                        withAnimation(.spring()) {
+                            showTaskCreationOverlay = true
+                        }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.green)
+                            Text("Add Your First Task")
+                                .fontWeight(.medium)
+                                .foregroundColor(.green)
+                        }
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 12)
+                        .background(Color.green.opacity(0.15))
+                        .cornerRadius(8)
+                    }
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.black)
+            } else {
+                #if os(macOS)
+                // Single column layout for macOS
+                NavigationView {
+                    // Add this placeholder sidebar view to prevent the empty split view
+                    Color.clear.frame(width: 1)
+                    
+                    GeometryReader { geometry in
+                        VStack(alignment: .leading, spacing: 16) {
+                            // --- Top Row: Sort Dropdown and Add Button ---
+                            HStack(spacing: 0) { // zero gap
+                                // Sort Dropdown
+                                Menu {
+                                    Button {
+                                        taskModel.sortOption = .dueDate
+                                    } label: {
+                                        Label("Due Date", systemImage: "calendar")
+                                    }
+                                    Button {
+                                        taskModel.sortOption = .difficulty
+                                    } label: {
+                                        Label("Difficulty", systemImage: "flame.fill")
+                                    }
+                                } label: {
+                                    HStack(spacing: 4) { // tighter content
+                                        Image(systemName: sortIcon(for: taskModel.sortOption))
+                                            .foregroundColor(.green)
+                                        Text(sortLabel(for: taskModel.sortOption))
+                                            .foregroundColor(.green)
+                                        Image(systemName: "chevron.down")
+                                            .font(.caption)
+                                            .foregroundColor(.green)
+                                    }
+                                    .frame(maxWidth: .infinity) // fill half
+                                    .frame(height: 36) // fixed height
+                                    .background(Color.green.opacity(0.15))
+                                    .cornerRadius(8)
+                                }
+                                
+                                // Add New Task Button - Positioned right after the filter button
+                                Button {
+                                    withAnimation(.spring()) {
+                                        showTaskCreationOverlay = true
+                                    }
+                                } label: {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "plus.circle.fill")
+                                            .font(.system(size: 16, weight: .bold))
+                                            .foregroundColor(.green)
+                                        Text("Add Task")
+                                            .fontWeight(.medium)
+                                            .foregroundColor(.green)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 36)
+                                    .background(Color.green.opacity(0.15))
+                                    .cornerRadius(8)
+                                }
+                            }
+                            .frame(maxWidth: .infinity) // full width
+                            
+                            // --- Task List ---
+                            ScrollView {
+                                LazyVStack(alignment: .leading, spacing: 8) {
+                                    ForEach(taskModel.tasks.filter { task in
+                                        if task.isCompleted, let done = task.completedAt {
+                                            return Date().timeIntervalSince(done) < 86400 // hide if completed over 1 day ago
+                                        }
+                                        return true
+                                    }) { task in
+                                        HStack {
+                                            // Replace the static image with a button for incomplete tasks
+                                            if task.isCompleted {
+                                                Image(systemName: "checkmark.circle.fill")
+                                                    .foregroundColor(.green)
+                                            } else {
+                                                Button {
+                                                    taskModel.completeTask(task, xpModel: xpModel, currencyModel: currencyModel)
+                                                } label: {
+                                                    Image(systemName: "circle")
+                                                        .foregroundColor(.gray)
+                                                }
+                                                .buttonStyle(PlainButtonStyle())
+                                            }
+                                            VStack(alignment: .leading) {
+                                                Text(task.title)
+                                                    .strikethrough(task.isCompleted)
+                                                    .foregroundColor(task.isCompleted ? .gray : .white)
+                                                HStack(spacing: 8) {
+                                                    // Difficulty
+                                                    Text("⭐️\(task.difficulty)")
+                                                        .font(.caption)
+                                                        .foregroundColor(.yellow)
+                                                    // Due Date (custom display)
+                                                    if let due = task.dueDate {
+                                                        Text(dueDateDisplay(due))
+                                                            .font(.caption)
+                                                            .foregroundColor(.orange)
+                                                    }
+                                                    // XP/Coins for incomplete tasks
+                                                    if !task.isCompleted {
+                                                        Text("+\(task.xpReward) XP, +\(task.coinReward) Coins")
+                                                            .font(.caption)
+                                                            .foregroundColor(.orange)
+                                                    }
+                                                }
+                                            }
+                                            Spacer()
+                                            // For completed tasks, show Delete button
+                                            if task.isCompleted {
+                                                Button(action: { taskModel.removeTask(task) }) {
+                                                    Image(systemName: "trash")
+                                                        .foregroundColor(.red)
+                                                }
+                                                .buttonStyle(TransparentButtonStyle())
+                                            }
+                                        }
+                                        .padding(.vertical, 4)
+                                        .padding(.horizontal, 12)
+                                        .background(Color.black)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .stroke(borderColor(for: task.dueDate), lineWidth: 2)
+                                        )
+                                        .cornerRadius(12)
+                                    }
+                                }
+                                .padding(.horizontal, 10)
+                            }
+                            .background(Color.black)
+                        }
+                        .padding(.vertical, 20)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity) // Dynamic sizing
+                    }
+                    .padding(.horizontal, 5)
+                    .background(Color.black) // Changed from .white to .black to match app theme
+                    .toolbar {
+                        ToolbarItem(placement: {
+                            #if os(iOS)
+                            return .navigationBarLeading
+                            #else
+                            return .automatic // Use automatic placement on macOS
+                            #endif
+                        }()) {
+                            // Empty toolbar item - can be used later if needed
+                        }
+                    }
+                }
+                .navigationViewStyle(DefaultNavigationViewStyle())
+                #else
+                // Standard navigation for iOS
+                NavigationView {
+                    VStack(spacing: 16) {
+                        let _ = print("🔍 DEBUG: Rendering iOS task content")
+                        
                         // --- Top Row: Sort Dropdown and Add Button ---
-                        HStack(spacing: 20) {
+                        HStack(spacing: 0) { // zero gap
                             // Sort Dropdown
                             Menu {
                                 Button {
@@ -38,7 +214,7 @@ struct TaskListView: View {
                                     Label("Difficulty", systemImage: "flame.fill")
                                 }
                             } label: {
-                                HStack(spacing: 6) {
+                                HStack(spacing: 4) { // tighter content
                                     Image(systemName: sortIcon(for: taskModel.sortOption))
                                         .foregroundColor(.green)
                                     Text(sortLabel(for: taskModel.sortOption))
@@ -47,20 +223,18 @@ struct TaskListView: View {
                                         .font(.caption)
                                         .foregroundColor(.green)
                                 }
-                                .padding(.vertical, 6)
-                                .padding(.horizontal, 12)
-                                .background(Color.green.opacity(0.15))
-                                .cornerRadius(8)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 36)
+                                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.green, lineWidth: 1))
                             }
-                            .padding(.top, 20)
                             
-                            // Add New Task Button - Positioned right after the filter button
+                            // Add New Task Button
                             Button {
                                 withAnimation(.spring()) {
                                     showTaskCreationOverlay = true
                                 }
                             } label: {
-                                HStack(spacing: 6) {
+                                HStack(spacing: 4) {
                                     Image(systemName: "plus.circle.fill")
                                         .font(.system(size: 16, weight: .bold))
                                         .foregroundColor(.green)
@@ -68,248 +242,106 @@ struct TaskListView: View {
                                         .fontWeight(.medium)
                                         .foregroundColor(.green)
                                 }
-                                .padding(.vertical, 6)
-                                .padding(.horizontal, 12)
-                                .background(Color.green.opacity(0.15))
-                                .cornerRadius(8)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 36)
+                                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.green, lineWidth: 1))
                             }
-                            .padding(.top, 20)
-                            
-                            Spacer()
                         }
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, 16)
+                        .background(Color.clear) // removed gray background behind buttons
                         
                         // --- Task List ---
-                        ScrollView {
-                            LazyVStack(alignment: .leading, spacing: 8) {
-                                ForEach(taskModel.tasks.filter { task in
-                                    if task.isCompleted, let done = task.completedAt {
-                                        return Date().timeIntervalSince(done) < 86400 // hide if completed over 1 day ago
-                                    }
-                                    return true
-                                }) { task in
-                                    HStack {
-                                        // Replace the static image with a button for incomplete tasks
-                                        if task.isCompleted {
-                                            Image(systemName: "checkmark.circle.fill")
-                                                .foregroundColor(.green)
-                                        } else {
-                                            Button {
-                                                taskModel.completeTask(task, xpModel: xpModel, currencyModel: currencyModel)
-                                            } label: {
-                                                Image(systemName: "circle")
-                                                    .foregroundColor(.gray)
-                                            }
-                                            .buttonStyle(PlainButtonStyle())
+                        List {
+                            ForEach(taskModel.tasks.filter { task in
+                                if task.isCompleted, let done = task.completedAt {
+                                    let _ = print("🔍 DEBUG: Task \(task.title) is completed")
+                                    return Date().timeIntervalSince(done) < 86400
+                                }
+                                let _ = print("🔍 DEBUG: Task \(task.title) is shown")
+                                return true
+                            }) { task in
+                                HStack {
+                                    if task.isCompleted {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundColor(.green)
+                                    } else {
+                                        Button {
+                                            taskModel.completeTask(task, xpModel: xpModel, currencyModel: currencyModel)
+                                        } label: {
+                                            Image(systemName: "circle")
+                                                .foregroundColor(.gray)
                                         }
-                                        VStack(alignment: .leading) {
-                                            Text(task.title)
-                                                .strikethrough(task.isCompleted)
-                                                .foregroundColor(task.isCompleted ? .gray : .white)
-                                            HStack(spacing: 8) {
-                                                // Difficulty
-                                                Text("⭐️\(task.difficulty)")
+                                        .buttonStyle(PlainButtonStyle())
+                                    }
+                                    VStack(alignment: .leading) {
+                                        Text(task.title)
+                                            .strikethrough(task.isCompleted)
+                                            .foregroundColor(task.isCompleted ? .gray : .white)
+                                        HStack(spacing: 8) {
+                                            Text("⭐️\(task.difficulty)")
+                                                .font(.caption)
+                                                .foregroundColor(.yellow)
+                                            if let due = task.dueDate {
+                                                Text(dueDateDisplay(due))
                                                     .font(.caption)
-                                                    .foregroundColor(.yellow)
-                                                // Due Date (custom display)
-                                                if let due = task.dueDate {
-                                                    Text(dueDateDisplay(due))
-                                                        .font(.caption)
-                                                        .foregroundColor(.orange)
-                                                }
-                                                // XP/Coins for incomplete tasks
-                                                if !task.isCompleted {
-                                                    Text("+\(task.xpReward) XP, +\(task.coinReward) Coins")
-                                                        .font(.caption)
-                                                        .foregroundColor(.orange)
-                                                }
+                                                    .foregroundColor(.orange)
+                                            }
+                                            if !task.isCompleted {
+                                                Text("+\(task.xpReward) XP, +\(task.coinReward) Coins")
+                                                    .font(.caption)
+                                                    .foregroundColor(.orange)
                                             }
                                         }
-                                        Spacer()
-                                        // For completed tasks, show Delete button
-                                        if task.isCompleted {
-                                            Button(action: { taskModel.removeTask(task) }) {
-                                                Image(systemName: "trash")
-                                                    .foregroundColor(.red)
-                                            }
-                                            .buttonStyle(TransparentButtonStyle())
+                                    }
+                                    Spacer()
+                                    if task.isCompleted {
+                                        Button(action: { taskModel.removeTask(task) }) {
+                                            Image(systemName: "trash")
+                                                .foregroundColor(.red)
                                         }
-                                    }
-                                    .padding(.vertical, 4)
-                                    .padding(.horizontal, 12)
-                                    .background(Color.black.opacity(0.3))
-                                    .cornerRadius(8)
-                                }
-                            }
-                            .padding(.horizontal, 10)
-                        }
-                        .background(Color.black)
-                    }
-                    .padding(.vertical, 20)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity) // Dynamic sizing
-                }
-                .padding(.horizontal, 5)
-                .background(Color.black) // Changed from .white to .black to match app theme
-                .toolbar {
-                    ToolbarItem(placement: {
-                        #if os(iOS)
-                        return .navigationBarLeading
-                        #else
-                        return .automatic // Use automatic placement on macOS
-                        #endif
-                    }()) {
-                        // Empty toolbar item - can be used later if needed
-                    }
-                }
-            }
-            .navigationViewStyle(DefaultNavigationViewStyle())
-            #else
-            // Standard navigation for iOS
-            NavigationView {
-                VStack(spacing: 16) {
-                    let _ = print("🔍 DEBUG: Rendering iOS task content")
-                    
-                    // --- Top Row: Sort Dropdown and Add Button ---
-                    HStack(spacing: 20) {
-                        // Sort Dropdown
-                        Menu {
-                            Button {
-                                taskModel.sortOption = .dueDate
-                            } label: {
-                                Label("Due Date", systemImage: "calendar")
-                            }
-                            Button {
-                                taskModel.sortOption = .difficulty
-                            } label: {
-                                Label("Difficulty", systemImage: "flame.fill")
-                            }
-                        } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: sortIcon(for: taskModel.sortOption))
-                                    .foregroundColor(.green)
-                                Text(sortLabel(for: taskModel.sortOption))
-                                    .foregroundColor(.green)
-                                Image(systemName: "chevron.down")
-                                    .font(.caption)
-                                    .foregroundColor(.green)
-                            }
-                            .padding(.vertical, 6)
-                            .padding(.horizontal, 12)
-                            .background(Color.clear) // frame is transparent
-                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.green, lineWidth: 1))
-                        }
-                        .padding(.top, 10) // Reduced from 20
-                        
-                        // Add New Task Button
-                        Button {
-                            withAnimation(.spring()) {
-                                showTaskCreationOverlay = true
-                            }
-                        } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: "plus.circle.fill")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.green)
-                                Text("Add Task")
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.green)
-                            }
-                            .padding(.vertical, 6)
-                            .padding(.horizontal, 12)
-                            .background(Color.clear) // frame is transparent
-                            .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.green, lineWidth: 1))
-                        }
-                        .padding(.top, 10) // Reduced from 20
-                        
-                        Spacer()
-                    }
-                    .padding(.horizontal, 16)
-                    .background(Color.clear) // removed gray background behind buttons
-                    
-                    // --- Task List ---
-                    List {
-                        ForEach(taskModel.tasks.filter { task in
-                            if task.isCompleted, let done = task.completedAt {
-                                let _ = print("🔍 DEBUG: Task \(task.title) is completed")
-                                return Date().timeIntervalSince(done) < 86400
-                            }
-                            let _ = print("🔍 DEBUG: Task \(task.title) is shown")
-                            return true
-                        }) { task in
-                            HStack {
-                                if task.isCompleted {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundColor(.green)
-                                } else {
-                                    Button {
-                                        taskModel.completeTask(task, xpModel: xpModel, currencyModel: currencyModel)
-                                    } label: {
-                                        Image(systemName: "circle")
-                                            .foregroundColor(.gray)
-                                    }
-                                    .buttonStyle(PlainButtonStyle())
-                                }
-                                VStack(alignment: .leading) {
-                                    Text(task.title)
-                                        .strikethrough(task.isCompleted)
-                                        .foregroundColor(task.isCompleted ? .gray : .white)
-                                    HStack(spacing: 8) {
-                                        Text("⭐️\(task.difficulty)")
-                                            .font(.caption)
-                                            .foregroundColor(.yellow)
-                                        if let due = task.dueDate {
-                                            Text(dueDateDisplay(due))
-                                                .font(.caption)
-                                                .foregroundColor(.orange)
-                                        }
-                                        if !task.isCompleted {
-                                            Text("+\(task.xpReward) XP, +\(task.coinReward) Coins")
-                                                .font(.caption)
-                                                .foregroundColor(.orange)
-                                        }
+                                        .buttonStyle(TransparentButtonStyle())
                                     }
                                 }
-                                Spacer()
-                                if task.isCompleted {
-                                    Button(action: { taskModel.removeTask(task) }) {
-                                        Image(systemName: "trash")
-                                            .foregroundColor(.red)
-                                    }
-                                    .buttonStyle(TransparentButtonStyle())
-                                }
+                                .padding(.vertical, 8)
+                                .padding(.horizontal, 12)
+                                .background(Color.black)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(borderColor(for: task.dueDate), lineWidth: 2)
+                                )
+                                .listRowBackground(Color.black)
                             }
-                            .padding(.vertical, 4)
-                            .background(Color.gray.opacity(0.2)) // Add background for visibility
-                            .listRowBackground(Color.black) // Ensure the row background is visible
+                        }
+                        .listStyle(PlainListStyle())
+                        .background(Color.clear) // Set transparent background
+                        .onAppear {
+                            print("🔍 DEBUG: List appeared with \(taskModel.tasks.count) tasks")
                         }
                     }
-                    .listStyle(PlainListStyle())
+                    .padding(.horizontal, 10)
                     .background(Color.clear) // Set transparent background
-                    .onAppear {
-                        print("🔍 DEBUG: List appeared with \(taskModel.tasks.count) tasks")
+                    .toolbar {
+                        ToolbarItem(placement: {
+                            #if os(iOS)
+                            return .navigationBarLeading
+                            #else
+                            return .automatic // Use automatic placement on macOS
+                            #endif
+                        }()) {
+                            // Empty toolbar item - can be used later if needed
+                        }
                     }
                 }
-                .padding(.horizontal, 10)
-                .background(Color.clear) // Set transparent background
-                .toolbar {
-                    ToolbarItem(placement: {
-                        #if os(iOS)
-                        return .navigationBarLeading
-                        #else
-                        return .automatic // Use automatic placement on macOS
-                        #endif
-                    }()) {
-                        // Empty toolbar item - can be used later if needed
+                .navigationViewStyle(StackNavigationViewStyle())
+                .onAppear {
+                    print("🔍 DEBUG: Navigation view appeared")
+                    if taskModel.tasks.isEmpty {
+                        print("⚠️ WARNING: No tasks in taskModel")
                     }
                 }
+                #endif
             }
-            .navigationViewStyle(StackNavigationViewStyle())
-            .onAppear {
-                print("🔍 DEBUG: Navigation view appeared")
-                if taskModel.tasks.isEmpty {
-                    print("⚠️ WARNING: No tasks in taskModel")
-                }
-            }
-            #endif
             
             // Task creation overlay
             if showTaskCreationOverlay {
@@ -367,6 +399,15 @@ struct TaskListView: View {
         }
     }
     
+    func borderColor(for due: Date?) -> Color {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        guard let due = due else { return .gray }
+        let days = cal.dateComponents([.day], from: today, to: cal.startOfDay(for: due)).day ?? 0
+        if days <= 1 { return .red }
+        else if days <= 3 { return .orange }
+        else { return .gray }
+    }
     
     struct SortButton: View {
         let label: String

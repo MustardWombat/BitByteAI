@@ -34,11 +34,6 @@ struct ShopView: View {
                         
                         // Shop items section
                         VStack(alignment: .leading) {
-                            Text("Shop")
-                                .font(.headline)
-                                .foregroundColor(.white)
-                                .padding(.bottom, 5)
-                            
                             // XP Boosters
                             ItemCategoryView(
                                 title: "XP Boosters",
@@ -62,50 +57,15 @@ struct ShopView: View {
                         .cornerRadius(10)
                     }
                     .padding()
-                    .padding(.top, 100) // Added top padding for the assets
                 }
             }
             
-            // Purchase confirmation overlay
-            if showPurchaseConfirmation, let item = selectedItem {
-                PurchaseConfirmationView(
-                    item: item,
-                    currencyModel: currencyModel,
-                    onConfirm: {
-                        purchaseItem(item)
-                        showPurchaseConfirmation = false
-                    },
-                    onCancel: {
-                        showPurchaseConfirmation = false
-                    }
-                )
-                .transition(.opacity)
-            }
-            
-            // Purchase success notification
-            if showPurchaseSuccess {
-                VStack {
-                    Spacer()
-                    Text("Purchase Successful!")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .padding()
-                        .background(Color.green)
-                        .cornerRadius(10)
-                        .shadow(radius: 5)
-                        .transition(.move(edge: .bottom))
-                    Spacer().frame(height: 100)
-                }
-                .transition(.opacity)
-                .onAppear {
-                    // Auto-hide success message after 2 seconds
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                        withAnimation {
-                            showPurchaseSuccess = false
-                        }
-                    }
-                }
-            }
+            // Purchase overlay
+            PurchaseOverlayView(
+                isPresented: $showPurchaseConfirmation,   // renamed binding argument
+                showSuccess: $showPurchaseSuccess,
+                selectedItem: $selectedItem
+            )
         }
         .background(Color.black.ignoresSafeArea())
     }
