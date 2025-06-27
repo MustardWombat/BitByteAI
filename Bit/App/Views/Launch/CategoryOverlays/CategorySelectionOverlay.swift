@@ -52,9 +52,9 @@ struct CategorySelectionOverlay: View {
             .cornerRadius(8)
         }
         .padding()
-        .background(Color.black.opacity(0.8))
         .cornerRadius(12)
         .shadow(radius: 10)
+        .background(Color.black)
         .sheet(isPresented: $showCategoryCreationOverlay) {
             CategoryCreationOverlay(
                 isPresented: $showCategoryCreationOverlay,
