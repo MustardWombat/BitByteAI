@@ -434,3 +434,41 @@ struct TaskListView: View {
     }
 }
 
+
+    }
+    
+    func borderColor(for due: Date?) -> Color {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        guard let due = due else { return .gray }
+        let days = cal.dateComponents([.day], from: today, to: cal.startOfDay(for: due)).day ?? 0
+        if days <= 1 { return .red }
+        else if days <= 3 { return .orange }
+        else { return .gray }
+    }
+    
+    struct SortButton: View {
+        let label: String
+        let isSelected: Bool
+        let systemImage: String
+        let action: () -> Void
+        
+        var body: some View {
+            Button(action: action) {
+                HStack(spacing: 6) {
+                    Image(systemName: systemImage)
+                        .foregroundColor(isSelected ? .green : .gray)
+                    Text(label)
+                        .font(.caption)
+                        .foregroundColor(isSelected ? .green : .gray)
+                }
+                .padding(.vertical, 6)
+                .padding(.horizontal, 10)
+                .background(isSelected ? Color.green.opacity(0.15) : Color.clear)
+                .cornerRadius(8)
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+    }
+}
+
