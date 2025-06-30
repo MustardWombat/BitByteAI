@@ -113,7 +113,7 @@ struct CategoryCreationOverlay: View {
             }
         }
         .padding()
-        .background(Color.black.opacity(0.8))
+        .background(Color.black)
         .cornerRadius(12)
         .shadow(radius: 10)
         .alert(isPresented: $showDeleteAlert) {

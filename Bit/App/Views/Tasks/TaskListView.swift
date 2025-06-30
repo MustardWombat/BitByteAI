@@ -435,7 +435,7 @@ struct TaskListView: View {
 }
 
 
-    }
+
     
     func borderColor(for due: Date?) -> Color {
         let cal = Calendar.current
@@ -470,5 +470,5 @@ struct TaskListView: View {
             .buttonStyle(PlainButtonStyle())
         }
     }
-}
+
 
