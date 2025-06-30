@@ -61,7 +61,6 @@ struct ProfileView: View {
     // Debugging state
     @State private var showDebugInfo: Bool = false
     @State private var userProfileData: [String: String] = [:]
-    @State private var userProgressData: [String: String] = [:]
     @State private var isLoadingDebugData: Bool = false
 
     var body: some View {
@@ -482,32 +481,6 @@ struct ProfileView: View {
                                     Divider()
                                         .padding(.vertical, 8)
                                     
-                                    Group {
-                                        Text("User Progress")
-                                            .font(.subheadline)
-                                            .bold()
-                                            .padding(.top, 4)
-                                        
-                                        if userProgressData.isEmpty {
-                                            Text("No progress data found")
-                                                .font(.caption)
-                                                .foregroundColor(.gray)
-                                        } else {
-                                            ForEach(Array(userProgressData.keys.sorted()), id: \.self) { key in
-                                                HStack {
-                                                    Text(key + ":")
-                                                        .font(.caption)
-                                                        .foregroundColor(.gray)
-                                                    Spacer()
-                                                    Text(userProgressData[key] ?? "")
-                                                        .font(.caption)
-                                                        .multilineTextAlignment(.trailing)
-                                                }
-                                                .padding(.vertical, 2)
-                                            }
-                                        }
-                                    }
-                                    
                                     Button("Refresh Debug Data") {
                                         loadDebugData()
                                     }
@@ -862,14 +835,10 @@ struct ProfileView: View {
     private func loadDebugData() {
         isLoadingDebugData = true
         userProfileData.removeAll()
-        userProgressData.removeAll()
-        
         let userID = UserDefaults.standard.string(forKey: "cachedCloudKitUserID") ?? ""
         loadUserProfileDebugData(userID: userID) {
-            loadUserProgressDebugData(userID: userID) {
-                DispatchQueue.main.async {
-                    self.isLoadingDebugData = false
-                }
+            DispatchQueue.main.async {
+                self.isLoadingDebugData = false
             }
         }
     }
@@ -902,48 +871,6 @@ struct ProfileView: View {
                     self.userProfileData["systemModificationDate"] = record.modificationDate?.description ?? "N/A"
                 } else {
                     self.userProfileData["Status"] = "No profile record found"
-                }
-                
-                completion()
-            }
-        }
-    }
-    
-    private func loadUserProgressDebugData(userID: String, completion: @escaping () -> Void) {
-        let predicate = NSPredicate(format: "userID == %@", userID)
-        let query = CKQuery(recordType: "UserProgress", predicate: predicate)
-        
-        CKContainer.default().privateCloudDatabase.perform(query, inZoneWith: nil) { records, error in
-            DispatchQueue.main.async {
-                if let error = error {
-                    self.userProgressData["Error"] = error.localizedDescription
-                    completion()
-                    return
-                }
-                
-                if let record = records?.first {
-                    // Convert all fields to string representation
-                    for (key, value) in record.allValues() {
-                        if key == "daily_Minutes", let minutes = value as? [Int] {
-                            let daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-                            var formattedMinutes = ""
-                            for (index, min) in minutes.enumerated() {
-                                if index < daysOfWeek.count {
-                                    formattedMinutes += "\(daysOfWeek[index]): \(min)min "
-                                }
-                            }
-                            self.userProgressData[key] = formattedMinutes
-                        } else {
-                            self.userProgressData[key] = String(describing: value)
-                        }
-                    }
-                    
-                    // Add record metadata
-                    self.userProgressData["recordID"] = record.recordID.recordName
-                    self.userProgressData["creationDate"] = record.creationDate?.description ?? "N/A"
-                    self.userProgressData["modificationDate"] = record.modificationDate?.description ?? "N/A"
-                } else {
-                    self.userProgressData["Status"] = "No progress record found"
                 }
                 
                 completion()
