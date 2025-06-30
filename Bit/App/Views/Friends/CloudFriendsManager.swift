@@ -59,6 +59,58 @@ class CloudFriendsManager {
         }
     }
 
+    // Add a friend to the current user's 'friends' list
+    func addFriend(currentUserID: String, friendID: String, completion: @escaping (Bool, Error?) -> Void) {
+        guard isCloudAvailable else {
+            completion(false, NSError(domain: "CloudFriendsManager", code: 1, userInfo: nil))
+            return
+        }
+        let publicDB = container.publicCloudDatabase
+        let predicate = NSPredicate(format: "userID == %@", currentUserID)
+        let query = CKQuery(recordType: "Users", predicate: predicate)
+        publicDB.perform(query, inZoneWith: nil) { results, error in
+            if let record = results?.first {
+                var friends = record["friends"] as? [String] ?? []
+                if !friends.contains(friendID) {
+                    friends.append(friendID)
+                    record["friends"] = friends as CKRecordValue
+                    publicDB.save(record) { _, saveError in
+                        DispatchQueue.main.async {
+                            completion(saveError == nil, saveError)
+                        }
+                    }
+                } else {
+                    DispatchQueue.main.async { completion(true, nil) }
+                }
+            } else {
+                DispatchQueue.main.async { completion(false, error) }
+            }
+        }
+    }
+
+    // Fetch the friend ID list for the current user
+    func fetchFriendList(currentUserID: String, completion: @escaping ([String]?, Error?) -> Void) {
+        guard isCloudAvailable else {
+            completion(nil, NSError(domain: "CloudFriendsManager", code: 1, userInfo: nil))
+            return
+        }
+        let publicDB = container.publicCloudDatabase
+        let predicate = NSPredicate(format: "userID == %@", currentUserID)
+        let query = CKQuery(recordType: "Users", predicate: predicate)
+        publicDB.perform(query, inZoneWith: nil) { records, error in
+            if let record = records?.first {
+                let friends = record["friends"] as? [String] ?? []
+                DispatchQueue.main.async {
+                    completion(friends, nil)
+                }
+            } else {
+                DispatchQueue.main.async {
+                    completion(nil, error)
+                }
+            }
+        }
+    }
+
     // MARK: - Cache Management
     
     private let usersCacheKey = "CachedUsers"
