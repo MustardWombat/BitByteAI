@@ -272,6 +272,15 @@ struct BitApp: App {
         #endif
 
         setupCloudKit()
+
+        // start periodic progress sync
+        CloudKitManager.shared.setupSync(
+            xpModel: xpModel,
+            currencyModel: currencyModel,
+            timerModel: timerModel
+        )
+        // push any local profile values up
+        CloudKitManager.shared.syncUserProfileToCloud()
     }
     
     var body: some Scene {
@@ -298,6 +307,7 @@ struct BitApp: App {
             .onChange(of: isSignedIn) { signedIn in
                 if signedIn {
                     // immediately fetch latest stats (coins, xp, study minutes)
+                    CloudKitManager.shared.syncUserProfileToCloud()
                     CloudKitManager.shared.fetchUserProgress(
                         xpModel: xpModel,
                         currencyModel: currencyModel,

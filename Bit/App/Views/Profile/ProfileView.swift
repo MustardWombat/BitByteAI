@@ -111,19 +111,35 @@ struct ProfileView: View {
                             HStack {
                                 Text("Name:")
                                 Spacer()
-                                TextField("Your Name", text: $name)
-                                    .multilineTextAlignment(.trailing)
-                                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                                    .frame(width: 180)
+                                TextField(
+                                    "Your Name",
+                                    text: $name,
+                                    onEditingChanged: { editing in
+                                        if !editing { saveProfileToCloudKit() }
+                                    }
+                                )
+                                .multilineTextAlignment(.trailing)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .frame(width: 180)
+                                .submitLabel(.done)
                             }
-                            // New username field
+                            // Username field
                             HStack {
                                 Text("Username:")
                                 Spacer()
-                                TextField("Enter your username", text: $username)
-                                    .multilineTextAlignment(.trailing)
-                                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                                    .frame(width: 180)
+                                TextField(
+                                    "Enter your username",
+                                    text: $username,
+                                    onEditingChanged: { editing in
+                                        if !editing {
+                                            saveProfileToCloudKit()
+                                        }
+                                    }
+                                )
+                                .multilineTextAlignment(.trailing)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .frame(width: 180)
+                                .submitLabel(.done)
                             }
                             if username.isEmpty {
                                 Text("Username is required")
@@ -131,15 +147,6 @@ struct ProfileView: View {
                                     .foregroundColor(.red)
                                     .padding(.leading)
                             }
-                            Button("Save to Cloud") {
-                                saveProfileToCloudKit()
-                                showAlert = true
-                            }
-                            .disabled(username.isEmpty) // Disable button if username is empty
-                            .padding()
-                            .background(username.isEmpty ? Color.gray : Color.green)
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
 
                             // Display crucial information
                             VStack(alignment: .leading, spacing: 10) {
@@ -549,6 +556,15 @@ struct ProfileView: View {
                 #endif
             }
         }
+        .refreshable {
+            // reload profile and stats
+            loadProfileFromCloudKit()
+            CloudKitManager.shared.fetchUserProgress(
+                xpModel: xpModel,
+                currencyModel: currencyModel,
+                timerModel: timerModel
+            )
+        }
         .sheet(isPresented: $showDataSharingInfo) {
             DataSharingInfoView(isPresented: $showDataSharingInfo)
         }
@@ -569,51 +585,46 @@ struct ProfileView: View {
     
     private func fetchUserRecordIDAndSaveProfile() {
         print("🌩️ Starting profile save to CloudKit...")
-        
-        // Get the default CloudKit container
         let container = CKContainer.default()
-        
-        // Fetch the user's record ID directly from CloudKit
         container.fetchUserRecordID { recordID, error in
-            guard let recordID = recordID else {
-                print("🌩️❌ Error fetching user record ID: \(error?.localizedDescription ?? "Unknown error")")
-                return
-            }
-            
+            guard let recordID = recordID else { return }
             let userID = recordID.recordName
             let privateDB = container.privateCloudDatabase
-            
-            // Create a record with the right record type
-            let record = CKRecord(recordType: "UserProfile")
-            
-            // Set the fields
-            record["userID"] = userID as CKRecordValue
-            record["username"] = self.username as CKRecordValue
-            record["displayName"] = self.name as CKRecordValue
-            record["lastLoginDate"] = Date() as CKRecordValue
-            
-            // Save profile image
-            if let profileImage = self.profileImage {
-                #if os(iOS)
-                if let imageData = profileImage.jpegData(compressionQuality: 0.7) {
-                    let tempURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString + ".jpg")
-                    try? imageData.write(to: tempURL)
-                    
-                    let imageAsset = CKAsset(fileURL: tempURL)
-                    record["profileImage"] = imageAsset
-                    
-                    // Clean up the temp file after upload
-                    DispatchQueue.global().async {
-                        try? FileManager.default.removeItem(at: tempURL)
+
+            // Query for an existing UserProfile record
+            let pred = NSPredicate(format: "userID == %@", userID)
+            let query = CKQuery(recordType: "UserProfile", predicate: pred)
+            privateDB.perform(query, inZoneWith: nil) { results, _ in
+                // Use existing or create new
+                let record: CKRecord = results?.first ?? CKRecord(recordType: "UserProfile")
+                
+                // Set or overwrite fields
+                record["userID"]        = userID as CKRecordValue
+                record["username"]      = self.username as CKRecordValue
+                record["displayName"]   = self.name as CKRecordValue
+                record["lastLoginDate"] = Date() as CKRecordValue
+
+                // Save profile image
+                if let profileImage = self.profileImage {
+                    #if os(iOS)
+                    if let imageData = profileImage.jpegData(compressionQuality: 0.7) {
+                        let tempURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString + ".jpg")
+                        try? imageData.write(to: tempURL)
+                        
+                        let imageAsset = CKAsset(fileURL: tempURL)
+                        record["profileImage"] = imageAsset
+                        
+                        // Clean up the temp file after upload
+                        DispatchQueue.global().async {
+                            try? FileManager.default.removeItem(at: tempURL)
+                        }
                     }
+                    #endif
                 }
-                #endif
+
+                // Save (will update if record was fetched)
+                self.performCloudKitSave(record, on: privateDB, attempts: 0)
             }
-            
-            print("🌩️ Using container: \(container.containerIdentifier ?? "unknown")")
-            
-            // Update retry mechanism to be more robust
-            self.performCloudKitSave(record, on: privateDB, attempts: 0)
         }
     }
     
