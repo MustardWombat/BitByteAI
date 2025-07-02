@@ -1,4 +1,5 @@
 import SwiftUI
+import StoreKit
 
 struct ShopView: View {
     @Binding var currentView: String
@@ -8,11 +9,54 @@ struct ShopView: View {
     @State private var selectedItem: ShopItem? = nil
     @State private var showPurchaseConfirmation = false
     @State private var showPurchaseSuccess = false
-    
+    @StateObject private var subscriptionManager = SubscriptionManager()
+    @State private var showSubscriptionSheet = false
+
     var body: some View {
         ZStack {
-            // Main shop view
             VStack {
+                // --- BitByte Pro Subscription Button ---
+                Group {
+                    if subscriptionManager.isLoading {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                    } else {
+                        Button(action: {
+                            print("🔔 Subscribe tapped")
+                            subscribePro()
+                        }) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "star.circle.fill")
+                                    .font(.title)
+                                VStack(alignment: .leading) {
+                                    Text(subscriptionManager.subscriptionProduct?.displayName ?? "BitByte Pro")
+                                        .font(.headline)
+                                    Text(subscriptionManager.subscriptionProduct?.displayPrice ?? "$9.99 / month")
+                                        .font(.subheadline)
+                                }
+                                Spacer()
+                                Text("Subscribe")
+                                    .font(.headline)
+                                    .bold()
+                            }
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                AngularGradient(
+                                    gradient: Gradient(colors: [Color.orange, Color.yellow]),
+                                    center: .center
+                                )
+                            )
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                        }
+                        .opacity(subscriptionManager.subscriptionProduct == nil ? 0.6 : 1.0)
+                    }
+                }
+                .padding(.horizontal)
+                // --- end subscription button ---
+
                 ScrollView {
                     VStack(spacing: 20) {
                         // Active items section
@@ -59,15 +103,55 @@ struct ShopView: View {
                     .padding()
                 }
             }
-            
-            // Purchase overlay
-            PurchaseOverlayView(
-                isPresented: $showPurchaseConfirmation,   // renamed binding argument
-                showSuccess: $showPurchaseSuccess,
-                selectedItem: $selectedItem
-            )
+
+            // only inject this view when showing
+            if showPurchaseConfirmation {
+                PurchaseOverlayView(
+                    isPresented: $showPurchaseConfirmation,
+                    showSuccess: $showPurchaseSuccess,
+                    selectedItem: $selectedItem
+                )
+                .zIndex(1)
+            }
         }
         .background(Color.black.ignoresSafeArea())
+        // show the sheet for confirming purchase
+        .sheet(isPresented: $showSubscriptionSheet) {
+            if let product = subscriptionManager.subscriptionProduct {
+                VStack(spacing: 20) {
+                    Text(product.displayName)
+                        .font(.headline)
+                    Text(product.displayPrice)
+                        .font(.title2)
+                    Button("Confirm Purchase") {
+                        Task { await subscriptionManager.purchase() }
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                .padding()
+            } else {
+                ProgressView()
+            }
+        }
+        // load product on appear
+        .task {
+            await subscriptionManager.loadProduct()
+        }
+        // show success alert
+        .alert("Subscription Successful", isPresented: $subscriptionManager.purchaseSuccess) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Thank you for subscribing to BitByte Pro!")
+        }
+        // show error alert
+        .alert("Subscription Error", isPresented: Binding(
+            get: { subscriptionManager.purchaseError != nil },
+            set: { _ in subscriptionManager.purchaseError = nil }
+        )) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(subscriptionManager.purchaseError?.localizedDescription ?? "Unknown error")
+        }
     }
     
     private func selectItem(_ item: ShopItem) {
@@ -84,6 +168,11 @@ struct ShopView: View {
                 showPurchaseSuccess = true
             }
         }
+    }
+    
+    private func subscribePro() {
+        // toggle the sheet instead of calling purchase() directly
+        showSubscriptionSheet = true
     }
 }
 

@@ -4,6 +4,11 @@
 //  Last edited 05/08/25.
 //
 
+#if DEBUG
+#if canImport(StoreKitTest)
+import StoreKitTest    // ← only import when StoreKitTest is available
+#endif
+#endif
 import SwiftUI
 import WidgetKit
 import CloudKit
@@ -230,7 +235,27 @@ struct BitAppView: View {
 @main
 struct CosmosApp: App {
     init() {
-        // Initialize CloudKit properly at app launch
+        #if DEBUG && canImport(StoreKitTest)
+        // list bundled .storekit files
+        let configs = Bundle.main.paths(forResourcesOfType: "storekit", inDirectory: nil)
+        print("🔍 Bundle .storekit files:", configs)
+
+        // load your BitBytePro.storekit
+        if let url = Bundle.main.url(forResource: "BitBytePro", withExtension: "storekit") {
+            print("🔍 Loading StoreKit config at:", url)
+            do {
+                let session = try SKTestSession(configurationFileURL: url)
+                session.disableDialogs = true
+                session.clearTransactions()
+                print("✅ StoreKitTest session started")
+            } catch {
+                print("⛔️ StoreKitTest session failed:", error)
+            }
+        } else {
+            print("⛔️ .storekit file not found – check target membership")
+        }
+        #endif
+
         setupCloudKit()
     }
     

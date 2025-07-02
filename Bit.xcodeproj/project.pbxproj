@@ -10,6 +10,7 @@
 		4F95C6562DA30C7F00839484 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F95C6552DA30C7F00839484 /* WidgetKit.framework */; };
 		4F95C6582DA30C7F00839484 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4F95C6572DA30C7F00839484 /* SwiftUI.framework */; };
 		4F95C6792DA316B100839484 /* Bit.entitlements in Sources */ = {isa = PBXBuildFile; fileRef = 4F95C6782DA316AA00839484 /* Bit.entitlements */; };
+		4FC2042A2E14E8DD00279941 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4FC204292E14E8DD00279941 /* StoreKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -34,6 +35,7 @@
 		4F95C6572DA30C7F00839484 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		4F95C6772DA311D300839484 /* StudyTimerWidgetExtensionExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = StudyTimerWidgetExtensionExtension.entitlements; sourceTree = "<group>"; };
 		4F95C6782DA316AA00839484 /* Bit.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Bit.entitlements; sourceTree = "<group>"; };
+		4FC204292E14E8DD00279941 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		4FE61E532DBC3E87001B12C0 /* StudyTimerWidgetExtensionExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = StudyTimerWidgetExtensionExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		4FEA9AFC2D8E205B00D8B37B /* Bit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Bit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4FEA9B0D2D8E205D00D8B37B /* CosmosTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CosmosTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -92,6 +94,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4FC2042A2E14E8DD00279941 /* StoreKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -115,6 +118,7 @@
 		4F95C6542DA30C7F00839484 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				4FC204292E14E8DD00279941 /* StoreKit.framework */,
 				4F95C6552DA30C7F00839484 /* WidgetKit.framework */,
 				4F95C6572DA30C7F00839484 /* SwiftUI.framework */,
 			);

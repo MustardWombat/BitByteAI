@@ -41,6 +41,7 @@ struct BottomBarButton: View {
 // MARK: - TopShellSpritePlaceholder
 struct TopShellSpritePlaceholder: View {
     @AppStorage("profileImageData") private var profileImageData: Data? // Store profile image in AppStorage
+    @AppStorage("hasSubscription") private var isPro: Bool = false  // ← new
     @Binding var currentView: String // Add binding to navigate to ProfileView
 
     var body: some View {
@@ -55,8 +56,23 @@ struct TopShellSpritePlaceholder: View {
                         .scaledToFill()
                         .frame(width: 44, height: 44)
                         .cornerRadius(8) // Rounded corners
-                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white, lineWidth: 2))
-                        .shadow(radius: 5)
+                        // gradient glow when Pro
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(
+                                    isPro
+                                        ? AnyShapeStyle(
+                                            AngularGradient(
+                                                gradient: Gradient(colors: [Color.orange, Color.yellow]),
+                                                center: .center
+                                            )
+                                        )
+                                        : AnyShapeStyle(Color.white),
+                                    lineWidth: 2
+                                )
+                        )
+                        .shadow(color: isPro ? Color.orange.opacity(0.7) : Color.clear,
+                                radius: isPro ? 8 : 0)
                 }
                 #elseif os(macOS)
                 if let nsImage = NSImage(data: imageData) {
@@ -65,8 +81,22 @@ struct TopShellSpritePlaceholder: View {
                         .scaledToFill()
                         .frame(width: 44, height: 44)
                         .cornerRadius(8) // Rounded corners
-                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.white, lineWidth: 2))
-                        .shadow(radius: 5)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(
+                                    isPro
+                                        ? AnyShapeStyle(
+                                            AngularGradient(
+                                                gradient: Gradient(colors: [Color.orange, Color.yellow]),
+                                                center: .center
+                                            )
+                                        )
+                                        : AnyShapeStyle(Color.white),
+                                    lineWidth: 2
+                                )
+                        )
+                        .shadow(color: isPro ? Color.orange.opacity(0.7) : Color.clear,
+                                radius: isPro ? 8 : 0)
                 }
                 #endif
             } else {
