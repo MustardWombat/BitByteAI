@@ -2,6 +2,7 @@ import SwiftUI
 
 struct StudyTimerView: View {
     @EnvironmentObject var timerModel: StudyTimerModel
+    @EnvironmentObject var xpModel: XPModel               // added
     @EnvironmentObject var miningModel: MiningModel
     @EnvironmentObject var categoriesVM: CategoriesViewModel
     @Environment(\.scenePhase) var scenePhase
@@ -67,6 +68,7 @@ struct StudyTimerView: View {
                     Button(action: {
                         timerModel.selectedTopic = categoriesVM.selectedTopic
                         timerModel.categoriesVM = categoriesVM
+                        timerModel.xpModel = xpModel           // added
                         timerModel.startTimer(for: 25 * 60)
                         withAnimation(.spring()) {
                             timerModel.isRocketOverlayActive = true

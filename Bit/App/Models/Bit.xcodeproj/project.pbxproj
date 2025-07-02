@@ -36,7 +36,6 @@
 		4F95C6772DA311D300839484 /* StudyTimerWidgetExtensionExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = StudyTimerWidgetExtensionExtension.entitlements; sourceTree = "<group>"; };
 		4F95C6782DA316AA00839484 /* Bit.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Bit.entitlements; sourceTree = "<group>"; };
 		4FC204292E14E8DD00279941 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
-		4FE506362E15DBBF00FB0901 /* Bit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Bit.xcodeproj; path = Bit/App/Models/Bit.xcodeproj; sourceTree = SOURCE_ROOT; };
 		4FE61E532DBC3E87001B12C0 /* StudyTimerWidgetExtensionExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = StudyTimerWidgetExtensionExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		4FEA9AFC2D8E205B00D8B37B /* Bit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Bit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4FEA9B0D2D8E205D00D8B37B /* CosmosTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CosmosTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -124,13 +123,6 @@
 				4F95C6572DA30C7F00839484 /* SwiftUI.framework */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		4FE506392E15DBBF00FB0901 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 		4FEA9AF32D8E205B00D8B37B = {
@@ -289,12 +281,6 @@
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4FEA9AFD2D8E205B00D8B37B /* Products */;
 			projectDirPath = "";
-			projectReferences = (
-				{
-					ProductGroup = 4FE506392E15DBBF00FB0901 /* Products */;
-					ProjectRef = 4FE506362E15DBBF00FB0901 /* Bit.xcodeproj */;
-				},
-			);
 			projectRoot = "";
 			targets = (
 				4FEA9AFB2D8E205B00D8B37B /* Bit */,
