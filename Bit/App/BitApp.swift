@@ -76,6 +76,9 @@ struct BitAppView: View {
                     .environmentObject(currencyModel)
                     .environmentObject(taskModel)
                     .onAppear {
+                        // trigger XPModel cloud load on app open
+                        xpModel.fetchFromICloud()
+                        
                         if !showSignInPrompt && !isSignedIn {
                             checkUserProfileExists()
                         }
@@ -155,38 +158,32 @@ struct BitAppView: View {
         let query = CKQuery(recordType: "UserProgress", predicate: predicate)
         
         privateDB.perform(query, inZoneWith: nil) { (records, error) in
-            if let error = error {
-                print("Error loading user progress: \(error)")
+            guard let record = records?.first, error == nil else {
+                if let error = error {
+                    print("Error loading user progress: \(error)")
+                }
                 return
             }
-            
-            if let records = records, !records.isEmpty {
-                let record = records[0]
+
+            DispatchQueue.main.async {
+                if let level = record["level"] as? Int,
+                   let xp    = record["xp"]    as? Int
+                {
+                    // atomic update to avoid UI glitch
+                    self.xpModel.applyCloudProgress(level: level, xp: xp)
+                }
+
+                if let balance = record["coinBalance"] as? Int {
+                    self.currencyModel.balance = balance
+                }
                 
-                // Update models with cloud data
-                DispatchQueue.main.async {
-                    if let level = record["level"] as? Int {
-                        self.xpModel.level = level
-                    }
-                    
-                    if let xp = record["xp"] as? Int {
-                        self.xpModel.xp = xp
-                    }
-                    
-                    if let balance = record["coinBalance"] as? Int {
-                        self.currencyModel.balance = balance
-                    }
-                    
-                    if let totalMinutes = record["totalStudyMinutes"] as? Double {
-                        // Convert minutes to seconds for totalTimeStudied
-                        self.timerModel.totalTimeStudied = Int(totalMinutes * 60)
-                    }
-                    
-                    // Weekly study minutes is now handled differently, so we'll convert appropriately
-                    if let dailyMinutes = record["daily_Minutes"] as? [Int] {
-                        let totalWeeklyMinutes = dailyMinutes.reduce(0, +)
-                        self.timerModel.weeklyStudyMinutes = totalWeeklyMinutes
-                    }
+                if let totalMinutes = record["totalStudyMinutes"] as? Double {
+                    self.timerModel.totalTimeStudied = Int(totalMinutes * 60)
+                }
+                
+                if let dailyMinutes = record["daily_Minutes"] as? [Int] {
+                    let totalWeeklyMinutes = dailyMinutes.reduce(0, +)
+                    self.timerModel.weeklyStudyMinutes = totalWeeklyMinutes
                 }
             }
         }

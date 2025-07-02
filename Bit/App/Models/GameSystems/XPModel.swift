@@ -113,25 +113,30 @@ class XPModel: ObservableObject {
 
     func fetchFromICloud() {
         print("🔍 XP: Starting XP fetch from iCloud...")
-        
-        // First try NSUbiquitousKeyValueStore
         let store = NSUbiquitousKeyValueStore.default
         store.synchronize()
-        
-        if let cloudXP = store.object(forKey: xpKey) as? Int {
-            print("🔍 XP: Found XP value in key-value store: \(cloudXP)")
-            
-            // Merge with local
-            let mergedXP = max(xp, cloudXP)
-            xp = mergedXP
-            
-            print("🔍 XP: Updated local XP to \(xp)")
-        } else {
+
+        // Try to load both level & xp from key-value store
+        let cloudLevel = Int(store.longLong(forKey: levelKey))
+        let cloudXP    = Int(store.longLong(forKey: xpKey))
+
+        if cloudLevel > 0 {
+            // Atomic update: recompute thresholds & overflow
+            print("🔍 XP: Found cloud level \(cloudLevel), xp \(cloudXP)")
+            applyCloudProgress(level: cloudLevel, xp: cloudXP)
+        }
+        else if let rawXP = store.object(forKey: xpKey) as? Int {
+            // Fallback: only xp stored (older versions)
+            print("🔍 XP: Found raw XP \(rawXP)")
+            xp = max(xp, rawXP)
+            checkForLevelUp()
+            print("🔍 XP: After merge → level \(level), xp \(xp)/\(xpForNextLevel)")
+        }
+        else {
             print("🔍 XP: No XP found in key-value store")
         }
-        
-        // Also try CloudKit for testing
-        testCloudKitXPAccess()
+
+        // ...existing code for testCloudKitXPAccess...
     }
 
     private func testCloudKitXPAccess() {
@@ -201,6 +206,34 @@ class XPModel: ObservableObject {
         xp = defaults.integer(forKey: xpKey)
         level = max(1, defaults.integer(forKey: levelKey)) // Ensure level is at least 1
         xpForNextLevel = defaults.integer(forKey: xpForNextLevelKey) > 0 ? defaults.integer(forKey: xpForNextLevelKey) : 100
+    }
+}
+
+extension XPModel {
+    /// Atomically apply loaded level & xp, looping until xp < threshold
+    func applyCloudProgress(level: Int, xp: Int) {
+        // Prevent intermediate saves/UI glitches
+        isInitialLoadComplete = false
+
+        // Local vars to compute without side-effects
+        var newLevel = level
+        var remainingXP = xp
+        var threshold = 100 * newLevel * newLevel
+
+        // Loop until remainingXP is less than the next-level threshold
+        while remainingXP >= threshold {
+            remainingXP -= threshold
+            newLevel += 1
+            threshold = 100 * newLevel * newLevel
+        }
+
+        // Commit all at once
+        self.level = newLevel
+        self.xp = remainingXP
+        self.xpForNextLevel = threshold
+
+        // Resume normal saving
+        isInitialLoadComplete = true
     }
 }
 
