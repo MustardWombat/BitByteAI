@@ -329,6 +329,45 @@ class CloudKitManager {
             }
         }
     }
+    
+    /// Fetch saved progress and apply to local models
+    func fetchUserProgress(
+        xpModel: XPModel,
+        currencyModel: CurrencyModel,
+        timerModel: StudyTimerModel
+    ) {
+        let userID = getUserID()
+        let predicate = NSPredicate(format: "userID == %@", userID)
+        let query = CKQuery(recordType: "UserProgress", predicate: predicate)
+
+        container.privateCloudDatabase.perform(query, inZoneWith: nil) { records, error in
+            if let error = error {
+                print("🌩️❌ Fetch progress error: \(error.localizedDescription)")
+                return
+            }
+            guard let record = records?.first else { return }
+
+            DispatchQueue.main.async {
+                // XP & level
+                if let xp = record["xp"] as? Int,
+                   let level = record["level"] as? Int {
+                    xpModel.applyCloudProgress(level: level, xp: xp)
+                }
+                // Coin balance
+                if let balance = record["coinBalance"] as? Int {
+                    currencyModel.balance = balance
+                }
+                // Study timer minutes
+                if let totalMinutes = record["totalStudyMinutes"] as? Double {
+                    timerModel.totalTimeStudied = Int(totalMinutes * 60)
+                }
+                // Weekly breakdown
+                if let dailyArray = record["daily_Minutes"] as? [Int] {
+                    timerModel.weeklyStudyMinutes = dailyArray.reduce(0, +)
+                }
+            }
+        }
+    }
 }
 
 // Updated extension with proper methods for StudyTimerModel 

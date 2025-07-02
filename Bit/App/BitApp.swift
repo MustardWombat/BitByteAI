@@ -27,20 +27,28 @@ struct BitAppView: View {
     @State private var showSignInPrompt: Bool = false
     @State private var showSplash = true
 
-    init() {
-        let xp = XPModel()
-        let mining = MiningModel()
+    // Updated init to match call-site
+    init(
+        xpModel: XPModel,
+        miningModel: MiningModel,
+        timerModel: StudyTimerModel
+    ) {
         let currency = CurrencyModel()
-
         // Hook the mining reward to the currency model
-        mining.awardCoins = { amount in
+        miningModel.awardCoins = { amount in
             currency.deposit(amount)
         }
 
-        _xpModel = StateObject(wrappedValue: xp)
-        _miningModel = StateObject(wrappedValue: mining)
-        _timerModel = StateObject(wrappedValue: StudyTimerModel(xpModel: xp, miningModel: mining))
+        _xpModel      = StateObject(wrappedValue: xpModel)
+        _miningModel  = StateObject(wrappedValue: miningModel)
+        _timerModel   = StateObject(wrappedValue: timerModel)
         _currencyModel = StateObject(wrappedValue: currency)
+
+        // other StateObjects remain default
+        _shopModel      = StateObject(wrappedValue: ShopModel())
+        _civModel       = StateObject(wrappedValue: CivilizationModel())
+        _categoriesModel = StateObject(wrappedValue: CategoriesViewModel())
+        _taskModel      = StateObject(wrappedValue: TaskModel())
     }
 
     var body: some View {
@@ -230,7 +238,17 @@ struct BitAppView: View {
 }
 
 @main
-struct CosmosApp: App {
+struct BitApp: App {
+    @AppStorage("isSignedIn") private var isSignedIn: Bool = false
+    @StateObject private var xpModel = XPModel()
+    @StateObject private var currencyModel = CurrencyModel()
+    @StateObject private var timerModel = StudyTimerModel()
+    @StateObject private var miningModel = MiningModel()
+    @StateObject private var shopModel = ShopModel()
+    @StateObject private var civModel = CivilizationModel()
+    @StateObject private var categoriesModel = CategoriesViewModel()
+    @StateObject private var taskModel = TaskModel()
+
     init() {
         #if DEBUG && canImport(StoreKitTest)
         // list bundled .storekit files
@@ -258,16 +276,39 @@ struct CosmosApp: App {
     
     var body: some Scene {
         WindowGroup {
-            BitAppView()
-                .preferredColorScheme(.dark)  // Forces everything into Dark Mode
-                .onAppear {
-                    // Test CloudKit specifically
-                    testCloudKitAccess()
+            BitAppView(
+                xpModel: xpModel,
+                miningModel: miningModel,
+                timerModel: timerModel
+            )
+            .environmentObject(currencyModel)
+            .environmentObject(shopModel)
+            .environmentObject(civModel)
+            .environmentObject(categoriesModel)
+            .environmentObject(taskModel)
+            .preferredColorScheme(.dark)  // Forces everything into Dark Mode
+            .onAppear {
+                // initial sync and schedule periodic updates
+                CloudKitManager.shared.setupSync(
+                    xpModel: xpModel,
+                    currencyModel: currencyModel,
+                    timerModel: timerModel
+                )
+            }
+            .onChange(of: isSignedIn) { signedIn in
+                if signedIn {
+                    // immediately fetch latest stats (coins, xp, study minutes)
+                    CloudKitManager.shared.fetchUserProgress(
+                        xpModel: xpModel,
+                        currencyModel: currencyModel,
+                        timerModel: timerModel
+                    )
                 }
-                // Set minimum window size
-                #if os(macOS)
-                .frame(minWidth: 800, minHeight: 600)
-                #endif
+            }
+            // Set minimum window size
+            #if os(macOS)
+            .frame(minWidth: 800, minHeight: 600)
+            #endif
         }
         #if os(macOS)
         .windowResizability(.contentSize) // Respects the minimum content size

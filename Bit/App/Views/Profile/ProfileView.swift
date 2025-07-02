@@ -27,6 +27,7 @@ struct ProfileView: View {
     @EnvironmentObject var currencyModel: CurrencyModel
     @EnvironmentObject var xpModel: XPModel
     @EnvironmentObject var shopModel: ShopModel
+    @EnvironmentObject var timerModel: StudyTimerModel // added
     
     // Change to observed object to enable bindings
     @ObservedObject private var productivityTracker = ProductivityTracker.shared
@@ -181,6 +182,12 @@ struct ProfileView: View {
                                     // Do not extract or set the full name; rely on the username field instead
                                     isSignedIn = true
                                     saveProfileToCloudKit()
+                                    // fetch stats immediately
+                                    CloudKitManager.shared.fetchUserProgress(
+                                        xpModel: xpModel,
+                                        currencyModel: currencyModel,
+                                        timerModel: timerModel
+                                    )
                                 case .failure:
                                     break
                                 }
@@ -506,6 +513,16 @@ struct ProfileView: View {
                     reminderTime2UI = Date(timeIntervalSince1970: reminderTime2Interval)
                     updateNotifications()
                     updateMLStatus()
+                }
+                .onChange(of: isSignedIn) { signedIn in
+                    if signedIn {
+                        // pull stats from CloudKit instead of pushing
+                        CloudKitManager.shared.fetchUserProgress(
+                            xpModel: xpModel,
+                            currencyModel: currencyModel,
+                            timerModel: timerModel
+                        )
+                    }
                 }
                 // Conditional PhotoPicker Sheet
                 #if os(iOS)
@@ -881,20 +898,27 @@ struct ProfileView: View {
     private func signOut() {
         // Reset sign-in state
         isSignedIn = false
-        
-        // Clear user data
+
+        // Clear profile data
         name = ""
         username = ""
         profileImage = nil
         profileImageData = nil
-        
-        // Clear cached data
+
+        // --- Reset all stats on logout ---
+        currencyModel.balance = 0
+        xpModel.resetXP()
+        shopModel.resetPurchases()
+        productivityTracker.dataShareOptIn = false
+        // ...if you have more trackers, reset them here...
+
+        // Clear cached CloudKit identifiers
         UserDefaults.standard.removeObject(forKey: "cachedCloudKitUserID")
         UserDefaults.standard.removeObject(forKey: "hasCreatedCloudProfile")
-        
+
         // Optionally delete profile from CloudKit
         deleteProfileFromCloudKit()
-        
+
         showAlert = true // Show confirmation
     }
     
@@ -906,6 +930,12 @@ struct ProfileView: View {
                     // User is signed in to iCloud
                     isSignedIn = true
                     saveProfileToCloudKit()
+                    // fetch stats immediately
+                    CloudKitManager.shared.fetchUserProgress(
+                        xpModel: xpModel,
+                        currencyModel: currencyModel,
+                        timerModel: timerModel
+                    )
                 
                 } else {
                     // Show an alert or handle the error
