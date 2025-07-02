@@ -81,6 +81,8 @@ struct TaskListView: View {
                                     .frame(height: 36) // fixed height
                                     .background(Color.green.opacity(0.15))
                                     .cornerRadius(8)
+                                    .padding(.vertical, 4)    // ← padding moved here
+                                    .padding(.horizontal, 8)
                                 }
                                 
                                 // Add New Task Button - Positioned right after the filter button
@@ -101,9 +103,12 @@ struct TaskListView: View {
                                     .frame(height: 36)
                                     .background(Color.green.opacity(0.15))
                                     .cornerRadius(8)
+                                    .padding(.vertical, 4)    // ← padding moved here
+                                    .padding(.horizontal, 8)
                                 }
                             }
-                            .frame(maxWidth: .infinity) // full width
+                            .padding(EdgeInsets(top: 16, leading: 8, bottom: 8, trailing: 8))  // ↑ increased top padding
+                            .frame(maxWidth: .infinity)   // full width
                             
                             // --- Task List ---
                             ScrollView {
@@ -226,6 +231,8 @@ struct TaskListView: View {
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 36)
                                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.green, lineWidth: 1))
+                                .padding(.vertical, 4)    // ← padding moved here
+                                .padding(.horizontal, 8)
                             }
                             
                             // Add New Task Button
@@ -245,10 +252,12 @@ struct TaskListView: View {
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 36)
                                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.green, lineWidth: 1))
+                                .padding(.vertical, 4)    // ← padding moved here
+                                .padding(.horizontal, 8)
                             }
                         }
+                        .padding(EdgeInsets(top: 16, leading: 16, bottom: 8, trailing: 16))  // ↑ increased top padding
                         .frame(maxWidth: .infinity)
-                        .padding(.horizontal, 16)
                         .background(Color.clear) // removed gray background behind buttons
                         
                         // --- Task List ---
@@ -433,42 +442,5 @@ struct TaskListView: View {
         }
     }
 }
-
-
-
-    
-    func borderColor(for due: Date?) -> Color {
-        let cal = Calendar.current
-        let today = cal.startOfDay(for: Date())
-        guard let due = due else { return .gray }
-        let days = cal.dateComponents([.day], from: today, to: cal.startOfDay(for: due)).day ?? 0
-        if days <= 1 { return .red }
-        else if days <= 3 { return .orange }
-        else { return .gray }
-    }
-    
-    struct SortButton: View {
-        let label: String
-        let isSelected: Bool
-        let systemImage: String
-        let action: () -> Void
-        
-        var body: some View {
-            Button(action: action) {
-                HStack(spacing: 6) {
-                    Image(systemName: systemImage)
-                        .foregroundColor(isSelected ? .green : .gray)
-                    Text(label)
-                        .font(.caption)
-                        .foregroundColor(isSelected ? .green : .gray)
-                }
-                .padding(.vertical, 6)
-                .padding(.horizontal, 10)
-                .background(isSelected ? Color.green.opacity(0.15) : Color.clear)
-                .cornerRadius(8)
-            }
-            .buttonStyle(PlainButtonStyle())
-        }
-    }
 
 
