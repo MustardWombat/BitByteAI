@@ -65,24 +65,22 @@ struct HomeView: View {
                                 .ignoresSafeArea()
                                 .zIndex(0)
 
-                            VStack(spacing: 20) {
+                            VStack(spacing: 0) {
                                 SpinningPlanetView()
-                                    .padding(.top, 50)
-
                                 WeeklyProgressChart()
                                     .environmentObject(categoriesVM)
-                                    .padding(.top, 20)
+                                    .padding(.top, 10)
 
                                 EarnedPlanetsView(wavePhase: $wavePhase, selectedCategory: $selectedCategory)
                                     .environmentObject(categoriesVM)
 
                                 PurchasesView()
                                     .environmentObject(shopModel)
-                                    .padding(.top, 20)
+                                    .padding(.top, 10)
 
                                 Spacer(minLength: 40)
                             }
-                            .padding(.top, 100)
+                            .padding(.top, 10)
                             .padding(.horizontal, 20)
                             .zIndex(1)
                         }
@@ -94,8 +92,8 @@ struct HomeView: View {
                             .environmentObject(categoriesVM)
                     }
                 }
-                StarOverlay()
-                    .zIndex(2)
+               // StarOverlay()
+                 //   .zIndex(2)
             }
             .frame(width: geometry.size.width, height: geometry.size.height) // Fill the entire window
             .onAppear {
