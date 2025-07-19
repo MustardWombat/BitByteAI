@@ -22,11 +22,13 @@ struct EarnedPlanetsView: View {
                             .fill(category.displayColor.opacity(0.3))
                             .frame(width: 80, height: 80)
 
-                        WaterWave(progress: CGFloat(progress), phase: wavePhase)
-                            .fill(category.displayColor)
-                            .frame(width: 80, height: 80)
-                            .clipShape(RoundedRectangle(cornerRadius: 15))
-                            .animation(.easeInOut(duration: 0.5), value: progress)
+                        if progress > 0 {
+                            WaterWave(progress: CGFloat(progress), phase: wavePhase)
+                                .fill(category.displayColor)
+                                .frame(width: 80, height: 80)
+                                .clipShape(RoundedRectangle(cornerRadius: 15))
+                                .animation(.easeInOut(duration: 0.5), value: progress)
+                        }
                     }
                     .onLongPressGesture {
                         selectedCategory = category

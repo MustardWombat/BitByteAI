@@ -35,6 +35,7 @@
 		4F95C6572DA30C7F00839484 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		4F95C6772DA311D300839484 /* StudyTimerWidgetExtensionExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = StudyTimerWidgetExtensionExtension.entitlements; sourceTree = "<group>"; };
 		4F95C6782DA316AA00839484 /* Bit.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Bit.entitlements; sourceTree = "<group>"; };
+		4FA514992E2063B4007ACCD0 /* Bit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Bit.xcodeproj; sourceTree = "<group>"; };
 		4FC204292E14E8DD00279941 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		4FE506362E15DBBF00FB0901 /* Bit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Bit.xcodeproj; path = Bit/App/Models/Bit.xcodeproj; sourceTree = SOURCE_ROOT; };
 		4FE61E532DBC3E87001B12C0 /* StudyTimerWidgetExtensionExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = StudyTimerWidgetExtensionExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -124,6 +125,13 @@
 				4F95C6572DA30C7F00839484 /* SwiftUI.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		4FA514DE2E2063B4007ACCD0 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
 			sourceTree = "<group>";
 		};
 		4FE506392E15DBBF00FB0901 /* Products */ = {
@@ -293,6 +301,10 @@
 				{
 					ProductGroup = 4FE506392E15DBBF00FB0901 /* Products */;
 					ProjectRef = 4FE506362E15DBBF00FB0901 /* Bit.xcodeproj */;
+				},
+				{
+					ProductGroup = 4FA514DE2E2063B4007ACCD0 /* Products */;
+					ProjectRef = 4FA514992E2063B4007ACCD0 /* Bit.xcodeproj */;
 				},
 			);
 			projectRoot = "";
