@@ -22,6 +22,14 @@ struct StudyTimerView: View {
                         .font(.system(size: 64, weight: .bold, design: .monospaced))
                         .foregroundColor(timerModel.isTimerRunning ? .green : .red)
 
+                    // Rocket sprite placeholder (color segment) under timer
+                    Rectangle()
+                        .fill(Color.white)
+                        .frame(width: 80, height: 150)
+                        .opacity(0.2)
+                        .cornerRadius(10)
+                        .padding(.vertical, 10)
+
                     // MARK: - Reward display
                     if let reward = timerModel.reward {
                         Text("You earned: \(reward)")
