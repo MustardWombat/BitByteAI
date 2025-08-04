@@ -115,11 +115,6 @@ struct LayoutShell: View {
     @Binding var currentView: String
     let content: AnyView
 
-    // State for marquee text and XP display
-    @State private var funFact: String = "Loading fun fact..."
-    @State private var currentXP: Int = 0    // will be set in updateXPValues()
-    @State private var maxXP: Int = 0        // will be set in updateXPValues()
-
     @EnvironmentObject var timerModel: StudyTimerModel // Inject StudyTimerModel
     
     // Define fixed heights for overlays
@@ -166,13 +161,16 @@ struct LayoutShell: View {
                         .padding(.horizontal, 16)
                         .frame(maxWidth: .infinity)
                         // Use MarqueeText for all views with the appropriate message
-                        MarqueeText(text: currentView == "Home" ? funFact : dynamicWelcomeText(for: currentView))
+                        //MarqueeText(text: currentView == "Home" ? funFact : dynamicWelcomeText(for: currentView))
                             .font(.subheadline)
                             .foregroundColor(.white)
                     }
                 }
                 .frame(height: topBarHeight)
                 .zIndex(2)
+                // push twice the bar height for a higher slide
+                .offset(y: timerModel.isRocketOverlayActive ? -topBarHeight * 2 : 0)
+                .animation(.easeInOut(duration: 1), value: timerModel.isRocketOverlayActive)
                 
                 // Main Content
                 content
@@ -191,17 +189,12 @@ struct LayoutShell: View {
                             .adaptiveCornerRadius(20, corners: [.topLeft, .topRight])
                             .shadow(color: Color.black.opacity(0.8), radius: 10, x: 0, y: -5)
                     )
+                    .offset(y: timerModel.isRocketOverlayActive ? bottomBarHeight : 0)
+                    .animation(.easeInOut(duration: 1), value: timerModel.isRocketOverlayActive)
             }
             .ignoresSafeArea(.keyboard, edges: .bottom) // This is key - ignore keyboard adjustments
 
-            // show rocket overlay when model flag is set
-            if timerModel.isRocketOverlayActive {
-                FocusOverlayView(isActive: $timerModel.isRocketOverlayActive,
-                                 timerModel: timerModel)
-                    .animation(.spring(), value: timerModel.isRocketOverlayActive)
-                    .zIndex(9999)
-                    .ignoresSafeArea()
-            }
+            // removed black screen overlay in launch state
         }
         .edgesIgnoringSafeArea(.bottom)
         .onAppear {
@@ -229,8 +222,8 @@ struct LayoutShell: View {
     
     private func updateXPValues() {
         // Replace with actual logic to fetch or calculate XP values
-        currentXP = 150 // Example current XP value
-        maxXP = 200 // Example max XP value
+        //currentXP = 150 // Example current XP value
+        //maxXP = 200 // Example max XP value
     }
     
     // Updated MarqueeText view: scrolls until the text’s right edge passes the container’s left edge using a recursive animation

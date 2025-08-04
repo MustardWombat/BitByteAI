@@ -2,34 +2,42 @@ import SwiftUI
 
 struct StudyTimerView: View {
     @EnvironmentObject var timerModel: StudyTimerModel
-    @EnvironmentObject var xpModel: XPModel               // added
+    @EnvironmentObject var xpModel: XPModel
     @EnvironmentObject var miningModel: MiningModel
     @EnvironmentObject var categoriesVM: CategoriesViewModel
     @Environment(\.scenePhase) var scenePhase
 
     @State private var isShowingCategorySheet = false
     @State private var showSessionEndedPopup = false
-    @State private var isShowingEditGoalView = false // Replace Apple popup state
+    @State private var isShowingEditGoalView = false
+    @State private var isLaunching = false   // new: control launch animation
+    @State private var showRocketOverlay = false   // new: control overlay appearance
+    @State private var showLandButton = false   // new: control land button appearance
 
     var body: some View {
         ZStack {
             // Main content wrapped with disabled modifier to lock interactions during focus mode
             VStack(spacing: 20) {
-                // Add padding to the top of the assets
+                // Fixed header: timer + rocket
                 VStack(alignment: .leading, spacing: 10) {
                     // MARK: - Timer display
                     Text(formatTime(timerModel.timeRemaining))
                         .font(.system(size: 64, weight: .bold, design: .monospaced))
                         .foregroundColor(timerModel.isTimerRunning ? .green : .red)
-
-                    // Rocket sprite placeholder (color segment) under timer
+                        .animation(nil, value: timerModel.timeRemaining)  // ← disable any animation on timer updates
+                    // Rocket sprite placeholder remains on screen
                     Rectangle()
                         .fill(Color.white)
                         .frame(width: 80, height: 150)
                         .opacity(0.2)
                         .cornerRadius(10)
                         .padding(.vertical, 10)
+                }
+                .padding(.top, 100)
+                .padding(.horizontal, 20)
 
+                // Now the rest of the UI falls off together
+                VStack(alignment: .leading, spacing: 20) {
                     // MARK: - Reward display
                     if let reward = timerModel.reward {
                         Text("You earned: \(reward)")
@@ -67,36 +75,47 @@ struct StudyTimerView: View {
                         .cornerRadius(10)
                     }
 
-                }
-                .padding(.top, 100) // Added top padding for the assets
-                .padding(.horizontal, 20)
-
-                // MARK: - Control buttons
-                HStack {
-                    Button(action: {
-                        timerModel.selectedTopic = categoriesVM.selectedTopic
-                        timerModel.categoriesVM = categoriesVM
-                        timerModel.xpModel = xpModel           // added
-                        timerModel.startTimer(for: 25 * 60)
-                        withAnimation(.spring()) {
-                            timerModel.isRocketOverlayActive = true
+                    // MARK: - Control buttons
+                    HStack {
+                        Button(action: {
+                            timerModel.selectedTopic = categoriesVM.selectedTopic
+                            timerModel.categoriesVM = categoriesVM
+                            timerModel.xpModel = xpModel
+                            timerModel.startTimer(for: 25 * 60)
+                            withAnimation(.easeInOut(duration: 1)) {
+                                isLaunching = true
+                                timerModel.isRocketOverlayActive = true    // ← trigger shell animation
+                            }
+                            // delay the full-screen overlay to let the animation finish
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                                showRocketOverlay = true
+                            }
+                            // schedule land button
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                                withAnimation { showLandButton = true }
+                            }
+                        }) {
+                            Text("Launch")
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                                .background(categoriesVM.selectedTopic == nil ? Color.gray : Color.green)
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
                         }
-                    }) {
-                        Text("Launch")
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(categoriesVM.selectedTopic == nil ? Color.gray : Color.green)
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
+                        .disabled(categoriesVM.selectedTopic == nil) // Disable if no topic is selected
                     }
-                    .disabled(categoriesVM.selectedTopic == nil) // Disable if no topic is selected
-                }
-                .padding()
+                    .padding()
 
-                Spacer()
+                    Spacer()
+                }
+                .offset(y: isLaunching 
+                         ? UIScreen.main.bounds.height 
+                         : 0)
+                .animation(.easeInOut(duration: 1), value: isLaunching)
             }
             .padding()
-            .allowsHitTesting(!timerModel.isRocketOverlayActive) // Disable hit testing when rocket overlay is active
+            .allowsHitTesting(!isLaunching)
+
             .onAppear {
                 if categoriesVM.selectedTopic == nil {
                     categoriesVM.selectedTopic = categoriesVM.loadSelectedTopic()
@@ -164,13 +183,27 @@ struct StudyTimerView: View {
                 .zIndex(4)
             }
 
-            if timerModel.isRocketOverlayActive {
-                FocusOverlayView(isActive: $timerModel.isRocketOverlayActive,
-                                 timerModel: timerModel)
-                    .animation(.spring(), value: timerModel.isRocketOverlayActive)
-                    .zIndex(1000000)
-                    .allowsHitTesting(true)
+            // Land button appears 5s after launch
+            if showLandButton {
+                Button("Land") {
+                    timerModel.stopTimer()  // stop the running timer
+                    withAnimation {
+                        isLaunching = false
+                        timerModel.isRocketOverlayActive = false
+                        showRocketOverlay = false
+                        showLandButton = false
+                    }
+                }
+                .padding()
+                .background(Color.blue)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+                .transition(.opacity)
+                .zIndex(10)
             }
+
+            // Fullscreen takeover overlay (delayed)
+            // overlay removed to prevent black full-screen takeover
         }
     }
 
