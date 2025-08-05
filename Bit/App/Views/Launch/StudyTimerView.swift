@@ -25,12 +25,14 @@ struct StudyTimerView: View {
                         .font(.system(size: 64, weight: .bold, design: .monospaced))
                         .foregroundColor(timerModel.isTimerRunning ? .green : .red)
                         .animation(nil, value: timerModel.timeRemaining)  // ← disable any animation on timer updates
-                    // Rocket sprite placeholder remains on screen
-                    Rectangle()
-                        .fill(Color.white)
-                        .frame(width: 80, height: 150)
-                        .opacity(0.2)
-                        .cornerRadius(10)
+                        .frame(maxWidth: .infinity, alignment: .center)  // center horizontally
+                    // Rocket sprite: fixed layout frame but scaled 3× visually
+                    Image("rocket")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 80, height: 150)   // layout size
+                        .scaleEffect(3, anchor: .center) // visual scale
+                        .frame(maxWidth: .infinity)      // center horizontally
                         .padding(.vertical, 10)
                 }
                 .padding(.top, 100)
@@ -90,6 +92,8 @@ struct StudyTimerView: View {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                                 showRocketOverlay = true
                             }
+                            // Notify the shell to wipe off screen
+                            NotificationCenter.default.post(name: .wipeShell, object: nil)
                             // schedule land button
                             DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
                                 withAnimation { showLandButton = true }
@@ -187,6 +191,8 @@ struct StudyTimerView: View {
             if showLandButton {
                 Button("Land") {
                     timerModel.stopTimer()  // stop the running timer
+                    NotificationCenter.default.post(name: .restoreShell, object: nil)  // restore shell UI
+
                     withAnimation {
                         isLaunching = false
                         timerModel.isRocketOverlayActive = false

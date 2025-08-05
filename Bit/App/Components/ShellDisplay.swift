@@ -115,15 +115,14 @@ struct LayoutShell: View {
     @Binding var currentView: String
     let content: AnyView
 
-    @EnvironmentObject var timerModel: StudyTimerModel // Inject StudyTimerModel
-    
-    // Define fixed heights for overlays
+    @State private var isShellWiped = false      // new: control shell wipe
+
+    @EnvironmentObject var timerModel: StudyTimerModel 
     private let topBarHeight: CGFloat = 100
     private let bottomBarHeight: CGFloat = 90
-    
+
     var body: some View {
         ZStack {
-            // Main content including top bar
             VStack(spacing: 0) {
                 // Top Bar
                 ZStack {
@@ -168,9 +167,8 @@ struct LayoutShell: View {
                 }
                 .frame(height: topBarHeight)
                 .zIndex(2)
-                // push twice the bar height for a higher slide
-                .offset(y: timerModel.isRocketOverlayActive ? -topBarHeight * 2 : 0)
-                .animation(.easeInOut(duration: 1), value: timerModel.isRocketOverlayActive)
+                .offset(y: isShellWiped ? -topBarHeight * 2 : 0)
+                .animation(.easeInOut(duration: 1), value: isShellWiped)
                 
                 // Main Content
                 content
@@ -189,12 +187,22 @@ struct LayoutShell: View {
                             .adaptiveCornerRadius(20, corners: [.topLeft, .topRight])
                             .shadow(color: Color.black.opacity(0.8), radius: 10, x: 0, y: -5)
                     )
-                    .offset(y: timerModel.isRocketOverlayActive ? bottomBarHeight : 0)
-                    .animation(.easeInOut(duration: 1), value: timerModel.isRocketOverlayActive)
+                    .offset(y: isShellWiped ? bottomBarHeight : 0)
+                    .animation(.easeInOut(duration: 1), value: isShellWiped)
             }
             .ignoresSafeArea(.keyboard, edges: .bottom) // This is key - ignore keyboard adjustments
 
             // removed black screen overlay in launch state
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .wipeShell)) { _ in
+            withAnimation {
+                isShellWiped = true
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .restoreShell)) { _ in
+            withAnimation {
+                isShellWiped = false
+            }
         }
         .edgesIgnoringSafeArea(.bottom)
         .onAppear {
@@ -270,6 +278,11 @@ struct LayoutShell: View {
             }
         }
     }
+
+    /// Call this to wipe the shell UI off screen
+    func wipeShell() {
+        isShellWiped = true
+    }
 }
 
 // MARK: - BottomBar
@@ -331,3 +344,9 @@ struct BlurView: View {
     }
 }
 #endif
+
+// Add notification name for wiping shell
+extension Notification.Name {
+    static let wipeShell = Notification.Name("wipeShell")
+    static let restoreShell = Notification.Name("restoreShell")
+}
