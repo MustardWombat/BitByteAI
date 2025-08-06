@@ -126,7 +126,9 @@ struct LayoutShell: View {
             VStack(spacing: 0) {
                 // Top Bar
                 ZStack {
-                    AdaptiveBlurView(style: .regular)
+                    // use native glassEffect for true liquid glass
+                    Rectangle()
+                        //.glassEffect(.regularMaterial, in: Rectangle())
                         .ignoresSafeArea(edges: .top)
                         .frame(height: topBarHeight)
                         .overlay(
@@ -179,13 +181,17 @@ struct LayoutShell: View {
             // Bottom bar overlay - positioned using VStack and Spacer
             VStack {
                 Spacer() // Pushes the bottom bar to the bottom
-                
+
                 BottomBar(currentView: $currentView)
                     .frame(height: bottomBarHeight)
                     .background(
-                        Color.black.opacity(0.65)
-                            .adaptiveCornerRadius(20, corners: [.topLeft, .topRight])
-                            .shadow(color: Color.black.opacity(0.8), radius: 10, x: 0, y: -5)
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .fill(.ultraThinMaterial)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                    .stroke(Color.white.opacity(0.2), lineWidth: 0.5)
+                            )
+                            .shadow(color: Color.black.opacity(0.4), radius: 6, x: 0, y: 2)
                     )
                     .offset(y: isShellWiped ? bottomBarHeight : 0)
                     .animation(.easeInOut(duration: 1), value: isShellWiped)
@@ -194,6 +200,7 @@ struct LayoutShell: View {
 
             // removed black screen overlay in launch state
         }
+        .background(Color.clear)          // ← ensure no black fill behind the ZStack
         .onReceive(NotificationCenter.default.publisher(for: .wipeShell)) { _ in
             withAnimation {
                 isShellWiped = true
@@ -302,9 +309,9 @@ struct BottomBar: View {
             BottomBarButton(iconName: "person.2.fill", viewName: "Friends", currentView: $currentView)
                 .frame(maxWidth: .infinity)
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, 10)
         .padding(.top, 10)
-        .padding(.bottom, 20)
+        .padding(.bottom, 10)
         .frame(maxWidth: .infinity)
     }
 }
@@ -340,7 +347,7 @@ struct BlurView: View {
     var style: BlurEffectStyle
     
     var body: some View {
-        Color.gray.opacity(0.5) // Use a simple gray background as a fallback
+        Color.gray.opacity(0.2) // Use a simple gray background as a fallback
     }
 }
 #endif
