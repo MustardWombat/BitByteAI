@@ -39,6 +39,7 @@
 		4FB295302E41E41F00AC243A /* Bit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Bit.xcodeproj; sourceTree = "<group>"; };
 		4FBF55D72E3D68D6003E52FF /* Bit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Bit.xcodeproj; sourceTree = "<group>"; };
 		4FC1B8E42E42E10F00CE751B /* Bit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Bit.xcodeproj; sourceTree = "<group>"; };
+		4FC1B9DE2E43ED6A00CE751B /* Bit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Bit.xcodeproj; sourceTree = "<group>"; };
 		4FC204292E14E8DD00279941 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		4FD146492E41DC1200A121B0 /* Bit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Bit.xcodeproj; sourceTree = "<group>"; };
 		4FE506362E15DBBF00FB0901 /* Bit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Bit.xcodeproj; path = Bit/App/Models/Bit.xcodeproj; sourceTree = SOURCE_ROOT; };
@@ -153,6 +154,13 @@
 			sourceTree = "<group>";
 		};
 		4FC1B9292E42E10F00CE751B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		4FC1BA232E43ED6A00CE751B /* Products */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -330,6 +338,10 @@
 			productRefGroup = 4FEA9AFD2D8E205B00D8B37B /* Products */;
 			projectDirPath = "";
 			projectReferences = (
+				{
+					ProductGroup = 4FC1BA232E43ED6A00CE751B /* Products */;
+					ProjectRef = 4FC1B9DE2E43ED6A00CE751B /* Bit.xcodeproj */;
+				},
 				{
 					ProductGroup = 4FE506392E15DBBF00FB0901 /* Products */;
 					ProjectRef = 4FE506362E15DBBF00FB0901 /* Bit.xcodeproj */;

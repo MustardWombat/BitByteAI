@@ -2,7 +2,9 @@ import SwiftUI
 
 struct CategoryCreationOverlay: View {
     @Binding var isPresented: Bool
-    var category: Category? = nil  // Optional category to edit; nil means create new.
+    var category: Category? = nil
+    var initialName: String = ""
+    var initialColor: Color = .blue
 
     @State private var categoryName: String = ""
     @State private var selectedHours: Int = 1  // Default to 1 hour
@@ -16,11 +18,14 @@ struct CategoryCreationOverlay: View {
 
     // Add a default initializer to ensure onDeleteCategory is provided
     init(isPresented: Binding<Bool>, category: Category? = nil, 
+         initialName: String = "", initialColor: Color = .blue,
          onSaveCategory: @escaping (String, Int, Color, Category?) -> Void = { _, _, _, _ in },
          onDeleteCategory: @escaping (Category) -> Void,
          onCancel: @escaping () -> Void = {}) {
         self._isPresented = isPresented
         self.category = category
+        self.initialName = initialName
+        self.initialColor = initialColor
         self.onSaveCategory = onSaveCategory
         self.onDeleteCategory = onDeleteCategory
         self.onCancel = onCancel
@@ -137,6 +142,10 @@ struct CategoryCreationOverlay: View {
                 selectedHours = total / 60
                 selectedMinutes = total % 60
                 selectedColor = cat.displayColor
+            } else {
+                // Use initial values for new category creation
+                categoryName = initialName
+                selectedColor = initialColor
             }
         }
     }

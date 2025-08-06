@@ -17,15 +17,28 @@ class ShopModel: ObservableObject {
     @Published var purchasedItems: [PurchasedItem] = [] {
         didSet { saveData() }
     }
-    @Published var availableItems: [ShopItem] = ShopItem.catalog
+    @Published var availableItems: [ShopItem] = []
     @Published var selectedItem: ShopItem? = nil
     @Published var showPurchaseConfirmation = false
     
+    // New: Track upgrade levels for each type
+    @Published var upgradeLevels: [ItemType: Int] = [
+        .xpBooster: 0,
+        .coinBooster: 0,
+        .timerExtender: 0,
+        .focusEnhancer: 0
+    ] {
+        didSet { saveUpgradeLevels() }
+    }
+    
     private let shopKey = "PurchasedItems"
+    private let levelsKey = "UpgradeLevels"
     private var timer: Timer?
     
     init() {
         loadData()
+        loadUpgradeLevels()
+        generateAvailableItems()
         startExpirationTimer()
         setupNotificationObservers()
     }
@@ -79,8 +92,23 @@ class ShopModel: ObservableObject {
         }
     }
     
+    // New: Generate available items based on current levels
+    private func generateAvailableItems() {
+        availableItems = []
+        
+        for type in [ItemType.xpBooster, .coinBooster, .timerExtender, .focusEnhancer] {
+            let currentLevel = upgradeLevels[type] ?? 0
+            let nextUpgrade = ShopItem.nextUpgrade(for: type, currentLevel: currentLevel)
+            availableItems.append(nextUpgrade)
+        }
+    }
+    
     func addPurchase(item: ShopItem) {
         guard item.price > 0 else { return }
+        
+        // Increment the upgrade level
+        let currentLevel = upgradeLevels[item.type] ?? 0
+        upgradeLevels[item.type] = currentLevel + 1
         
         let expirationDate: Date?
         if let hours = item.durationInHours {
@@ -115,6 +143,9 @@ class ShopModel: ObservableObject {
             // Add as new item
             purchasedItems.append(newItem)
         }
+        
+        // Regenerate available items for next levels
+        generateAvailableItems()
         
         // Apply the item's effect
         applyItemEffects(newItem)
@@ -212,6 +243,30 @@ class ShopModel: ObservableObject {
         reapplyAllActiveEffects()
     }
     
+    private func saveUpgradeLevels() {
+        let encoder = JSONEncoder()
+        if let encoded = try? encoder.encode(upgradeLevels) {
+            NSUbiquitousKeyValueStore.default.set(encoded, forKey: levelsKey)
+            NSUbiquitousKeyValueStore.default.synchronize()
+            UserDefaults.standard.set(encoded, forKey: levelsKey)
+        }
+    }
+    
+    private func loadUpgradeLevels() {
+        let decoder = JSONDecoder()
+        
+        // Try loading from iCloud first
+        if let data = NSUbiquitousKeyValueStore.default.data(forKey: levelsKey),
+           let levels = try? decoder.decode([ItemType: Int].self, from: data) {
+            upgradeLevels = levels
+        }
+        // Fall back to UserDefaults
+        else if let data = UserDefaults.standard.data(forKey: levelsKey),
+                let levels = try? decoder.decode([ItemType: Int].self, from: data) {
+            upgradeLevels = levels
+        }
+    }
+    
     private func reapplyAllActiveEffects() {
         // Reset all multipliers first
         NotificationCenter.default.post(name: Notification.Name("ResetAllBoosts"), object: nil)
@@ -244,14 +299,26 @@ class ShopModel: ObservableObject {
     /// Debug function to reset all purchases
     func resetPurchases() {
         purchasedItems = []
+        upgradeLevels = [
+            .xpBooster: 0,
+            .coinBooster: 0,
+            .timerExtender: 0,
+            .focusEnhancer: 0
+        ]
         
-        // Clear any persistent storage
+        // Clear persistent storage
         UserDefaults.standard.removeObject(forKey: shopKey)
+        UserDefaults.standard.removeObject(forKey: levelsKey)
+        NSUbiquitousKeyValueStore.default.removeObject(forKey: shopKey)
+        NSUbiquitousKeyValueStore.default.removeObject(forKey: levelsKey)
+        
+        // Regenerate available items
+        generateAvailableItems()
         
         // Notify observers that data has changed
         objectWillChange.send()
         
         // Print confirmation message
-        print("DEBUG: All purchases have been reset")
+        print("DEBUG: All purchases and levels have been reset")
     }
 }

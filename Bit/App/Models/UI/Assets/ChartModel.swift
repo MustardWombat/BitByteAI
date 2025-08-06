@@ -95,12 +95,10 @@ struct WeeklyProgressChart: View {
     private func maxOverallMinutes() -> Int {
         if let cat = selectedCategory {
             let logs = viewModel.weeklyData(for: cat.id)
-            let maxMinutes = logs.map { $0.minutes }.max() ?? 0
-            return max(maxMinutes, 10) // Ensure minimum scale of 10
+            return logs.map { $0.minutes }.max() ?? 10
         }
         let weeklyData = viewModel.categories.flatMap { viewModel.weeklyData(for: $0.id) }
-        let maxMinutes = weeklyData.map { $0.minutes }.max() ?? 0
-        return max(maxMinutes, 10) // Ensure minimum scale of 10
+        return weeklyData.map { $0.minutes }.max() ?? 10
     }
 }
 
@@ -129,48 +127,7 @@ extension CategoriesViewModel {
             return []
         }
         
-        let calendar = Calendar.current
-        let today = Date()
-        
-        // Get the start of the current week (Sunday)
-        guard let startOfWeek = calendar.dateInterval(of: .weekOfYear, for: today)?.start else {
-            return []
-        }
-        
-        // Create all 7 days of the week with 0 minutes by default
-        var weeklyData: [DailyLog] = []
-        for i in 0..<7 {
-            if let date = calendar.date(byAdding: .day, value: i, to: startOfWeek) {
-                weeklyData.append(DailyLog(date: date, minutes: 0))
-            }
-        }
-        
-        // Update with actual logged minutes from category
-        for actualLog in category.weeklyLogs {
-            if let index = weeklyData.firstIndex(where: { 
-                calendar.isDate($0.date, inSameDayAs: actualLog.date) 
-            }) {
-                weeklyData[index] = actualLog
-            }
-        }
-        
-        return weeklyData
-    }
-    
-    // Live data method that includes current session progress
-    func liveWeeklyData(for categoryId: UUID, currentSessionMinutes: Int = 0) -> [DailyLog] {
-        var data = weeklyData(for: categoryId)
-        
-        // Add current session minutes to today if this category is active
-        let calendar = Calendar.current
-        let today = Date()
-        
-        if let todayIndex = data.firstIndex(where: { 
-            calendar.isDate($0.date, inSameDayAs: today) 
-        }) {
-            data[todayIndex].minutes += currentSessionMinutes
-        }
-        
-        return data
+        // Use the category's weeklyLogs property which now consistently returns Sun-Sat
+        return category.weeklyLogs
     }
 }

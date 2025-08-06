@@ -79,21 +79,47 @@ struct ShopView: View {
                         // Shop items section
                         VStack(alignment: .leading) {
                             // XP Boosters
-                            ItemCategoryView(
-                                title: "XP Boosters",
+                            UpgradeCategoryView(
+                                title: "Knowledge Boosters",
                                 icon: "star.fill",
                                 iconColor: .yellow,
-                                items: shopModel.availableItems.filter { $0.type == .xpBooster },
-                                onItemSelected: { selectItem($0) }
+                                type: .xpBooster,
+                                currentLevel: shopModel.upgradeLevels[.xpBooster] ?? 0,
+                                nextUpgrade: shopModel.availableItems.first { $0.type == .xpBooster },
+                                onPurchase: { selectItem($0) }
                             )
                             
                             // Coin Boosters
-                            ItemCategoryView(
-                                title: "Coin Boosters",
+                            UpgradeCategoryView(
+                                title: "Wealth Generators",
                                 icon: "dollarsign.circle.fill",
                                 iconColor: .green,
-                                items: shopModel.availableItems.filter { $0.type == .coinBooster },
-                                onItemSelected: { selectItem($0) }
+                                type: .coinBooster,
+                                currentLevel: shopModel.upgradeLevels[.coinBooster] ?? 0,
+                                nextUpgrade: shopModel.availableItems.first { $0.type == .coinBooster },
+                                onPurchase: { selectItem($0) }
+                            )
+                            
+                            // Timer Extenders
+                            UpgradeCategoryView(
+                                title: "Time Masters",
+                                icon: "timer",
+                                iconColor: .blue,
+                                type: .timerExtender,
+                                currentLevel: shopModel.upgradeLevels[.timerExtender] ?? 0,
+                                nextUpgrade: shopModel.availableItems.first { $0.type == .timerExtender },
+                                onPurchase: { selectItem($0) }
+                            )
+                            
+                            // Focus Enhancers
+                            UpgradeCategoryView(
+                                title: "Focus Masters",
+                                icon: "brain.head.profile",
+                                iconColor: .purple,
+                                type: .focusEnhancer,
+                                currentLevel: shopModel.upgradeLevels[.focusEnhancer] ?? 0,
+                                nextUpgrade: shopModel.availableItems.first { $0.type == .focusEnhancer },
+                                onPurchase: { selectItem($0) }
                             )
                         }
                         .padding()
@@ -117,21 +143,10 @@ struct ShopView: View {
         .background(Color.black.ignoresSafeArea())
         // show the sheet for confirming purchase
         .sheet(isPresented: $showSubscriptionSheet) {
-            if let product = subscriptionManager.subscriptionProduct {
-                VStack(spacing: 20) {
-                    Text(product.displayName)
-                        .font(.headline)
-                    Text(product.displayPrice)
-                        .font(.title2)
-                    Button("Confirm Purchase") {
-                        Task { await subscriptionManager.purchase() }
-                    }
-                    .buttonStyle(.borderedProminent)
-                }
-                .padding()
-            } else {
-                ProgressView()
-            }
+            SubscriptionConfirmationView(
+                isPresented: $showSubscriptionSheet,
+                subscriptionManager: subscriptionManager
+            )
         }
         // load product on appear
         .task {
@@ -302,6 +317,91 @@ struct ShopItemCard: View {
             .background(Color.gray.opacity(0.2))
             .cornerRadius(8)
         }
+    }
+}
+
+// New: Cookie Clicker style upgrade category
+struct UpgradeCategoryView: View {
+    let title: String
+    let icon: String
+    let iconColor: Color
+    let type: ItemType
+    let currentLevel: Int
+    let nextUpgrade: ShopItem?
+    let onPurchase: (ShopItem) -> Void
+    @EnvironmentObject var currencyModel: CurrencyModel
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Category header with current level
+            HStack {
+                Image(systemName: icon)
+                    .foregroundColor(iconColor)
+                Text(title)
+                    .font(.subheadline.bold())
+                    .foregroundColor(.white)
+                Spacer()
+                Text("Level \(currentLevel)")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.gray.opacity(0.3))
+                    .cornerRadius(4)
+            }
+            
+            if let upgrade = nextUpgrade {
+                // Next upgrade card
+                Button(action: { onPurchase(upgrade) }) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text(upgrade.displayName)
+                                .font(.subheadline.bold())
+                                .foregroundColor(.white)
+                            Spacer()
+                            HStack(spacing: 4) {
+                                Image("coin")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 16, height: 16)
+                                Text("\(upgrade.price)")
+                                    .font(.subheadline)
+                                    .foregroundColor(currencyModel.canAfford(upgrade.price) ? .white : .red)
+                            }
+                        }
+                        
+                        Text(upgrade.effectDescription)
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                        
+                        // Progress bar showing cost scaling
+                        if currentLevel > 0 {
+                            HStack {
+                                Text("Next level cost:")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                                Spacer()
+                                Text("\(Int((Double(upgrade.price) / Double(ShopItem.nextUpgrade(for: type, currentLevel: max(1, currentLevel)).price)) * 100))% more expensive")
+                                    .font(.caption)
+                                    .foregroundColor(.orange)
+                            }
+                        }
+                    }
+                    .padding(12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.gray.opacity(0.2))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(currencyModel.canAfford(upgrade.price) ? iconColor.opacity(0.5) : Color.clear, lineWidth: 1)
+                            )
+                    )
+                }
+                .disabled(!currencyModel.canAfford(upgrade.price))
+                .opacity(currencyModel.canAfford(upgrade.price) ? 1.0 : 0.6)
+            }
+        }
+        .padding(.vertical, 10)
     }
 }
 

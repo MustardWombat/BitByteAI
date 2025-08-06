@@ -5,7 +5,7 @@ struct SplashScreenView: View {
     
     var body: some View {
         if isActive {
-            AppContentView()
+            MainView() // Changed from NavigatorModule to MainView
         } else {
             SplashScreenOverlay()
                 .onDisappear {

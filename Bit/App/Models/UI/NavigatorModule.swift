@@ -1,47 +1,70 @@
 import SwiftUI
 
 struct MainView: View {
-    @State private var currentView: String = "Home" // Updated default tab
-    @State private var showOverlay: Bool = false   // new binding for FocusOverlay
-    @StateObject private var timerModel = StudyTimerModel() // shared timer
-    @StateObject private var router = AppRouter() // Add router
+    @State private var currentView: String = "Home"
+    @State private var showOverlay: Bool = false
+    @StateObject private var timerModel = StudyTimerModel()
+    @StateObject private var router = AppRouter()
+    @StateObject private var categoriesViewModel = CategoriesViewModel()
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
+    @AppStorage("isSignedIn") private var isSignedIn: Bool = false
 
     var body: some View {
         ZStack {
-            StarOverlay() // Add the starry background to all views
-            #if os(iOS)
-            if #available(iOS 26.0, *) {
-                TabView(selection: $router.selectedTab) {
-                    ForEach(AppTab.allCases, id: \.self) { tab in
-                        Tab(value: tab) {
-                            AppTabRootView(tab: tab)
-                        } label: {
-                            Label(tab.title, systemImage: tab.icon)
-                        }
+            if !hasCompletedOnboarding {
+                OnboardingView(
+                    onSignIn: {
+                        isSignedIn = true
+                    },
+                    onSkip: {
+                        isSignedIn = false
+                    },
+                    onComplete: {
+                        hasCompletedOnboarding = true
                     }
-                }
-                .tint(.tabs)
-                .tabBarMinimizeBehavior(.onScrollDown)
-                .environmentObject(timerModel)
-                .environmentObject(router)
-            } else {
-                // Fallback on earlier versions
-                LayoutShell(
-                    currentView: $currentView,
-                    content: makeContentView()
                 )
-                .environmentObject(timerModel)
-            }
+                .environmentObject(categoriesViewModel)
+            } else {
+                StarOverlay()
+                #if os(iOS)
+                if #available(iOS 18.0, *) { // Fixed version number
+                    VStack(spacing: 0) {
+                        AppHeader(currentView: $currentView)
+                            .environmentObject(timerModel)
+                        
+                        TabView(selection: $router.selectedTab) {
+                            ForEach(AppTab.allCases, id: \.self) { tab in
+                                Tab(value: tab) {
+                                    AppTabRootView(tab: tab)
+                                } label: {
+                                    Label(tab.title, systemImage: tab.icon)
+                                }
+                            }
+                        }
+                        .tint(.tabs)
+                        .tabBarMinimizeBehavior(.onScrollDown)
+                        .environmentObject(timerModel)
+                        .environmentObject(router)
+                    }
+                } else {
+                    LayoutShell(
+                        currentView: $currentView,
+                        content: makeContentView()
+                    )
+                    .environmentObject(timerModel)
+                }
 
-            if showOverlay {
-                FocusOverlayView(isActive: $showOverlay, timerModel: timerModel)
-                    .ignoresSafeArea()
-                    .zIndex(99)
+                if showOverlay {
+                    FocusOverlayView(isActive: $showOverlay, timerModel: timerModel)
+                        .ignoresSafeArea()
+                        .zIndex(99)
+                }
+                #else
+                MacMainView()
+                #endif
             }
-            #else
-            MacMainView() // Use the new macOS-specific view
-            #endif
         }
+        .environmentObject(categoriesViewModel)
     }
     
     // Helper that returns an explicit AnyView to fix generic inference issues.
