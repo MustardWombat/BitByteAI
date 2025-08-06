@@ -138,6 +138,7 @@ struct AppHeader: View {
         case "Tasks": return "Explore the galaxy!"
         case "Launch": return "Focus and achieve greatness!"
         case "Shop": return "Upgrade your journey!"
+        case "Profile": return "Manage your profile!"
         default: return "Welcome back, Commander!"
         }
     }

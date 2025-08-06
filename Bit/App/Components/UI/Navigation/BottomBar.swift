@@ -37,20 +37,36 @@ class AppRouter: ObservableObject {
 // MARK: - AppTabRootView
 struct AppTabRootView: View {
     let tab: AppTab
-    @State private var currentView: String = "Home"
+    @Binding var currentView: String // Change from @State to @Binding
+    @State private var showProfile: Bool = false
     
     var body: some View {
-        switch tab {
-        case .home:
-            HomeView(currentView: $currentView)
-        case .tasks:
-            TaskListView(currentView: $currentView)
-        case .compose:
-            LaunchView(currentView: $currentView)
-        case .shop:
-            ShopView(currentView: $currentView)
-        case .friends:
-            FriendsView()
+        Group {
+            switch tab {
+            case .home:
+                HomeView(currentView: $currentView)
+            case .tasks:
+                TaskListView(currentView: $currentView)
+            case .compose:
+                LaunchView(currentView: $currentView)
+            case .shop:
+                ShopView(currentView: $currentView)
+            case .friends:
+                FriendsView()
+            }
+        }
+        .fullScreenCover(isPresented: $showProfile) {
+            ProfileView()
+                .transition(.move(edge: .top))
+        }
+        .onChange(of: currentView) { newView in
+            if newView == "Profile" {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    showProfile = true
+                }
+                // Reset currentView immediately
+                currentView = "Home"
+            }
         }
     }
 }
@@ -104,7 +120,7 @@ struct BottomBar: View {
                 TabView(selection: $router.selectedTab) {
                     ForEach(AppTab.allCases, id: \.self) { tab in
                         Tab(value: tab) {
-                            AppTabRootView(tab: tab)
+                            AppTabRootView(tab: tab, currentView: $currentView) // Pass the binding
                         } label: {
                             Label(tab.title, systemImage: tab.icon)
                         }

@@ -24,6 +24,8 @@ struct ProfileView: View {
     @AppStorage("profileName") private var storedName: String = ""
     @AppStorage("profileImageData") private var profileImageData: Data? // Store profile image in AppStorage
 
+    @Environment(\.dismiss) private var dismiss // Add dismiss environment
+
     @EnvironmentObject var currencyModel: CurrencyModel
     @EnvironmentObject var xpModel: XPModel
     @EnvironmentObject var shopModel: ShopModel
@@ -65,109 +67,374 @@ struct ProfileView: View {
     @State private var isLoadingDebugData: Bool = false
 
     var body: some View {
-        ScrollView {
-            ZStack {
-                StarOverlay()
-                VStack(spacing: 24) {
-                    Text(username.isEmpty ? "Profile" : (username))
-                        .font(.largeTitle)
-                        .bold()
-                        .padding(.top, 40)
+        NavigationView {
+            ScrollView {
+                ZStack {
+                    StarOverlay()
+                    VStack(spacing: 24) {
+                        Text(username.isEmpty ? "Profile" : (username))
+                            .font(.largeTitle)
+                            .bold()
+                            .padding(.top, 20) // Reduced top padding since we have navigation
 
-                    // Profile Picture Section
-                    VStack {
-                        if let profileImage = profileImage {
-                            #if os(iOS)
-                            Image(uiImage: profileImage)
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 100, height: 100)
-                                .clipShape(Circle())
-                                .overlay(Circle().stroke(Color.white, lineWidth: 2))
-                                .shadow(radius: 5)
-                            #else
-                            Image(nsImage: profileImage)
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 100, height: 100)
-                                .clipShape(Circle())
-                                .overlay(Circle().stroke(Color.white, lineWidth: 2))
-                                .shadow(radius: 5)
-                            #endif
-                        } else {
-                            Circle()
-                                .fill(Color.gray.opacity(0.5))
-                                .frame(width: 100, height: 100)
-                                .overlay(Text("Add Photo").foregroundColor(.white))
-                        }
-                        Button("Change Picture") {
-                            showImagePicker = true
-                        }
-                        .padding(.top, 8)
-                    }
-
-                    if isSignedIn {
-                        VStack(spacing: 16) {
-                            HStack {
-                                Text("Name:")
-                                Spacer()
-                                TextField(
-                                    "Your Name",
-                                    text: $name,
-                                    onEditingChanged: { editing in
-                                        if !editing { saveProfileToCloudKit() }
-                                    }
-                                )
-                                .multilineTextAlignment(.trailing)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .frame(width: 180)
-                                .submitLabel(.done)
+                        // Profile Picture Section
+                        VStack {
+                            if let profileImage = profileImage {
+                                #if os(iOS)
+                                Image(uiImage: profileImage)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 100, height: 100)
+                                    .clipShape(Circle())
+                                    .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                                    .shadow(radius: 5)
+                                #else
+                                Image(nsImage: profileImage)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 100, height: 100)
+                                    .clipShape(Circle())
+                                    .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                                    .shadow(radius: 5)
+                                #endif
+                            } else {
+                                Circle()
+                                    .fill(Color.gray.opacity(0.5))
+                                    .frame(width: 100, height: 100)
+                                    .overlay(Text("Add Photo").foregroundColor(.white))
                             }
-                            // Username field
-                            HStack {
-                                Text("Username:")
-                                Spacer()
-                                TextField(
-                                    "Enter your username",
-                                    text: $username,
-                                    onEditingChanged: { editing in
-                                        if !editing {
-                                            saveProfileToCloudKit()
+                            Button("Change Picture") {
+                                showImagePicker = true
+                            }
+                            .padding(.top, 8)
+                        }
+
+                        if isSignedIn {
+                            VStack(spacing: 16) {
+                                HStack {
+                                    Text("Name:")
+                                    Spacer()
+                                    TextField(
+                                        "Your Name",
+                                        text: $name,
+                                        onEditingChanged: { editing in
+                                            if !editing { saveProfileToCloudKit() }
                                         }
-                                    }
-                                )
-                                .multilineTextAlignment(.trailing)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .frame(width: 180)
-                                .submitLabel(.done)
-                            }
-                            if username.isEmpty {
-                                Text("Username is required")
-                                    .font(.caption)
-                                    .foregroundColor(.red)
-                                    .padding(.leading)
-                            }
-
-                            // Display crucial information
-                            VStack(alignment: .leading, spacing: 10) {
-                                Text("Coins: \(currencyModel.balance)")
-                                    .font(.headline)
-                                Text("XP: \(xpModel.xp) / \(xpModel.xpForNextLevel)")
-                                    .font(.headline)
-                                Text("Level: \(xpModel.level)")
-                                    .font(.headline)
-                                Text("Purchases:")
-                                    .font(.headline)
-                                if shopModel.purchasedItems.isEmpty {
-                                    Text("No items purchased yet.")
+                                    )
+                                    .multilineTextAlignment(.trailing)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    .frame(width: 180)
+                                    .submitLabel(.done)
+                                }
+                                // Username field
+                                HStack {
+                                    Text("Username:")
+                                    Spacer()
+                                    TextField(
+                                        "Enter your username",
+                                        text: $username,
+                                        onEditingChanged: { editing in
+                                            if !editing {
+                                                saveProfileToCloudKit()
+                                            }
+                                        }
+                                    )
+                                    .multilineTextAlignment(.trailing)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    .frame(width: 180)
+                                    .submitLabel(.done)
+                                }
+                                if username.isEmpty {
+                                    Text("Username is required")
                                         .font(.caption)
-                                        .foregroundColor(.gray)
-                                } else {
-                                    ForEach(shopModel.purchasedItems) { item in
-                                        Text("\(item.name) x\(item.quantity)")
+                                        .foregroundColor(.red)
+                                        .padding(.leading)
+                                }
+
+                                // Display crucial information
+                                VStack(alignment: .leading, spacing: 10) {
+                                    Text("Coins: \(currencyModel.balance)")
+                                        .font(.headline)
+                                    Text("XP: \(xpModel.xp) / \(xpModel.xpForNextLevel)")
+                                        .font(.headline)
+                                    Text("Level: \(xpModel.level)")
+                                        .font(.headline)
+                                    Text("Purchases:")
+                                        .font(.headline)
+                                    if shopModel.purchasedItems.isEmpty {
+                                        Text("No items purchased yet.")
                                             .font(.caption)
                                             .foregroundColor(.gray)
+                                    } else {
+                                        ForEach(shopModel.purchasedItems) { item in
+                                            Text("\(item.name) x\(item.quantity)")
+                                                .font(.caption)
+                                                .foregroundColor(.gray)
+                                        }
                                     }
+                                }
+                                .padding()
+                                .background(Color.black.opacity(0.1))
+                                .cornerRadius(8)
+                            }
+                            .padding()
+                        } else {
+                            #if os(iOS)
+                            SignInWithAppleButton(
+                                .signIn,
+                                onRequest: { request in
+                                    // Remove fullName scope since we rely solely on usernames
+                                    request.requestedScopes = []
+                                },
+                                onCompletion: { result in
+                                    switch result {
+                                    case .success:
+                                        // Do not extract or set the full name; rely on the username field instead
+                                        isSignedIn = true
+                                        saveProfileToCloudKit()
+                                        // fetch stats immediately
+                                        CloudKitManager.shared.fetchUserProgress(
+                                            xpModel: xpModel,
+                                            currencyModel: currencyModel,
+                                            timerModel: timerModel
+                                        )
+                                    case .failure:
+                                        break
+                                    }
+                                }
+                            )
+                            .signInWithAppleButtonStyle(.whiteOutline)
+                            .frame(height: 45)
+                            .padding(.horizontal, 40)
+                            #else
+                            Button("Sign In") {
+                                signIn()
+                            }
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
+                            #endif
+                        }
+                        
+                        // Sign Out button when signed in
+                        if isSignedIn {
+                            Button("Sign Out") {
+                                signOut()
+                            }
+                            .padding()
+                            .background(Color.red)
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
+                            .padding(.top, 20)
+                        }
+
+                        // Debug Notifications section
+                        VStack {
+                            Text("Debug Notifications")
+                                .font(.headline)
+                            Button("Send Debug Notification") {
+                                NotificationManager.shared.sendDebugNotification()
+                            }
+                            .padding()
+                            .background(Color.orange)
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
+                            
+                            // Debug button to reset purchases
+                            Button("Reset Purchases") {
+                                shopModel.resetPurchases()
+                            }
+                            .padding()
+                            .background(Color.red)
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
+                        }
+                        .padding()
+                        
+                        // Study Reminder Settings section
+                        VStack {
+                            Text("Study Reminder Settings")
+                                .font(.headline)
+                            Text("Choose your preferred study reminder times:")
+                                .font(.subheadline)
+                            Toggle("Enable Reminders", isOn: $notificationsEnabled)
+                                .onChange(of: notificationsEnabled) { newValue in
+                                    if newValue {
+                                        NotificationManager.shared.requestAuthorization()
+                                    }
+                                    updateNotifications()
+                                }
+                            
+                            Toggle("Use Smart Reminders", isOn: $useDynamicReminders)
+                                .onChange(of: useDynamicReminders) { newValue in
+                                    updateNotifications()
+                                }
+                            
+                            if notificationsEnabled && !useDynamicReminders {
+                                DatePicker("Reminder 1", selection: $reminderTime1UI, displayedComponents: .hourAndMinute)
+                                    .onChange(of: reminderTime1UI) { newValue in 
+                                        reminderTime1Interval = newValue.timeIntervalSince1970
+                                        updateNotifications()
+                                    }
+                                DatePicker("Reminder 2", selection: $reminderTime2UI, displayedComponents: .hourAndMinute)
+                                    .onChange(of: reminderTime2UI) { newValue in
+                                        reminderTime2Interval = newValue.timeIntervalSince1970
+                                        updateNotifications()
+                                    }
+                            }
+                            
+                            if useDynamicReminders {
+                                Text("Smart reminders will be set based on your productivity patterns")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                                
+                                Button("Record Productive Session (Debug)") {
+                                    ProductivityTracker.shared.recordProductiveSession()
+                                    updateNotifications()
+                                }
+                                .font(.caption)
+                                .padding(.top, 4)
+                            }
+                        }
+                        .padding()
+                        
+                        // ML Insights section
+                        VStack {
+                            Text("ML Insights")
+                                .font(.headline)
+                            
+                            VStack(alignment: .leading) {
+                                Text("Study Pattern Data")
+                                    .font(.subheadline)
+                                    .bold()
+                                
+                                HStack {
+                                    Text("Sessions Collected:")
+                                    Spacer()
+                                    Text("\(sessionsCollected)/\(sessionsNeeded)")
+                                        .foregroundColor(sessionsCollected >= sessionsNeeded ? .green : .gray)
+                                }
+                                
+                                GeometryReader { geometry in
+                                    ZStack(alignment: .leading) {
+                                        Rectangle()
+                                            .frame(width: geometry.size.width, height: 10)
+                                            .opacity(0.3)
+                                            .foregroundColor(.gray)
+                                        
+                                        Rectangle()
+                                            .frame(width: min(CGFloat(sessionsCollected) / CGFloat(sessionsNeeded) * geometry.size.width, geometry.size.width), height: 10)
+                                            .foregroundColor(.green)
+                                    }
+                                    .cornerRadius(5)
+                                }
+                                .frame(height: 10)
+                                
+                                Text("Available ML Features:")
+                                    .padding(.top, 8)
+                                
+                                ForEach(mlFeaturesAvailable, id: \.self) { feature in
+                                    HStack {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundColor(.green)
+                                        Text(feature)
+                                    }
+                                }
+                                
+                                if mlFeaturesAvailable.isEmpty {
+                                    Text("No ML features available yet")
+                                        .font(.caption)
+                                        .foregroundColor(.gray)
+                                }
+                                
+                                if sessionsCollected >= sessionsNeeded && !isTrainingModel {
+                                    Button("Train ML Model") {
+                                        trainMLModel()
+                                    }
+                                    .padding(.vertical, 8)
+                                    .padding(.horizontal, 16)
+                                    .background(Color.blue)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(8)
+                                    .padding(.top, 8)
+                                } else if isTrainingModel {
+                                    HStack {
+                                        ProgressView()
+                                            .progressViewStyle(CircularProgressViewStyle())
+                                        Text("Training model...")
+                                    }
+                                }
+                            }
+                            .padding()
+                            .background(Color.black.opacity(0.1))
+                            .cornerRadius(8)
+                            
+                            Button("Record Test Productivity Session") {
+                                recordTestSession()
+                            }
+                            .padding()
+                            .background(Color.purple)
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
+                            .padding(.top, 8)
+                        }
+                        .padding()
+                        
+                        // Data Sharing section
+                        VStack {
+                            Text("Help Improve the AI")
+                                .font(.headline)
+                            
+                            VStack(alignment: .leading, spacing: 12) {
+                                Toggle("Share Anonymous Study Data", isOn: $productivityTracker.dataShareOptIn)
+                                    .onChange(of: productivityTracker.dataShareOptIn) { newValue in
+                                        if newValue {
+                                            // User opted in, show info sheet
+                                            showDataSharingInfo = true
+                                        }
+                                    }
+                                
+                                Text("Share anonymized study patterns to help improve the ML models for everyone.")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                                
+                                if productivityTracker.dataShareOptIn {
+                                    HStack {
+                                        Button(action: {
+                                            showDataSharingInfo = true
+                                        }) {
+                                            Label("Learn More", systemImage: "info.circle")
+                                                .font(.caption)
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        Button(action: {
+                                            if productivityTracker.shareAnonymizedData() {
+                                                showDataSharedConfirmation = true
+                                                
+                                                // Auto-hide confirmation after 3 seconds
+                                                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                                                    showDataSharedConfirmation = false
+                                                }
+                                            }
+                                        }) {
+                                            Label("Share Now", systemImage: "square.and.arrow.up")
+                                                .font(.caption)
+                                        }
+                                    }
+                                }
+                                
+                                if showDataSharedConfirmation {
+                                    HStack {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundColor(.green)
+                                        Text("Data shared successfully")
+                                            .font(.caption)
+                                            .foregroundColor(.green)
+                                    }
+                                    .transition(.opacity)
                                 }
                             }
                             .padding()
@@ -175,387 +442,138 @@ struct ProfileView: View {
                             .cornerRadius(8)
                         }
                         .padding()
-                    } else {
-                        #if os(iOS)
-                        SignInWithAppleButton(
-                            .signIn,
-                            onRequest: { request in
-                                // Remove fullName scope since we rely solely on usernames
-                                request.requestedScopes = []
-                            },
-                            onCompletion: { result in
-                                switch result {
-                                case .success:
-                                    // Do not extract or set the full name; rely on the username field instead
-                                    isSignedIn = true
-                                    saveProfileToCloudKit()
-                                    // fetch stats immediately
-                                    CloudKitManager.shared.fetchUserProgress(
-                                        xpModel: xpModel,
-                                        currencyModel: currencyModel,
-                                        timerModel: timerModel
-                                    )
-                                case .failure:
-                                    break
-                                }
-                            }
-                        )
-                        .signInWithAppleButtonStyle(.whiteOutline)
-                        .frame(height: 45)
-                        .padding(.horizontal, 40)
-                        #else
-                        Button("Sign In") {
-                            signIn()
-                        }
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
-                        #endif
-                    }
-                    
-                    // Sign Out button when signed in
-                    if isSignedIn {
-                        Button("Sign Out") {
-                            signOut()
-                        }
-                        .padding()
-                        .background(Color.red)
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
-                        .padding(.top, 20)
-                    }
-
-                    // Debug Notifications section
-                    VStack {
-                        Text("Debug Notifications")
-                            .font(.headline)
-                        Button("Send Debug Notification") {
-                            NotificationManager.shared.sendDebugNotification()
-                        }
-                        .padding()
-                        .background(Color.orange)
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
                         
-                        // Debug button to reset purchases
-                        Button("Reset Purchases") {
-                            shopModel.resetPurchases()
-                        }
-                        .padding()
-                        .background(Color.red)
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
-                    }
-                    .padding()
-                    
-                    // Study Reminder Settings section
-                    VStack {
-                        Text("Study Reminder Settings")
-                            .font(.headline)
-                        Text("Choose your preferred study reminder times:")
-                            .font(.subheadline)
-                        Toggle("Enable Reminders", isOn: $notificationsEnabled)
-                            .onChange(of: notificationsEnabled) { newValue in
-                                if newValue {
-                                    NotificationManager.shared.requestAuthorization()
-                                }
-                                updateNotifications()
-                            }
-                        
-                        Toggle("Use Smart Reminders", isOn: $useDynamicReminders)
-                            .onChange(of: useDynamicReminders) { newValue in
-                                updateNotifications()
-                            }
-                        
-                        if notificationsEnabled && !useDynamicReminders {
-                            DatePicker("Reminder 1", selection: $reminderTime1UI, displayedComponents: .hourAndMinute)
-                                .onChange(of: reminderTime1UI) { newValue in 
-                                    reminderTime1Interval = newValue.timeIntervalSince1970
-                                    updateNotifications()
-                                }
-                            DatePicker("Reminder 2", selection: $reminderTime2UI, displayedComponents: .hourAndMinute)
-                                .onChange(of: reminderTime2UI) { newValue in
-                                    reminderTime2Interval = newValue.timeIntervalSince1970
-                                    updateNotifications()
-                                }
-                        }
-                        
-                        if useDynamicReminders {
-                            Text("Smart reminders will be set based on your productivity patterns")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            
-                            Button("Record Productive Session (Debug)") {
-                                ProductivityTracker.shared.recordProductiveSession()
-                                updateNotifications()
-                            }
-                            .font(.caption)
-                            .padding(.top, 4)
-                        }
-                    }
-                    .padding()
-                    
-                    // ML Insights section
-                    VStack {
-                        Text("ML Insights")
-                            .font(.headline)
-                        
-                        VStack(alignment: .leading) {
-                            Text("Study Pattern Data")
-                                .font(.subheadline)
-                                .bold()
-                            
+                        // Debug section
+                        VStack {
                             HStack {
-                                Text("Sessions Collected:")
+                                Text("CloudKit Debug Info")
+                                    .font(.headline)
+                                
                                 Spacer()
-                                Text("\(sessionsCollected)/\(sessionsNeeded)")
-                                    .foregroundColor(sessionsCollected >= sessionsNeeded ? .green : .gray)
-                            }
-                            
-                            GeometryReader { geometry in
-                                ZStack(alignment: .leading) {
-                                    Rectangle()
-                                        .frame(width: geometry.size.width, height: 10)
-                                        .opacity(0.3)
-                                        .foregroundColor(.gray)
-                                    
-                                    Rectangle()
-                                        .frame(width: min(CGFloat(sessionsCollected) / CGFloat(sessionsNeeded) * geometry.size.width, geometry.size.width), height: 10)
-                                        .foregroundColor(.green)
-                                }
-                                .cornerRadius(5)
-                            }
-                            .frame(height: 10)
-                            
-                            Text("Available ML Features:")
-                                .padding(.top, 8)
-                            
-                            ForEach(mlFeaturesAvailable, id: \.self) { feature in
-                                HStack {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundColor(.green)
-                                    Text(feature)
-                                }
-                            }
-                            
-                            if mlFeaturesAvailable.isEmpty {
-                                Text("No ML features available yet")
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
-                            }
-                            
-                            if sessionsCollected >= sessionsNeeded && !isTrainingModel {
-                                Button("Train ML Model") {
-                                    trainMLModel()
-                                }
-                                .padding(.vertical, 8)
-                                .padding(.horizontal, 16)
-                                .background(Color.blue)
-                                .foregroundColor(.white)
-                                .cornerRadius(8)
-                                .padding(.top, 8)
-                            } else if isTrainingModel {
-                                HStack {
-                                    ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle())
-                                    Text("Training model...")
-                                }
-                            }
-                        }
-                        .padding()
-                        .background(Color.black.opacity(0.1))
-                        .cornerRadius(8)
-                        
-                        Button("Record Test Productivity Session") {
-                            recordTestSession()
-                        }
-                        .padding()
-                        .background(Color.purple)
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
-                        .padding(.top, 8)
-                    }
-                    .padding()
-                    
-                    // Data Sharing section
-                    VStack {
-                        Text("Help Improve the AI")
-                            .font(.headline)
-                        
-                        VStack(alignment: .leading, spacing: 12) {
-                            Toggle("Share Anonymous Study Data", isOn: $productivityTracker.dataShareOptIn)
-                                .onChange(of: productivityTracker.dataShareOptIn) { newValue in
-                                    if newValue {
-                                        // User opted in, show info sheet
-                                        showDataSharingInfo = true
+                                
+                                Button(action: {
+                                    withAnimation {
+                                        showDebugInfo.toggle()
+                                        if showDebugInfo {
+                                            loadDebugData()
+                                        }
                                     }
+                                }) {
+                                    Image(systemName: showDebugInfo ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
+                                        .imageScale(.large)
                                 }
+                            }
                             
-                            Text("Share anonymized study patterns to help improve the ML models for everyone.")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            
-                            if productivityTracker.dataShareOptIn {
-                                HStack {
-                                    Button(action: {
-                                        showDataSharingInfo = true
-                                    }) {
-                                        Label("Learn More", systemImage: "info.circle")
-                                            .font(.caption)
-                                    }
-                                    
-                                    Spacer()
-                                    
-                                    Button(action: {
-                                        if productivityTracker.shareAnonymizedData() {
-                                            showDataSharedConfirmation = true
+                            if showDebugInfo {
+                                if isLoadingDebugData {
+                                    ProgressView("Loading data...")
+                                } else {
+                                    VStack(alignment: .leading) {
+                                        Group {
+                                            Text("User Profile")
+                                                .font(.subheadline)
+                                                .bold()
+                                                .padding(.top, 4)
                                             
-                                            // Auto-hide confirmation after 3 seconds
-                                            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                                                showDataSharedConfirmation = false
+                                            if userProfileData.isEmpty {
+                                                Text("No profile data found")
+                                                    .font(.caption)
+                                                    .foregroundColor(.gray)
+                                            } else {
+                                                ForEach(Array(userProfileData.keys.sorted()), id: \.self) { key in
+                                                    HStack {
+                                                        Text(key + ":")
+                                                            .font(.caption)
+                                                            .foregroundColor(.gray)
+                                                        Spacer()
+                                                        Text(userProfileData[key] ?? "")
+                                                            .font(.caption)
+                                                            .multilineTextAlignment(.trailing)
+                                                    }
+                                                    .padding(.vertical, 2)
+                                                }
                                             }
                                         }
-                                    }) {
-                                        Label("Share Now", systemImage: "square.and.arrow.up")
-                                            .font(.caption)
+                                        
+                                        Divider()
+                                            .padding(.vertical, 8)
+                                        
+                                        Button("Refresh Debug Data") {
+                                            loadDebugData()
+                                        }
+                                        .font(.caption)
+                                        .padding(.top, 8)
                                     }
                                 }
-                            }
-                            
-                            if showDataSharedConfirmation {
-                                HStack {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundColor(.green)
-                                    Text("Data shared successfully")
-                                        .font(.caption)
-                                        .foregroundColor(.green)
-                                }
-                                .transition(.opacity)
                             }
                         }
                         .padding()
                         .background(Color.black.opacity(0.1))
                         .cornerRadius(8)
+                        .padding(.horizontal)
+                        .padding(.bottom, 40) // Extra padding at bottom
                     }
-                    .padding()
-                    
-                    // Debug section
-                    VStack {
-                        HStack {
-                            Text("CloudKit Debug Info")
-                                .font(.headline)
-                            
-                            Spacer()
-                            
-                            Button(action: {
-                                withAnimation {
-                                    showDebugInfo.toggle()
-                                    if showDebugInfo {
-                                        loadDebugData()
-                                    }
-                                }
-                            }) {
-                                Image(systemName: showDebugInfo ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
-                                    .imageScale(.large)
-                            }
+                    .alert(isPresented: $showAlert) {
+                        Alert(title: Text("Profile Saved"), message: Text("Your profile info is saved to CloudKit."), dismissButton: .default(Text("OK")))
+                    }
+                    .background(Color.black.ignoresSafeArea())
+                    .onAppear {
+                        loadProfileFromCloudKit()
+                        reminderTime1UI = Date(timeIntervalSince1970: reminderTime1Interval)
+                        reminderTime2UI = Date(timeIntervalSince1970: reminderTime2Interval)
+                        updateNotifications()
+                        updateMLStatus()
+                    }
+                    .onChange(of: isSignedIn) { signedIn in
+                        if (signedIn) {
+                            // pull stats from CloudKit instead of pushing
+                            CloudKitManager.shared.fetchUserProgress(
+                                xpModel: xpModel,
+                                currencyModel: currencyModel,
+                                timerModel: timerModel
+                            )
                         }
-                        
-                        if showDebugInfo {
-                            if isLoadingDebugData {
-                                ProgressView("Loading data...")
-                            } else {
-                                VStack(alignment: .leading) {
-                                    Group {
-                                        Text("User Profile")
-                                            .font(.subheadline)
-                                            .bold()
-                                            .padding(.top, 4)
-                                        
-                                        if userProfileData.isEmpty {
-                                            Text("No profile data found")
-                                                .font(.caption)
-                                                .foregroundColor(.gray)
-                                        } else {
-                                            ForEach(Array(userProfileData.keys.sorted()), id: \.self) { key in
-                                                HStack {
-                                                    Text(key + ":")
-                                                        .font(.caption)
-                                                        .foregroundColor(.gray)
-                                                    Spacer()
-                                                    Text(userProfileData[key] ?? "")
-                                                        .font(.caption)
-                                                        .multilineTextAlignment(.trailing)
-                                                }
-                                                .padding(.vertical, 2)
-                                            }
-                                        }
+                    }
+                    // Conditional PhotoPicker Sheet
+                    #if os(iOS)
+                    .sheet(isPresented: $showImagePicker) {
+                        PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                            Text("Select a Profile Picture")
+                        }
+                        .onChange(of: selectedPhotoItem) { newItem in
+                            if let newItem = newItem {
+                                Task {
+                                    if let data = try? await newItem.loadTransferable(type: Data.self),
+                                       let image = UIImage(data: data) {
+                                        profileImage = image
+                                        profileImageData = data // Save image data to AppStorage
                                     }
-                                    
-                                    Divider()
-                                        .padding(.vertical, 8)
-                                    
-                                    Button("Refresh Debug Data") {
-                                        loadDebugData()
-                                    }
-                                    .font(.caption)
-                                    .padding(.top, 8)
                                 }
                             }
                         }
                     }
-                    .padding()
-                    .background(Color.black.opacity(0.1))
-                    .cornerRadius(8)
-                    .padding(.horizontal)
-                    .padding(.bottom, 40) // Extra padding at bottom
-                }
-                .alert(isPresented: $showAlert) {
-                    Alert(title: Text("Profile Saved"), message: Text("Your profile info is saved to CloudKit."), dismissButton: .default(Text("OK")))
-                }
-                .background(Color.black.ignoresSafeArea())
-                .onAppear {
-                    loadProfileFromCloudKit()
-                    reminderTime1UI = Date(timeIntervalSince1970: reminderTime1Interval)
-                    reminderTime2UI = Date(timeIntervalSince1970: reminderTime2Interval)
-                    updateNotifications()
-                    updateMLStatus()
-                }
-                .onChange(of: isSignedIn) { signedIn in
-                    if signedIn {
-                        // pull stats from CloudKit instead of pushing
-                        CloudKitManager.shared.fetchUserProgress(
-                            xpModel: xpModel,
-                            currencyModel: currencyModel,
-                            timerModel: timerModel
-                        )
+                    #else
+                    .sheet(isPresented: $showImagePicker) {
+                        Text("Photo picker not available on this platform")
                     }
+                    #endif
                 }
-                // Conditional PhotoPicker Sheet
-                #if os(iOS)
-                .sheet(isPresented: $showImagePicker) {
-                    PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
-                        Text("Select a Profile Picture")
-                    }
-                    .onChange(of: selectedPhotoItem) { newItem in
-                        if let newItem = newItem {
-                            Task {
-                                if let data = try? await newItem.loadTransferable(type: Data.self),
-                                   let image = UIImage(data: data) {
-                                    profileImage = image
-                                    profileImageData = data // Save image data to AppStorage
-                                }
-                            }
-                        }
-                    }
-                }
-                #else
-                .sheet(isPresented: $showImagePicker) {
-                    Text("Photo picker not available on this platform")
-                }
-                #endif
             }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.headline)
+                    .foregroundColor(.white)
+                }
+            }
+            .toolbarBackground(.clear, for: .navigationBar)
+            .navigationBarBackButtonHidden(true)
         }
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
         .refreshable {
             // reload profile and stats
             loadProfileFromCloudKit()
