@@ -11,7 +11,8 @@ struct LayoutShell: View {
     @Binding var currentView: String
     let content: AnyView
 
-    @State private var isShellWiped = false      // new: control shell wipe
+    @State private var isShellWiped = false
+    @StateObject private var router = AppRouter()
 
     @EnvironmentObject var timerModel: StudyTimerModel 
     private let topBarHeight: CGFloat = 100
@@ -34,24 +35,29 @@ struct LayoutShell: View {
                 .zIndex(0)
                 
                 // Bottom bar - highest z-index to stay on top
-                BottomBar(currentView: $currentView)
-                    .frame(height: bottomBarHeight)
-                    .frame(maxWidth: .infinity)
-                    .background(
-                        RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .fill(.ultraThinMaterial)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                    .stroke(Color.white.opacity(0.2), lineWidth: 0.5)
-                            )
-                            .shadow(color: Color.black.opacity(0.4), radius: 6, x: 0, y: 2)
-                    )
-                    .position(
-                        x: geometry.size.width / 2,
-                        y: geometry.size.height - bottomBarHeight / 2 + (isShellWiped ? bottomBarHeight : 0)
-                    )
-                    .animation(.easeInOut(duration: 1), value: isShellWiped)
-                    .zIndex(999) // Ensure it's always on top
+                BottomBar(
+                    currentView: $currentView,
+                    router: router,
+                    timerModel: timerModel,
+                    makeContentView: { content }
+                )
+                .frame(height: bottomBarHeight)
+                .frame(maxWidth: .infinity)
+                .background(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .fill(.ultraThinMaterial)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                .stroke(Color.white.opacity(0.2), lineWidth: 0.5)
+                        )
+                        .shadow(color: Color.black.opacity(0.4), radius: 6, x: 0, y: 2)
+                )
+                .position(
+                    x: geometry.size.width / 2,
+                    y: geometry.size.height - bottomBarHeight / 2 + (isShellWiped ? bottomBarHeight : 0)
+                )
+                .animation(.easeInOut(duration: 1), value: isShellWiped)
+                .zIndex(999) // Ensure it's always on top
             }
         }
         .background(Color.clear)

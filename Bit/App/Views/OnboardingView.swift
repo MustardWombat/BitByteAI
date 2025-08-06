@@ -4,10 +4,15 @@ import AuthenticationServices
 struct OnboardingView: View {
     @State private var selection: Int = 0
     @StateObject private var subscriptionManager = SubscriptionManager()
-    @StateObject private var categoriesViewModel = CategoriesViewModel()
     @State private var showCategoryCreationOverlay = false
+    @State private var showTaskCreationOverlay = false
     @State private var presetCategoryName = ""
     @State private var presetCategoryColor = Color.blue
+    
+    // Use environment objects instead of creating new ones
+    @EnvironmentObject var categoriesViewModel: CategoriesViewModel
+    @EnvironmentObject var taskModel: TaskModel
+    
     var onSignIn: () -> Void
     var onSkip: () -> Void
     var onComplete: () -> Void
@@ -131,14 +136,60 @@ struct OnboardingView: View {
                     }
                     
                     Button("Skip for now") {
-                        withAnimation { selection = 4 }
+                        withAnimation { selection = 5 }
                     }
                     .foregroundColor(.gray)
                 }
                 .tag(3)
                 .padding()
                 
-                // Page 5: Welcome & Upgrade
+                // Page 5: Create First Task
+                VStack(spacing: 30) {
+                    Text("Add Your First Task")
+                        .font(.largeTitle)
+                        .bold()
+                    
+                    Text("Tasks help you break down your goals into actionable steps. Let's create your first one!")
+                        .multilineTextAlignment(.center)
+                        .padding()
+                    
+                    VStack(spacing: 15) {
+                        Button("📖 Read a chapter") {
+                            createPresetTask("Read a chapter", difficulty: 2)
+                        }
+                        .buttonStyle(CategoryButtonStyle())
+                        
+                        Button("✍️ Complete assignment") {
+                            createPresetTask("Complete assignment", difficulty: 4)
+                        }
+                        .buttonStyle(CategoryButtonStyle())
+                        
+                        Button("🏋️ Exercise for 30 minutes") {
+                            createPresetTask("Exercise for 30 minutes", difficulty: 3)
+                        }
+                        .buttonStyle(CategoryButtonStyle())
+                        
+                        Button("📝 Write project proposal") {
+                            createPresetTask("Write project proposal", difficulty: 4)
+                        }
+                        .buttonStyle(CategoryButtonStyle())
+                        
+                        Button("✏️ Create Custom Task") {
+                            showTaskCreationOverlay = true
+                        }
+                        .buttonStyle(CategoryButtonStyle())
+                        .foregroundColor(.orange)
+                    }
+                    
+                    Button("Skip for now") {
+                        withAnimation { selection = 5 }
+                    }
+                    .foregroundColor(.gray)
+                }
+                .tag(4)
+                .padding()
+                
+                // Page 6: Welcome & Upgrade
                 VStack(spacing: 30) {
                     Text("Welcome to BitByte! 🎉")
                         .font(.largeTitle)
@@ -180,7 +231,7 @@ struct OnboardingView: View {
                     .foregroundColor(.white)
                     .cornerRadius(8)
                 }
-                .tag(4)
+                .tag(5)
                 .padding()
             }
             .tabViewStyle(PageTabViewStyle(indexDisplayMode: .always))
@@ -212,6 +263,26 @@ struct OnboardingView: View {
                     }
                 )
             }
+            
+            // Task Creation Overlay
+            if showTaskCreationOverlay {
+                Color.black.opacity(0.4)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        showTaskCreationOverlay = false
+                    }
+                
+                TaskCreationOverlay(
+                    isPresented: $showTaskCreationOverlay
+                )
+                .environmentObject(taskModel)
+                .onDisappear {
+                    // Move to next screen when task is created
+                    if !showTaskCreationOverlay {
+                        withAnimation { selection = 5 }
+                    }
+                }
+            }
         }
     }
     
@@ -219,6 +290,12 @@ struct OnboardingView: View {
         presetCategoryName = name
         presetCategoryColor = color
         showCategoryCreationOverlay = true
+    }
+    
+    private func createPresetTask(_ title: String, difficulty: Int) {
+        // Use the actual TaskModel functionality
+        taskModel.addTask(title: title, difficulty: difficulty)
+        withAnimation { selection = 5 }
     }
 }
 
@@ -237,5 +314,7 @@ struct CategoryButtonStyle: ButtonStyle {
 struct OnboardingView_Previews: PreviewProvider {
     static var previews: some View {
         OnboardingView(onSignIn: {}, onSkip: {}, onComplete: {})
+            .environmentObject(CategoriesViewModel())
+            .environmentObject(TaskModel())
     }
 }

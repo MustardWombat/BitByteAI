@@ -4,6 +4,57 @@ import SwiftUI
 import UIKit
 #endif
 
+// MARK: - AppTab Enum
+enum AppTab: String, CaseIterable, Hashable {
+    case home, tasks, compose, shop, friends
+    
+    var title: String {
+        switch self {
+        case .home: return "Home"
+        case .tasks: return "Tasks"
+        case .compose: return "Launch"
+        case .shop: return "Shop"
+        case .friends: return "Friends"
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .home: return "house.fill"
+        case .tasks: return "globe"
+        case .compose: return "airplane"
+        case .shop: return "cart.fill"
+        case .friends: return "person.2.fill"
+        }
+    }
+}
+
+// MARK: - AppRouter
+class AppRouter: ObservableObject {
+    @Published var selectedTab: AppTab = .home
+}
+
+// MARK: - AppTabRootView
+struct AppTabRootView: View {
+    let tab: AppTab
+    @State private var currentView: String = "Home"
+    
+    var body: some View {
+        switch tab {
+        case .home:
+            HomeView(currentView: $currentView)
+        case .tasks:
+            TaskListView(currentView: $currentView)
+        case .compose:
+            LaunchView(currentView: $currentView)
+        case .shop:
+            ShopView(currentView: $currentView)
+        case .friends:
+            FriendsView()
+        }
+    }
+}
+
 // MARK: - BottomBarButton
 struct BottomBarButton: View {
     let iconName: String
@@ -32,15 +83,54 @@ struct BottomBarButton: View {
                     .foregroundColor(currentView == viewName ? Color.green : Color.white)
             }
         }
-        .buttonStyle(TransparentButtonStyle()) // Apply the transparent style
+        .buttonStyle(TransparentButtonStyle())
     }
 }
 
 // MARK: - BottomBar
 struct BottomBar: View {
     @Binding var currentView: String
+    @ObservedObject var router: AppRouter
+    let timerModel: StudyTimerModel
+    let makeContentView: () -> AnyView
     
     var body: some View {
+        #if os(iOS)
+        if #available(iOS 18.0, *) {
+            VStack(spacing: 0) {
+                AppHeader(currentView: $currentView)
+                    .environmentObject(timerModel)
+                
+                TabView(selection: $router.selectedTab) {
+                    ForEach(AppTab.allCases, id: \.self) { tab in
+                        Tab(value: tab) {
+                            AppTabRootView(tab: tab)
+                        } label: {
+                            Label(tab.title, systemImage: tab.icon)
+                        }
+                    }
+                }
+                .tint(.tabs)
+                .environmentObject(timerModel)
+                .environmentObject(router)
+            }
+        } else {
+            VStack(spacing: 0) {
+                AppHeader(currentView: $currentView)
+                    .environmentObject(timerModel)
+                
+                makeContentView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                
+                legacyBottomBar
+            }
+        }
+        #else
+        legacyBottomBar
+        #endif
+    }
+    
+    private var legacyBottomBar: some View {
         HStack {
             BottomBarButton(iconName: "house.fill", viewName: "Home", currentView: $currentView)
                 .frame(maxWidth: .infinity)
@@ -57,7 +147,12 @@ struct BottomBar: View {
         .padding(.top, 10)
         .padding(.bottom, 10)
         .frame(maxWidth: .infinity)
-        .background(Color.black.opacity(0.9)) // Add background
-        .zIndex(1000) // Move zIndex here for entire bar
+        .background(Color.black.opacity(0.9))
+        .zIndex(1000)
     }
+}
+
+// MARK: - Color Extension
+extension Color {
+    static let tabs = Color.green
 }
