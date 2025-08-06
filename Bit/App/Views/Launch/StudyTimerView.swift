@@ -1,4 +1,5 @@
 import SwiftUI
+import Charts
 
 struct StudyTimerView: View {
     @EnvironmentObject var timerModel: StudyTimerModel
@@ -189,27 +190,56 @@ struct StudyTimerView: View {
 
             // Land button appears 5s after launch
             if showLandButton {
-                Button("Land") {
-                    timerModel.stopTimer()  // stop the running timer
-                    NotificationCenter.default.post(name: .restoreShell, object: nil)  // restore shell UI
-
-                    withAnimation {
-                        isLaunching = false
-                        timerModel.isRocketOverlayActive = false
-                        showRocketOverlay = false
-                        showLandButton = false
+                VStack(spacing: 20) {
+                    // Live progress display
+                    if let selectedTopic = categoriesVM.selectedTopic {
+                        VStack(spacing: 15) {
+                            HStack {
+                                Circle()
+                                    .fill(selectedTopic.displayColor)
+                                    .frame(width: 20, height: 20)
+                                Text(selectedTopic.name)
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.white)
+                            }
+                            
+                            Text("Today: \(timerModel.studiedMinutes) min")
+                                .font(.headline)
+                                .foregroundColor(.green)
+                            
+                            // Mini live chart
+                            LiveProgressChart(categoryId: selectedTopic.id)
+                                .environmentObject(categoriesVM)
+                                .frame(height: 120)
+                                .padding()
+                                .background(Color.black.opacity(0.3))
+                                .cornerRadius(10)
+                        }
+                        .padding()
+                        .background(Color.black.opacity(0.7))
+                        .cornerRadius(15)
                     }
+                    
+                    Button("Land") {
+                        timerModel.stopTimer()  // stop the running timer
+                        NotificationCenter.default.post(name: .restoreShell, object: nil)  // restore shell UI
+
+                        withAnimation {
+                            isLaunching = false
+                            timerModel.isRocketOverlayActive = false
+                            showRocketOverlay = false
+                            showLandButton = false
+                        }
+                    }
+                    .padding()
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
                 }
-                .padding()
-                .background(Color.blue)
-                .foregroundColor(.white)
-                .cornerRadius(10)
                 .transition(.opacity)
                 .zIndex(10)
             }
-
-            // Fullscreen takeover overlay (delayed)
-            // overlay removed to prevent black full-screen takeover
         }
     }
 
@@ -258,6 +288,54 @@ struct EditGoalView: View {
         .cornerRadius(12)
         .shadow(radius: 10)
         .padding()
+    }
+}
+
+// Live progress chart component
+struct LiveProgressChart: View {
+    let categoryId: UUID
+    @EnvironmentObject var viewModel: CategoriesViewModel
+    
+    var body: some View {
+        if #available(iOS 16.0, *) {
+            Chart {
+                let logs = viewModel.weeklyData(for: categoryId)
+                ForEach(logs) { log in
+                    LineMark(
+                        x: .value("Date", log.date, unit: .day),
+                        y: .value("Minutes", log.minutes)
+                    )
+                    .interpolationMethod(.catmullRom)
+                    .foregroundStyle(viewModel.categories.first(where: { $0.id == categoryId })?.displayColor ?? .blue)
+                }
+            }
+            .chartYScale(domain: 0...Double(maxMinutes()))
+            .chartXAxis {
+                AxisMarks(values: .stride(by: .day)) { value in
+                    AxisGridLine()
+                    AxisTick()
+                    AxisValueLabel(format: .dateTime.weekday(.abbreviated))
+                        .foregroundStyle(.white)
+                }
+            }
+            .chartYAxis {
+                AxisMarks { value in
+                    AxisGridLine()
+                    AxisTick()
+                    AxisValueLabel()
+                        .foregroundStyle(.white)
+                }
+            }
+        } else {
+            Text("Live chart requires iOS 16+")
+                .foregroundColor(.white)
+        }
+    }
+    
+    private func maxMinutes() -> Int {
+        let logs = viewModel.weeklyData(for: categoryId)
+        let maxMinutes = logs.map { $0.minutes }.max() ?? 0
+        return max(maxMinutes, 60) // Minimum scale of 1 hour
     }
 }
 

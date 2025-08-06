@@ -156,4 +156,21 @@ extension CategoriesViewModel {
         
         return weeklyData
     }
+    
+    // Live data method that includes current session progress
+    func liveWeeklyData(for categoryId: UUID, currentSessionMinutes: Int = 0) -> [DailyLog] {
+        var data = weeklyData(for: categoryId)
+        
+        // Add current session minutes to today if this category is active
+        let calendar = Calendar.current
+        let today = Date()
+        
+        if let todayIndex = data.firstIndex(where: { 
+            calendar.isDate($0.date, inSameDayAs: today) 
+        }) {
+            data[todayIndex].minutes += currentSessionMinutes
+        }
+        
+        return data
+    }
 }
