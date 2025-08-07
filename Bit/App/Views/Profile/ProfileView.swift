@@ -22,8 +22,8 @@ struct ProfileView: View {
     @State private var showAlert = false
     @AppStorage("isSignedIn") private var isSignedIn: Bool = false
     @AppStorage("profileName") private var storedName: String = ""
-    @AppStorage("profileImageData") private var profileImageData: Data? // Store profile image in AppStorage
-    
+    @AppStorage("profileEmoji") private var profileEmoji: String = "😀" // Added profileEmoji AppStorage
+
     @AppStorage("deviceNotificationsAllowed") private var deviceNotificationsAllowed: Bool = true
 
     @Environment(\.dismiss) private var dismiss // Add dismiss environment
@@ -46,11 +46,6 @@ struct ProfileView: View {
     @State private var reminderTime1UI: Date = Date()
     @State private var reminderTime2UI: Date = Date()
     
-    // Profile picture state
-    @State private var profileImage: UIImage? = nil
-    @State private var showImagePicker = false
-    @State private var selectedPhotoItem: PhotosPickerItem? = nil
-
     // Debugging state
     @State private var showDebugInfo: Bool = false
     @State private var userProfileData: [String: String] = [:]
@@ -66,38 +61,6 @@ struct ProfileView: View {
                             .font(.largeTitle)
                             .bold()
                             .padding(.top, 20) // Reduced top padding since we have navigation
-
-                        // Profile Picture Section
-                        VStack {
-                            if let profileImage = profileImage {
-                                #if os(iOS)
-                                Image(uiImage: profileImage)
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 100, height: 100)
-                                    .clipShape(Circle())
-                                    .overlay(Circle().stroke(Color.white, lineWidth: 2))
-                                    .shadow(radius: 5)
-                                #else
-                                Image(nsImage: profileImage)
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 100, height: 100)
-                                    .clipShape(Circle())
-                                    .overlay(Circle().stroke(Color.white, lineWidth: 2))
-                                    .shadow(radius: 5)
-                                #endif
-                            } else {
-                                Circle()
-                                    .fill(Color.gray.opacity(0.5))
-                                    .frame(width: 100, height: 100)
-                                    .overlay(Text("Add Photo").foregroundColor(.white))
-                            }
-                            Button("Change Picture") {
-                                showImagePicker = true
-                            }
-                            .padding(.top, 8)
-                        }
 
                         if isSignedIn {
                             VStack(spacing: 16) {
@@ -139,6 +102,18 @@ struct ProfileView: View {
                                         .font(.caption)
                                         .foregroundColor(.red)
                                         .padding(.leading)
+                                }
+                                
+                                // Profile Emoji picker added here
+                                VStack(alignment: .leading) {
+                                    Text("Profile Emoji")
+                                    Picker("Profile Emoji", selection: $profileEmoji) {
+                                        Text("😀").tag("😀")
+                                        Text("🚀").tag("🚀")
+                                        Text("🌟").tag("🌟")
+                                    }
+                                    .pickerStyle(.segmented)
+                                    .frame(width: 180)
                                 }
 
                                 // Display crucial information
@@ -368,29 +343,6 @@ struct ProfileView: View {
                     timerModel: timerModel
                 )
             }
-            // Conditional PhotoPicker Sheet
-            #if os(iOS)
-            .sheet(isPresented: $showImagePicker) {
-                PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
-                    Text("Select a Profile Picture")
-                }
-                .onChange(of: selectedPhotoItem) { newItem in
-                    if let newItem = newItem {
-                        Task {
-                            if let data = try? await newItem.loadTransferable(type: Data.self),
-                               let image = UIImage(data: data) {
-                                profileImage = image
-                                profileImageData = data // Save image data to AppStorage
-                            }
-                        }
-                    }
-                }
-            }
-            #else
-            .sheet(isPresented: $showImagePicker) {
-                Text("Photo picker not available on this platform")
-            }
-            #endif
             .alert(isPresented: $showAlert) {
                 Alert(title: Text("Profile Saved"), message: Text("Your profile info is saved to CloudKit."), dismissButton: .default(Text("OK")))
             }
@@ -467,25 +419,8 @@ struct ProfileView: View {
                 record["userID"]        = userID as CKRecordValue
                 record["username"]      = self.username as CKRecordValue
                 record["displayName"]   = self.name as CKRecordValue
+                record["profileEmoji"]  = self.profileEmoji as CKRecordValue // Save profileEmoji
                 record["lastLoginDate"] = Date() as CKRecordValue
-
-                // Save profile image
-                if let profileImage = self.profileImage {
-                    #if os(iOS)
-                    if let imageData = profileImage.jpegData(compressionQuality: 0.7) {
-                        let tempURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString + ".jpg")
-                        try? imageData.write(to: tempURL)
-                        
-                        let imageAsset = CKAsset(fileURL: tempURL)
-                        record["profileImage"] = imageAsset
-                        
-                        // Clean up the temp file after upload
-                        DispatchQueue.global().async {
-                            try? FileManager.default.removeItem(at: tempURL)
-                        }
-                    }
-                    #endif
-                }
 
                 // Save (will update if record was fetched)
                 self.performCloudKitSave(record, on: privateDB, attempts: 0)
@@ -566,16 +501,7 @@ struct ProfileView: View {
                 if let records = records, let record = records.first {
                     self.name = record["displayName"] as? String ?? ""
                     self.username = record["username"] as? String ?? ""
-                    
-                    // Load profile image if available
-                    if let profileAsset = record["profileImage"] as? CKAsset,
-                       let fileURL = profileAsset.fileURL,
-                       let imageData = try? Data(contentsOf: fileURL) {
-                        #if os(iOS)
-                        self.profileImage = UIImage(data: imageData)
-                        self.profileImageData = imageData
-                        #endif
-                    }
+                    self.profileEmoji = record["profileEmoji"] as? String ?? "😀" // Load profileEmoji
                     
                     self.isSignedIn = true
                 } else if let ckError = error as? CKError {
@@ -714,8 +640,7 @@ struct ProfileView: View {
         // Clear profile data
         name = ""
         username = ""
-        profileImage = nil
-        profileImageData = nil
+        profileEmoji = "😀" // Reset profileEmoji to default
 
         // --- Reset all stats on logout ---
         currencyModel.balance = 0

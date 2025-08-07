@@ -3,6 +3,7 @@ import CloudKit
 
 struct FriendsView: View {
     @AppStorage("profileUsername") private var storedUsername: String = ""
+    @AppStorage("profileEmoji") private var profileEmoji: String = "😀"
     @State private var allUsers: [CKRecord] = []
     @State private var isLoadingUsers: Bool = false
     @State private var username: String = ""
@@ -47,14 +48,14 @@ struct FriendsView: View {
                         Section("Your Profile") {
                             if !storedUsername.isEmpty {
                                 HStack(spacing: 16) {
-                                    ZStack {
-                                        Circle()
-                                            .fill(Color.gray.opacity(0.3))
-                                            .frame(width: 48, height: 48)
-                                        Image(systemName: "person.fill")
-                                            .font(.largeTitle)
-                                            .foregroundColor(.white)
-                                    }
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color.gray.opacity(0.3))
+                                        .frame(width: 48, height: 48)
+                                        .overlay(
+                                            Text(profileEmoji)
+                                                .font(.largeTitle)
+                                                .foregroundColor(.white)
+                                        )
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text("\(storedUsername)")
                                             .font(.headline)
@@ -88,7 +89,10 @@ struct FriendsView: View {
                                 return uid != UserDefaults.standard.string(forKey: "UserID")
                             }, id: \.recordID) { record in
                                 let uid = record["userID"] as? String ?? ""
+                                let emoji = record["profileEmoji"] as? String ?? "😀"
                                 HStack {
+                                    Text(emoji)
+                                        .font(.title2)
                                     Text(record["username"] as? String ?? "Unknown")
                                         .font(.headline)
                                     Spacer()
@@ -135,7 +139,10 @@ struct FriendsView: View {
                                        !friendIDs.contains(uid)
                             }, id: \.recordID) { record in
                                 let uid = record["userID"] as? String ?? ""
+                                let emoji = record["profileEmoji"] as? String ?? "😀"
                                 HStack {
+                                    Text(emoji)
+                                        .font(.title2)
                                     Text(record["username"] as? String ?? "Unknown")
                                     Spacer()
                                     Button("Add") {
@@ -224,3 +231,4 @@ struct FriendsView: View {
         }
     }
 }
+

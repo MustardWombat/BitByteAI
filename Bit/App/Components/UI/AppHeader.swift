@@ -10,6 +10,7 @@ import AppKit
 struct TopShellSpritePlaceholder: View {
     @AppStorage("profileImageData") private var profileImageData: Data? // Store profile image in AppStorage
     @AppStorage("hasSubscription") private var isPro: Bool = false  // ← new
+    @AppStorage("profileEmoji") private var profileEmoji: String = "😀"
     @Binding var currentView: String // Add binding to navigate to ProfileView
 
     var body: some View {
@@ -71,7 +72,12 @@ struct TopShellSpritePlaceholder: View {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Color.gray.opacity(0.5))
                     .frame(width: 44, height: 44)
-                    .overlay(Text("Add").foregroundColor(.white))
+                    .overlay(
+                        Text(profileEmoji)
+                            .font(.system(size: 32))
+                            .frame(width: 44, height: 44)
+                            .multilineTextAlignment(.center)
+                    )
             }
         }
         .buttonStyle(PlainButtonStyle()) // Remove default button styling

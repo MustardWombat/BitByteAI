@@ -408,6 +408,32 @@ class CloudKitManager {
             }
         }
     }
+    
+    /// Save the user's selected emoji as their profile picture to CloudKit
+    func saveProfileEmojiToCloud(_ emoji: String, completion: ((Bool) -> Void)? = nil) {
+        let userID = getUserID()
+        let predicate = NSPredicate(format: "userID == %@", userID)
+        let query = CKQuery(recordType: "UserProfile", predicate: predicate)
+        let privateDB = container.privateCloudDatabase
+
+        privateDB.perform(query, inZoneWith: nil) { records, error in
+            let record = records?.first ?? CKRecord(recordType: "UserProfile")
+            record["userID"] = userID as CKRecordValue
+            record["profileEmoji"] = emoji as CKRecordValue
+
+            privateDB.save(record) { _, error in
+                DispatchQueue.main.async {
+                    if let error = error {
+                        print("🌩️❌ Error saving profile emoji: \(error.localizedDescription)")
+                        completion?(false)
+                    } else {
+                        print("🌩️✅ Profile emoji saved to CloudKit: \(emoji)")
+                        completion?(true)
+                    }
+                }
+            }
+        }
+    }
 }
 
 // Updated extension with proper methods for StudyTimerModel 
