@@ -26,31 +26,16 @@ struct ShopView: View {
                             print("🔔 Subscribe tapped")
                             subscribePro()
                         }) {
-                            HStack(spacing: 12) {
-                                Image(systemName: "star.circle.fill")
-                                    .font(.title)
-                                VStack(alignment: .leading) {
-                                    Text(subscriptionManager.subscriptionProduct?.displayName ?? "BitByte Pro")
-                                        .font(.headline)
-                                    Text(subscriptionManager.subscriptionProduct?.displayPrice ?? "$9.99 / month")
-                                        .font(.subheadline)
-                                }
-                                Spacer()
-                                Text("Subscribe")
-                                    .font(.headline)
-                                    .bold()
-                            }
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(
-                                AngularGradient(
-                                    gradient: Gradient(colors: [Color.orange, Color.yellow]),
-                                    center: .center
-                                )
-                            )
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
+                            Text("BitByte Pro")
+                                .font(.largeTitle).bold()
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding()
                         }
+                        .frame(maxWidth: .infinity)
+                        .background(Color.orange)
+                        .foregroundColor(.white)
+                        .cornerRadius(12)
                         .opacity(subscriptionManager.subscriptionProduct == nil ? 0.6 : 1.0)
                     }
                 }

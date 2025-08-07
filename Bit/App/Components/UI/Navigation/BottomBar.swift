@@ -56,7 +56,7 @@ struct AppTabRootView: View {
             }
         }
         .fullScreenCover(isPresented: $showProfile) {
-            ProfileView()
+            ProfileView(isPresented: $showProfile)
                 .transition(.move(edge: .top))
         }
         .onChange(of: currentView) { newView in
@@ -172,3 +172,4 @@ struct BottomBar: View {
 extension Color {
     static let tabs = Color.green
 }
+

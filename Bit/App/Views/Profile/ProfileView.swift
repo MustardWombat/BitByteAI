@@ -23,16 +23,16 @@ struct ProfileView: View {
     @AppStorage("isSignedIn") private var isSignedIn: Bool = false
     @AppStorage("profileName") private var storedName: String = ""
     @AppStorage("profileImageData") private var profileImageData: Data? // Store profile image in AppStorage
+    
+    @AppStorage("deviceNotificationsAllowed") private var deviceNotificationsAllowed: Bool = true
 
     @Environment(\.dismiss) private var dismiss // Add dismiss environment
+    var isPresented: Binding<Bool>? = nil
 
     @EnvironmentObject var currencyModel: CurrencyModel
     @EnvironmentObject var xpModel: XPModel
     @EnvironmentObject var shopModel: ShopModel
     @EnvironmentObject var timerModel: StudyTimerModel // added
-    
-    // Change to observed object to enable bindings
-    @ObservedObject private var productivityTracker = ProductivityTracker.shared
     
     private let profileKey = "UserProfile"
     private let recordID = CKRecord.ID(recordName: "UserProfile")
@@ -46,16 +46,6 @@ struct ProfileView: View {
     @State private var reminderTime1UI: Date = Date()
     @State private var reminderTime2UI: Date = Date()
     
-    // ML tracking state
-    @State private var sessionsCollected: Int = 0
-    @State private var sessionsNeeded: Int = 20
-    @State private var mlFeaturesAvailable: [String] = []
-    @State private var isTrainingModel: Bool = false
-    
-    // Data sharing state
-    @State private var showDataSharingInfo = false
-    @State private var showDataSharedConfirmation = false
-
     // Profile picture state
     @State private var profileImage: UIImage? = nil
     @State private var showImagePicker = false
@@ -67,7 +57,7 @@ struct ProfileView: View {
     @State private var isLoadingDebugData: Bool = false
 
     var body: some View {
-        NavigationView {
+        ZStack {
             ScrollView {
                 ZStack {
                     StarOverlay()
@@ -258,6 +248,17 @@ struct ProfileView: View {
                                 .font(.headline)
                             Text("Choose your preferred study reminder times:")
                                 .font(.subheadline)
+                            
+                            Toggle("Allow Notifications on Device", isOn: $deviceNotificationsAllowed)
+                                .onChange(of: deviceNotificationsAllowed) { newValue in
+                                    if newValue {
+                                        NotificationManager.shared.requestAuthorization()
+                                    } else {
+                                        NotificationManager.shared.cancelReminders()
+                                    }
+                                }
+                                .padding(.bottom)
+                            
                             Toggle("Enable Reminders", isOn: $notificationsEnabled)
                                 .onChange(of: notificationsEnabled) { newValue in
                                     if newValue {
@@ -283,163 +284,6 @@ struct ProfileView: View {
                                         updateNotifications()
                                     }
                             }
-                            
-                            if useDynamicReminders {
-                                Text("Smart reminders will be set based on your productivity patterns")
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
-                                
-                                Button("Record Productive Session (Debug)") {
-                                    ProductivityTracker.shared.recordProductiveSession()
-                                    updateNotifications()
-                                }
-                                .font(.caption)
-                                .padding(.top, 4)
-                            }
-                        }
-                        .padding()
-                        
-                        // ML Insights section
-                        VStack {
-                            Text("ML Insights")
-                                .font(.headline)
-                            
-                            VStack(alignment: .leading) {
-                                Text("Study Pattern Data")
-                                    .font(.subheadline)
-                                    .bold()
-                                
-                                HStack {
-                                    Text("Sessions Collected:")
-                                    Spacer()
-                                    Text("\(sessionsCollected)/\(sessionsNeeded)")
-                                        .foregroundColor(sessionsCollected >= sessionsNeeded ? .green : .gray)
-                                }
-                                
-                                GeometryReader { geometry in
-                                    ZStack(alignment: .leading) {
-                                        Rectangle()
-                                            .frame(width: geometry.size.width, height: 10)
-                                            .opacity(0.3)
-                                            .foregroundColor(.gray)
-                                        
-                                        Rectangle()
-                                            .frame(width: min(CGFloat(sessionsCollected) / CGFloat(sessionsNeeded) * geometry.size.width, geometry.size.width), height: 10)
-                                            .foregroundColor(.green)
-                                    }
-                                    .cornerRadius(5)
-                                }
-                                .frame(height: 10)
-                                
-                                Text("Available ML Features:")
-                                    .padding(.top, 8)
-                                
-                                ForEach(mlFeaturesAvailable, id: \.self) { feature in
-                                    HStack {
-                                        Image(systemName: "checkmark.circle.fill")
-                                            .foregroundColor(.green)
-                                        Text(feature)
-                                    }
-                                }
-                                
-                                if mlFeaturesAvailable.isEmpty {
-                                    Text("No ML features available yet")
-                                        .font(.caption)
-                                        .foregroundColor(.gray)
-                                }
-                                
-                                if sessionsCollected >= sessionsNeeded && !isTrainingModel {
-                                    Button("Train ML Model") {
-                                        trainMLModel()
-                                    }
-                                    .padding(.vertical, 8)
-                                    .padding(.horizontal, 16)
-                                    .background(Color.blue)
-                                    .foregroundColor(.white)
-                                    .cornerRadius(8)
-                                    .padding(.top, 8)
-                                } else if isTrainingModel {
-                                    HStack {
-                                        ProgressView()
-                                            .progressViewStyle(CircularProgressViewStyle())
-                                        Text("Training model...")
-                                    }
-                                }
-                            }
-                            .padding()
-                            .background(Color.black.opacity(0.1))
-                            .cornerRadius(8)
-                            
-                            Button("Record Test Productivity Session") {
-                                recordTestSession()
-                            }
-                            .padding()
-                            .background(Color.purple)
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
-                            .padding(.top, 8)
-                        }
-                        .padding()
-                        
-                        // Data Sharing section
-                        VStack {
-                            Text("Help Improve the AI")
-                                .font(.headline)
-                            
-                            VStack(alignment: .leading, spacing: 12) {
-                                Toggle("Share Anonymous Study Data", isOn: $productivityTracker.dataShareOptIn)
-                                    .onChange(of: productivityTracker.dataShareOptIn) { newValue in
-                                        if newValue {
-                                            // User opted in, show info sheet
-                                            showDataSharingInfo = true
-                                        }
-                                    }
-                                
-                                Text("Share anonymized study patterns to help improve the ML models for everyone.")
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
-                                
-                                if productivityTracker.dataShareOptIn {
-                                    HStack {
-                                        Button(action: {
-                                            showDataSharingInfo = true
-                                        }) {
-                                            Label("Learn More", systemImage: "info.circle")
-                                                .font(.caption)
-                                        }
-                                        
-                                        Spacer()
-                                        
-                                        Button(action: {
-                                            if productivityTracker.shareAnonymizedData() {
-                                                showDataSharedConfirmation = true
-                                                
-                                                // Auto-hide confirmation after 3 seconds
-                                                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                                                    showDataSharedConfirmation = false
-                                                }
-                                            }
-                                        }) {
-                                            Label("Share Now", systemImage: "square.and.arrow.up")
-                                                .font(.caption)
-                                        }
-                                    }
-                                }
-                                
-                                if showDataSharedConfirmation {
-                                    HStack {
-                                        Image(systemName: "checkmark.circle.fill")
-                                            .foregroundColor(.green)
-                                        Text("Data shared successfully")
-                                            .font(.caption)
-                                            .foregroundColor(.green)
-                                    }
-                                    .transition(.opacity)
-                                }
-                            }
-                            .padding()
-                            .background(Color.black.opacity(0.1))
-                            .cornerRadius(8)
                         }
                         .padding()
                         
@@ -513,78 +357,81 @@ struct ProfileView: View {
                         .padding(.horizontal)
                         .padding(.bottom, 40) // Extra padding at bottom
                     }
-                    .alert(isPresented: $showAlert) {
-                        Alert(title: Text("Profile Saved"), message: Text("Your profile info is saved to CloudKit."), dismissButton: .default(Text("OK")))
-                    }
-                    .background(Color.black.ignoresSafeArea())
-                    .onAppear {
-                        loadProfileFromCloudKit()
-                        reminderTime1UI = Date(timeIntervalSince1970: reminderTime1Interval)
-                        reminderTime2UI = Date(timeIntervalSince1970: reminderTime2Interval)
-                        updateNotifications()
-                        updateMLStatus()
-                    }
-                    .onChange(of: isSignedIn) { signedIn in
-                        if (signedIn) {
-                            // pull stats from CloudKit instead of pushing
-                            CloudKitManager.shared.fetchUserProgress(
-                                xpModel: xpModel,
-                                currencyModel: currencyModel,
-                                timerModel: timerModel
-                            )
-                        }
-                    }
-                    // Conditional PhotoPicker Sheet
-                    #if os(iOS)
-                    .sheet(isPresented: $showImagePicker) {
-                        PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
-                            Text("Select a Profile Picture")
-                        }
-                        .onChange(of: selectedPhotoItem) { newItem in
-                            if let newItem = newItem {
-                                Task {
-                                    if let data = try? await newItem.loadTransferable(type: Data.self),
-                                       let image = UIImage(data: data) {
-                                        profileImage = image
-                                        profileImageData = data // Save image data to AppStorage
-                                    }
-                                }
+                }
+            }
+            .refreshable {
+                // reload profile and stats
+                loadProfileFromCloudKit()
+                CloudKitManager.shared.fetchUserProgress(
+                    xpModel: xpModel,
+                    currencyModel: currencyModel,
+                    timerModel: timerModel
+                )
+            }
+            // Conditional PhotoPicker Sheet
+            #if os(iOS)
+            .sheet(isPresented: $showImagePicker) {
+                PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                    Text("Select a Profile Picture")
+                }
+                .onChange(of: selectedPhotoItem) { newItem in
+                    if let newItem = newItem {
+                        Task {
+                            if let data = try? await newItem.loadTransferable(type: Data.self),
+                               let image = UIImage(data: data) {
+                                profileImage = image
+                                profileImageData = data // Save image data to AppStorage
                             }
                         }
                     }
-                    #else
-                    .sheet(isPresented: $showImagePicker) {
-                        Text("Photo picker not available on this platform")
-                    }
-                    #endif
                 }
             }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+            #else
+            .sheet(isPresented: $showImagePicker) {
+                Text("Photo picker not available on this platform")
+            }
+            #endif
+            .alert(isPresented: $showAlert) {
+                Alert(title: Text("Profile Saved"), message: Text("Your profile info is saved to CloudKit."), dismissButton: .default(Text("OK")))
+            }
+            .overlay(alignment: .topLeading) {
+                HStack {
                     Button("Done") {
-                        dismiss()
+                        if let isPresented = isPresented {
+                            isPresented.wrappedValue = false
+                        } else {
+                            dismiss()
+                        }
                     }
                     .font(.headline)
                     .foregroundColor(.white)
+                    .padding(.top, 16)
+                    .padding(.leading, 20)
+                    Spacer()
                 }
             }
-            .toolbarBackground(.clear, for: .navigationBar)
-            .navigationBarBackButtonHidden(true)
         }
+        .background(Color.black.ignoresSafeArea())
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
-        .refreshable {
-            // reload profile and stats
+        .onAppear {
             loadProfileFromCloudKit()
-            CloudKitManager.shared.fetchUserProgress(
-                xpModel: xpModel,
-                currencyModel: currencyModel,
-                timerModel: timerModel
-            )
+            reminderTime1UI = Date(timeIntervalSince1970: reminderTime1Interval)
+            reminderTime2UI = Date(timeIntervalSince1970: reminderTime2Interval)
+            updateNotifications()
+            if !deviceNotificationsAllowed {
+                NotificationManager.shared.cancelReminders()
+            }
         }
-        .sheet(isPresented: $showDataSharingInfo) {
-            DataSharingInfoView(isPresented: $showDataSharingInfo)
+        .onChange(of: isSignedIn) { signedIn in
+            if (signedIn) {
+                // pull stats from CloudKit instead of pushing
+                CloudKitManager.shared.fetchUserProgress(
+                    xpModel: xpModel,
+                    currencyModel: currencyModel,
+                    timerModel: timerModel
+                )
+            }
         }
     }
 
@@ -799,82 +646,18 @@ struct ProfileView: View {
     }
 
     private func updateNotifications() {
-        // If using dynamic notifications, get times from ProductivityTracker
-        var reminderComponents: [DateComponents]
+        // Only use manually set reminder times; remove dynamic reminder logic
+        let comp1 = Calendar.current.dateComponents([.hour, .minute], from: Date(timeIntervalSince1970: reminderTime1Interval))
+        let comp2 = Calendar.current.dateComponents([.hour, .minute], from: Date(timeIntervalSince1970: reminderTime2Interval))
+        let reminderComponents = [comp1, comp2]
         
-        if useDynamicReminders {
-            reminderComponents = ProductivityTracker.shared.getOptimalNotificationTimes()
-        } else {
-            // Otherwise use the manually set times
-            let comp1 = Calendar.current.dateComponents([.hour, .minute], from: Date(timeIntervalSince1970: reminderTime1Interval))
-            let comp2 = Calendar.current.dateComponents([.hour, .minute], from: Date(timeIntervalSince1970: reminderTime2Interval))
-            reminderComponents = [comp1, comp2]
-        }
-        
-        // Update NotificationManager only if enabled
-        if notificationsEnabled {
+        // Update NotificationManager only if enabled and device notifications allowed
+        if notificationsEnabled && deviceNotificationsAllowed {
             NotificationManager.shared.reminderTimes = reminderComponents
             NotificationManager.shared.updateReminders()
         } else {
             NotificationManager.shared.cancelReminders()
         }
-    }
-    
-    // ML functionality methods
-    private func updateMLStatus() {
-        let status = MLManager.shared.getDataCollectionStatus()
-        sessionsCollected = status.sessionsCollected
-        sessionsNeeded = status.sessionsNeeded
-        
-        mlFeaturesAvailable = []
-        
-        if MLManager.shared.isFeatureAvailable(.notificationTiming) {
-            mlFeaturesAvailable.append("Smart Notification Timing")
-        }
-        
-        if MLManager.shared.isFeatureAvailable(.studyDuration) {
-            mlFeaturesAvailable.append("Optimal Study Duration")
-        }
-        
-        if MLManager.shared.isFeatureAvailable(.taskRecommendation) {
-            mlFeaturesAvailable.append("Task Recommendations")
-        }
-    }
-    
-    private func trainMLModel() {
-        isTrainingModel = true
-        
-        DispatchQueue.global(qos: .background).async {
-            let sessions = ProductivityTracker.shared.getAllSessions()
-            let modelURL = NotificationModelTrainer.shared.trainModel(from: sessions)
-            
-            DispatchQueue.main.async {
-                self.isTrainingModel = false
-                if modelURL != nil {
-                    MLManager.shared.loadModels()
-                    self.updateMLStatus()
-                }
-            }
-        }
-    }
-    
-    private func recordTestSession() {
-        let now = Date()
-        let calendar = Calendar.current
-        
-        let session = ProductivityTracker.ProductivitySession(
-            timestamp: now,
-            duration: TimeInterval.random(in: 900...3600),
-            dayOfWeek: calendar.component(.weekday, from: now),
-            engagement: Float.random(in: 0.5...1.0),
-            taskType: ["reading", "problem-solving", "memorization"].randomElement(),
-            difficulty: Int.random(in: 1...5),
-            completionPercentage: Float.random(in: 0.5...1.0),
-            userEnergyLevel: Int.random(in: 2...5)
-        )
-        
-        ProductivityTracker.shared.addSession(session)
-        updateMLStatus()
     }
     
     // Debug data loading functions
@@ -938,7 +721,6 @@ struct ProfileView: View {
         currencyModel.balance = 0
         xpModel.resetXP()
         shopModel.resetPurchases()
-        productivityTracker.dataShareOptIn = false
         // ...if you have more trackers, reset them here...
 
         // Clear cached CloudKit identifiers
@@ -986,7 +768,7 @@ extension CKRecord {
     }
 }
 
-// Data sharing info view
+// Data sharing info view (kept because it is no longer referenced, but not harmful)
 struct DataSharingInfoView: View {
     @Binding var isPresented: Bool
     

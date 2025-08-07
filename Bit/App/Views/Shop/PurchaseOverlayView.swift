@@ -28,9 +28,8 @@ struct PurchaseOverlayView: View {
 
             // Confirmation overlay
             if isPresented, let item = selectedItem {
-                // solid black background
-                Color.black
-                    .ignoresSafeArea()
+                // blurred, semi-transparent glass effect background
+                Color.clear.background(.ultraThinMaterial).ignoresSafeArea()
                     .onTapGesture { withAnimation { isPresented = false } }
 
                 // Confirmation card (was in PurchaseConfirmationView)
@@ -64,7 +63,7 @@ struct PurchaseOverlayView: View {
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
 
-                    Divider().background(Color.gray.opacity(0.3)).padding(.horizontal)
+                    Divider().background(.ultraThinMaterial).padding(.horizontal)
 
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
@@ -116,7 +115,7 @@ struct PurchaseOverlayView: View {
                     }
                     .padding(.bottom, 20)
                 }
-                .background(Color.black)
+                .background(.ultraThinMaterial)
                 .cornerRadius(16)
                 .shadow(radius: 10)
                 .padding(.horizontal, 30)
