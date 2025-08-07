@@ -1,9 +1,17 @@
 import SwiftUI
 import CloudKit
 
+private struct LevelPillWidthKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
 struct FriendsView: View {
     @AppStorage("profileUsername") private var storedUsername: String = ""
     @AppStorage("profileEmoji") private var profileEmoji: String = "😀"
+    @State private var profileLevel: Int? = nil
     @State private var allUsers: [CKRecord] = []
     @State private var isLoadingUsers: Bool = false
     @State private var username: String = ""
@@ -12,6 +20,8 @@ struct FriendsView: View {
     @State private var friendIDs: Set<String> = []
     @State private var showAddFriendOverlay = false
     @State private var currentUserStreak: Int? = nil
+    @State private var friendLevels: [String: Int] = [:]
+    @State private var levelPillWidth: CGFloat = 0
     private let friendsManager = CloudFriendsManager()
 
     var body: some View {
@@ -64,16 +74,31 @@ struct FriendsView: View {
                                             .foregroundColor(.gray)
                                     }
                                     Spacer()
-                                    HStack(spacing: 4) {
-                                        Image(systemName: "flame.fill")
-                                            .foregroundColor(.white)
-                                        Text(currentUserStreak != nil ? String(currentUserStreak!) : "?")
-                                            .bold()
-                                            .foregroundColor(.white)
+                                    VStack(spacing: 4) {
+                                        HStack(spacing: 4) {
+                                            Image(systemName: "star.fill").foregroundColor(.yellow)
+                                            Text(profileLevel != nil ? String(profileLevel!) : String(UserDefaults.standard.integer(forKey: "XPModel.level"))).bold().foregroundColor(.white)
+                                        }
+                                        .padding(.vertical, 4)
+                                        .padding(.horizontal, 12)
+                                        .background(Capsule().fill(Color.green))
+                                        .background(GeometryReader { geo in
+                                            Color.clear.preference(key: LevelPillWidthKey.self, value: geo.size.width)
+                                        })
+                                        .frame(minWidth: 60)
+                                        .frame(width: levelPillWidth)
+
+                                        HStack(spacing: 4) {
+                                            Image(systemName: "flame.fill")
+                                                .foregroundColor(.white)
+                                            Text(currentUserStreak != nil ? String(currentUserStreak!) : "?")
+                                                .bold()
+                                                .foregroundColor(.white)
+                                        }
+                                        .padding(.vertical, 4)
+                                        .padding(.horizontal, 12)
+                                        .background(Capsule().fill(Color.orange))
                                     }
-                                    .padding(.vertical, 4)
-                                    .padding(.horizontal, 12)
-                                    .background(Capsule().fill(Color.orange))
                                 }
                                 .padding(.vertical, 8)
                             } else {
@@ -90,11 +115,21 @@ struct FriendsView: View {
                             }, id: \.recordID) { record in
                                 let uid = record["userID"] as? String ?? ""
                                 let emoji = record["profileEmoji"] as? String ?? "😀"
+                                let friendLevel = friendLevels[uid]
                                 HStack {
                                     Text(emoji)
                                         .font(.title2)
                                     Text(record["username"] as? String ?? "Unknown")
                                         .font(.headline)
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "star.fill").foregroundColor(.yellow)
+                                        Text(friendLevel != nil ? String(friendLevel!) : "?").bold().foregroundColor(.white)
+                                    }
+                                    .frame(minWidth: 60)
+                                    .frame(width: levelPillWidth)
+                                    .padding(.vertical, 4)
+                                    .padding(.horizontal, 12)
+                                    .background(Capsule().fill(Color.green))
                                     Spacer()
                                     if friendIDs.contains(uid) {
                                         Text("Added")
@@ -115,6 +150,9 @@ struct FriendsView: View {
                         }
                     }
                     .listStyle(InsetGroupedListStyle())  // make headers visible
+                    .onPreferenceChange(LevelPillWidthKey.self) { value in
+                        levelPillWidth = value
+                    }
 
                     Button("Refresh Data") {
                         fetchAllData()
@@ -175,6 +213,7 @@ struct FriendsView: View {
         .onAppear {
             fetchAllData()
             fetchCurrentUserStreak()
+            fetchUserLevelFromCloudKit()
         }
         .alert("Enter Your Username", isPresented: $showingUsernamePrompt) {
             TextField("Username", text: $username)
@@ -191,6 +230,12 @@ struct FriendsView: View {
                 DispatchQueue.main.async {
                     if let ids = ids {
                         friendIDs = Set(ids)
+                    }
+                    // fetch each friend's level
+                    for record in allUsers {
+                        if let uid = record["userID"] as? String {
+                            fetchLevel(for: uid)
+                        }
                     }
                     isLoadingUsers = false
                 }
@@ -228,6 +273,42 @@ struct FriendsView: View {
         }
         friendsManager.createUserRecord(username: username) { _, _ in
             fetchAllData()
+        }
+    }
+    
+    private func fetchUserLevelFromCloudKit() {
+        let userID = CloudKitManager.shared.getUserID()
+        
+        let predicate = NSPredicate(format: "userID == %@", userID)
+        let query = CKQuery(recordType: "UserProgress", predicate: predicate)
+        
+        let operation = CKQueryOperation(query: query)
+        operation.resultsLimit = 1
+        
+        operation.recordFetchedBlock = { record in
+            DispatchQueue.main.async {
+                if let level = record["level"] as? Int {
+                    self.profileLevel = level
+                }
+            }
+        }
+        
+        operation.queryCompletionBlock = { _, _ in
+            // No action required on complete
+        }
+        
+        CKContainer.default().publicCloudDatabase.add(operation)
+    }
+    
+    private func fetchLevel(for userID: String) {
+        let predicate = NSPredicate(format: "userID == %@", userID)
+        let query = CKQuery(recordType: "UserProgress", predicate: predicate)
+        CKContainer.default().publicCloudDatabase.perform(query, inZoneWith: nil) { records, error in
+            if let level = records?.first?["level"] as? Int {
+                DispatchQueue.main.async {
+                    friendLevels[userID] = level
+                }
+            }
         }
     }
 }

@@ -204,6 +204,7 @@ struct StudyTimerView: View {
                 .background(Color.blue)
                 .foregroundColor(.white)
                 .cornerRadius(10)
+                .padding(.top, 180)
                 .transition(.opacity)
                 .zIndex(10)
             }
@@ -262,3 +263,4 @@ struct EditGoalView: View {
 }
 
 // Custom overlay for category selection
+

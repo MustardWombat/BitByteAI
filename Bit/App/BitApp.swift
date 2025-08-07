@@ -24,7 +24,6 @@ struct BitAppView: View {
     @StateObject var taskModel = TaskModel()
 
     @AppStorage("isSignedIn") private var isSignedIn: Bool = false
-    @State private var showSignInPrompt: Bool = false
     @State private var showSplash = true
 
     // Updated init to match call-site
@@ -86,57 +85,7 @@ struct BitAppView: View {
                     .onAppear {
                         // trigger XPModel cloud load on app open
                         xpModel.fetchFromICloud()
-                        
-                        if !showSignInPrompt && !isSignedIn {
-                            checkUserProfileExists()
-                        }
                     }
-            }
-        }
-        .sheet(isPresented: $showSignInPrompt, onDismiss: {
-            if isSignedIn {
-                categoriesModel.mergeWithICloudData()
-                CloudKitManager.shared.syncUserProfileToCloud()
-            }
-        }) {
-            SignInPromptView(onSignIn: {
-                isSignedIn = true
-                showSignInPrompt = false
-                categoriesModel.mergeWithICloudData()
-                CloudKitManager.shared.syncUserProfileToCloud()
-            }, onSkip: {
-                showSignInPrompt = false
-                createLocalUserProfile()
-            })
-        }
-    }
-    
-    private func checkUserProfileExists() {
-        let container = CKContainer.default()
-        let privateDB = container.privateCloudDatabase
-        
-        // Use consistent user ID
-        let userID = CloudKitManager.shared.getUserID()
-        let predicate = NSPredicate(format: "userID == %@", userID)
-        let query = CKQuery(recordType: "UserProfile", predicate: predicate)
-        
-        privateDB.perform(query, inZoneWith: nil) { (records, error) in
-            DispatchQueue.main.async {
-                if let error = error {
-                    print("Error checking user profile: \(error)")
-                    // Continue with sign-in prompt on error
-                    self.showSignInPrompt = true
-                    return
-                }
-                
-                if let records = records, !records.isEmpty {
-                    // Profile exists, load it
-                    print("Found existing profile, loading data...")
-                    self.loadUserProfile(from: records[0])
-                } else {
-                    // No profile found, show sign in prompt
-                    self.showSignInPrompt = true
-                }
             }
         }
     }
@@ -426,5 +375,4 @@ class CloudKitContainer {
         print("🌩️ CloudKitContainer initialized with: \(container.containerIdentifier ?? "unknown")")
     }
 }
-
 

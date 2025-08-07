@@ -31,6 +31,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		4F4FB6862E45604400E27245 /* Bit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Bit.xcodeproj; sourceTree = "<group>"; };
 		4F95C6552DA30C7F00839484 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		4F95C6572DA30C7F00839484 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		4F95C6772DA311D300839484 /* StudyTimerWidgetExtensionExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = StudyTimerWidgetExtensionExtension.entitlements; sourceTree = "<group>"; };
@@ -123,6 +124,13 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		4F4FB6CC2E45604400E27245 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		4F95C6542DA30C7F00839484 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -347,16 +355,16 @@
 			projectDirPath = "";
 			projectReferences = (
 				{
-					ProductGroup = 4FC1BA232E43ED6A00CE751B /* Products */;
-					ProjectRef = 4FC1B9DE2E43ED6A00CE751B /* Bit.xcodeproj */;
-				},
-				{
 					ProductGroup = 4FE506392E15DBBF00FB0901 /* Products */;
 					ProjectRef = 4FE506362E15DBBF00FB0901 /* Bit.xcodeproj */;
 				},
 				{
 					ProductGroup = 4F9FA4352E442C5D00C200E4 /* Products */;
 					ProjectRef = 4F9FA3EF2E442C5D00C200E4 /* Bit.xcodeproj */;
+				},
+				{
+					ProductGroup = 4F4FB6CC2E45604400E27245 /* Products */;
+					ProjectRef = 4F4FB6862E45604400E27245 /* Bit.xcodeproj */;
 				},
 				{
 					ProductGroup = 4FB295752E41E41F00AC243A /* Products */;
@@ -371,12 +379,16 @@
 					ProjectRef = 4FC1B8E42E42E10F00CE751B /* Bit.xcodeproj */;
 				},
 				{
-					ProductGroup = 4FA514DE2E2063B4007ACCD0 /* Products */;
-					ProjectRef = 4FA514992E2063B4007ACCD0 /* Bit.xcodeproj */;
-				},
-				{
 					ProductGroup = 4FD1468E2E41DC1200A121B0 /* Products */;
 					ProjectRef = 4FD146492E41DC1200A121B0 /* Bit.xcodeproj */;
+				},
+				{
+					ProductGroup = 4FC1BA232E43ED6A00CE751B /* Products */;
+					ProjectRef = 4FC1B9DE2E43ED6A00CE751B /* Bit.xcodeproj */;
+				},
+				{
+					ProductGroup = 4FA514DE2E2063B4007ACCD0 /* Products */;
+					ProjectRef = 4FA514992E2063B4007ACCD0 /* Bit.xcodeproj */;
 				},
 			);
 			projectRoot = "";
@@ -673,7 +685,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.2;
-				MARKETING_VERSION = 1.0.7;
+				MARKETING_VERSION = 1.0.8;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.jameswilliams.BitByteAI-";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -718,7 +730,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.2;
-				MARKETING_VERSION = 1.0.7;
+				MARKETING_VERSION = 1.0.8;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.jameswilliams.Bit-";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;

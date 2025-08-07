@@ -23,6 +23,7 @@ struct ProfileView: View {
     @AppStorage("isSignedIn") private var isSignedIn: Bool = false
     @AppStorage("profileName") private var storedName: String = ""
     @AppStorage("profileEmoji") private var profileEmoji: String = "😀" // Added profileEmoji AppStorage
+    @State private var cloudLevel: Int? = nil
 
     @AppStorage("deviceNotificationsAllowed") private var deviceNotificationsAllowed: Bool = true
 
@@ -122,7 +123,7 @@ struct ProfileView: View {
                                         .font(.headline)
                                     Text("XP: \(xpModel.xp) / \(xpModel.xpForNextLevel)")
                                         .font(.headline)
-                                    Text("Level: \(xpModel.level)")
+                                    Text("Level: \(cloudLevel ?? xpModel.level)")
                                         .font(.headline)
                                     Text("Purchases:")
                                         .font(.headline)
@@ -374,6 +375,7 @@ struct ProfileView: View {
             if !deviceNotificationsAllowed {
                 NotificationManager.shared.cancelReminders()
             }
+            fetchUserLevelFromCloudKit()
         }
         .onChange(of: isSignedIn) { signedIn in
             if (signedIn) {
@@ -641,6 +643,7 @@ struct ProfileView: View {
         name = ""
         username = ""
         profileEmoji = "😀" // Reset profileEmoji to default
+        cloudLevel = nil
 
         // --- Reset all stats on logout ---
         currencyModel.balance = 0
@@ -676,6 +679,31 @@ struct ProfileView: View {
                 } else {
                     // Show an alert or handle the error
                     print("❌ iCloud sign-in failed: \(error?.localizedDescription ?? "Unknown error")")
+                }
+            }
+        }
+    }
+    
+    private func fetchUserLevelFromCloudKit() {
+        let userID = CloudKitManager.shared.getUserID()
+        let predicate = NSPredicate(format: "userID == %@", userID)
+        let query = CKQuery(recordType: "UserProgress", predicate: predicate)
+        let container = CKContainer.default()
+
+        // First try private database
+        container.privateCloudDatabase.perform(query, inZoneWith: nil) { records, error in
+            if let record = records?.first, let level = record["level"] as? Int {
+                print("✅ Found level in private database: \(level)")
+                DispatchQueue.main.async { self.cloudLevel = level }
+            } else {
+                // If not found, try public database
+                container.publicCloudDatabase.perform(query, inZoneWith: nil) { pubRecords, pubError in
+                    if let pubRecord = pubRecords?.first, let pubLevel = pubRecord["level"] as? Int {
+                        print("✅ Found level in public database: \(pubLevel)")
+                        DispatchQueue.main.async { self.cloudLevel = pubLevel }
+                    } else {
+                        print("❌ No level found in either database.")
+                    }
                 }
             }
         }
