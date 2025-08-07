@@ -44,23 +44,6 @@ struct ShopView: View {
 
                 ScrollView {
                     VStack(spacing: 20) {
-                        // Active items section
-                        if !shopModel.purchasedItems.filter({ $0.isActive }).isEmpty {
-                            VStack(alignment: .leading) {
-                                Text("Active Boosts")
-                                    .font(.headline)
-                                    .foregroundColor(.white)
-                                    .padding(.bottom, 5)
-                                
-                                ForEach(shopModel.purchasedItems.filter { $0.isActive }) { item in
-                                    ActiveItemCard(item: item)
-                                }
-                            }
-                            .padding()
-                            .background(Color.black.opacity(0.5))
-                            .cornerRadius(10)
-                        }
-                        
                         // Shop items section
                         VStack(alignment: .leading) {
                             // XP Boosters
@@ -82,28 +65,6 @@ struct ShopView: View {
                                 type: .coinBooster,
                                 currentLevel: shopModel.upgradeLevels[.coinBooster] ?? 0,
                                 nextUpgrade: shopModel.availableItems.first { $0.type == .coinBooster },
-                                onPurchase: { selectItem($0) }
-                            )
-                            
-                            // Timer Extenders
-                            UpgradeCategoryView(
-                                title: "Time Masters",
-                                icon: "timer",
-                                iconColor: .blue,
-                                type: .timerExtender,
-                                currentLevel: shopModel.upgradeLevels[.timerExtender] ?? 0,
-                                nextUpgrade: shopModel.availableItems.first { $0.type == .timerExtender },
-                                onPurchase: { selectItem($0) }
-                            )
-                            
-                            // Focus Enhancers
-                            UpgradeCategoryView(
-                                title: "Focus Masters",
-                                icon: "brain.head.profile",
-                                iconColor: .purple,
-                                type: .focusEnhancer,
-                                currentLevel: shopModel.upgradeLevels[.focusEnhancer] ?? 0,
-                                nextUpgrade: shopModel.availableItems.first { $0.type == .focusEnhancer },
                                 onPurchase: { selectItem($0) }
                             )
                         }
