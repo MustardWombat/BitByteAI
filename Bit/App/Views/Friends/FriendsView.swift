@@ -2,6 +2,7 @@ import SwiftUI
 import CloudKit
 
 struct FriendsView: View {
+    @AppStorage("profileUsername") private var storedUsername: String = ""
     @State private var allUsers: [CKRecord] = []
     @State private var isLoadingUsers: Bool = false
     @State private var username: String = ""
@@ -9,6 +10,7 @@ struct FriendsView: View {
     @State private var errorMessage: String?
     @State private var friendIDs: Set<String> = []
     @State private var showAddFriendOverlay = false
+    @State private var currentUserStreak: Int? = nil
     private let friendsManager = CloudFriendsManager()
 
     var body: some View {
@@ -43,10 +45,36 @@ struct FriendsView: View {
                     List {
                         // Your Profile section - use the locally saved Username
                         Section("Your Profile") {
-                            if let name = UserDefaults.standard.string(forKey: "Username") {
-                                Text("\(name) (You)")
-                                    .font(.headline)
-                                    .padding(.vertical, 8)
+                            if !storedUsername.isEmpty {
+                                HStack(spacing: 16) {
+                                    ZStack {
+                                        Circle()
+                                            .fill(Color.gray.opacity(0.3))
+                                            .frame(width: 48, height: 48)
+                                        Image(systemName: "person.fill")
+                                            .font(.largeTitle)
+                                            .foregroundColor(.white)
+                                    }
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("\(storedUsername)")
+                                            .font(.headline)
+                                        Text("(You)")
+                                            .font(.caption)
+                                            .foregroundColor(.gray)
+                                    }
+                                    Spacer()
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "flame.fill")
+                                            .foregroundColor(.white)
+                                        Text(currentUserStreak != nil ? String(currentUserStreak!) : "?")
+                                            .bold()
+                                            .foregroundColor(.white)
+                                    }
+                                    .padding(.vertical, 4)
+                                    .padding(.horizontal, 12)
+                                    .background(Capsule().fill(Color.orange))
+                                }
+                                .padding(.vertical, 8)
                             } else {
                                 Text("No profile found")
                                     .foregroundColor(.gray)
@@ -137,7 +165,10 @@ struct FriendsView: View {
         }
         .background(Color.black.ignoresSafeArea())
         .foregroundColor(.white)
-        .onAppear { fetchAllData() }
+        .onAppear {
+            fetchAllData()
+            fetchCurrentUserStreak()
+        }
         .alert("Enter Your Username", isPresented: $showingUsernamePrompt) {
             TextField("Username", text: $username)
             Button("Save") { createUser() }
@@ -169,6 +200,16 @@ struct FriendsView: View {
                     errorMessage = "Error fetching users: \(error.localizedDescription)"
                 }
                 completion()
+            }
+        }
+    }
+
+    private func fetchCurrentUserStreak() {
+        let localStreak = 0
+        let localDate = Date.distantPast
+        CloudKitManager.shared.syncStreakWithCloud(localStreak: localStreak, localDate: localDate) { streak in
+            DispatchQueue.main.async {
+                self.currentUserStreak = streak
             }
         }
     }

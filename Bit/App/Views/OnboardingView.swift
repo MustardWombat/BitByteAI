@@ -96,18 +96,38 @@ struct OnboardingView: View {
                 .tag(1)
                 .padding()
 
-                // Page 3: Sign In
-                SignInPromptView(
-                    onSignIn: {
-                        onSignIn()
-                        withAnimation { selection = 3 }
-                    },
-                    onSkip: {
-                        onSkip()
-                        withAnimation { selection = 3 }
-                    }
-                )
+                // Page 3: Sign In with Apple
+                VStack(spacing: 30) {
+                    Text("Sign In With Apple")
+                        .font(.largeTitle)
+                        .bold()
+                    Text("To continue, please sign in with your Apple ID.")
+                        .multilineTextAlignment(.center)
+                        .padding()
+                    SignInWithAppleButton(
+                        .signIn,
+                        onRequest: { request in
+                            // Configure request if needed
+                        },
+                        onCompletion: { result in
+                            switch result {
+                            case .success(_):
+                                onSignIn()
+                                withAnimation { selection = 3 }
+                            case .failure(_):
+                                // Optionally show an error
+                                break
+                            }
+                        }
+                    )
+                    .signInWithAppleButtonStyle(.white)
+                    .frame(height: 50)
+                    .cornerRadius(8)
+                    .padding(.horizontal)
+                }
                 .tag(2)
+                .padding()
+                .background(Color.white)
 
                 // New Page 4: Notification Permission
                 VStack(spacing: 30) {

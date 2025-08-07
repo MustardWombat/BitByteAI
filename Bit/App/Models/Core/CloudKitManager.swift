@@ -56,6 +56,46 @@ class CloudKitManager {
         }
     }
     
+    // Add this method to CloudKitManager:
+    //
+    // This method fetches the user's cloud streak and last update date, compares with the local streak and date, keeps the most recent one, and updates the cloud if needed.
+    //
+    // Place near other public methods of CloudKitManager, such as after getUserID().
+    func syncStreakWithCloud(localStreak: Int, localDate: Date, completion: @escaping (Int) -> Void) {
+        let userID = getUserID()
+        let predicate = NSPredicate(format: "userID == %@", userID)
+        let query = CKQuery(recordType: "UserProgress", predicate: predicate)
+        let privateDB = container.privateCloudDatabase
+
+        privateDB.perform(query, inZoneWith: nil) { records, error in
+            if let error = error {
+                print("Error fetching UserProgress: \(error.localizedDescription)")
+                // On error, fallback to local value
+                completion(localStreak)
+                return
+            }
+
+            let record = records?.first ?? CKRecord(recordType: "UserProgress")
+            let cloudStreak = record["studyStreak"] as? Int ?? 0
+            let cloudDate = record["lastStudyDate"] as? Date ?? Date.distantPast
+
+            // Decide which to use: the one with the most recent lastStudyDate
+            if localDate > cloudDate {
+                // Local is newer, update cloud
+                record["studyStreak"] = localStreak as CKRecordValue
+                record["lastStudyDate"] = localDate as CKRecordValue
+                privateDB.save(record) { _, saveError in
+                    if let saveError = saveError {
+                        print("Error updating cloud streak: \(saveError.localizedDescription)")
+                    }
+                    completion(localStreak)
+                }
+            } else {
+                completion(cloudStreak)
+            }
+        }
+    }
+    
     // Setup initial sync (call this when app starts)
     func setupSync(xpModel: XPModel, currencyModel: CurrencyModel, timerModel: StudyTimerModel) {
         // First sync right away
