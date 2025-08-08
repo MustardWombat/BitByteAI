@@ -55,7 +55,9 @@ struct AppTabRootView: View {
                 FriendsView()
             }
         }
-        .fullScreenCover(isPresented: $showProfile) {
+        .fullScreenCover(isPresented: $showProfile, onDismiss: {
+            currentView = "Home"
+        }) {
             ProfileView(isPresented: $showProfile)
                 .transition(.move(edge: .top))
         }
@@ -64,8 +66,7 @@ struct AppTabRootView: View {
                 withAnimation(.easeInOut(duration: 0.3)) {
                     showProfile = true
                 }
-                // Reset currentView immediately
-                currentView = "Home"
+                // currentView = "Home" // Removed this line as per instructions
             }
         }
     }
