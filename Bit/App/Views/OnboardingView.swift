@@ -101,7 +101,7 @@ struct OnboardingView: View {
                     Text("Sign In With Apple")
                         .font(.largeTitle)
                         .bold()
-                    Text("To continue, please sign in with your Apple ID.")
+                    Text("To continue, please sign in with your Apple ID. Signing in is optional and only required for syncing and social features.")
                         .multilineTextAlignment(.center)
                         .padding()
                     SignInWithAppleButton(
@@ -122,13 +122,25 @@ struct OnboardingView: View {
                     )
                     .signInWithAppleButtonStyle(.white)
                     .frame(height: 50)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.white)
+                    .clipShape(Capsule())
+                    .shadow(radius: 2)
+                    .padding(.horizontal)
+                    
+                    Button("Continue without Signing In") {
+                        onSkip()
+                        withAnimation { selection = 3 }
+                    }
+                    .padding()
+                    .background(Color.gray.opacity(0.2))
+                    .foregroundColor(.gray)
                     .cornerRadius(8)
                     .padding(.horizontal)
                 }
                 .tag(2)
                 .padding()
-                .background(Color.white)
-
+                
                 // New Page 4: Notification Permission
                 VStack(spacing: 30) {
                     Text("Stay On Track with Reminders")

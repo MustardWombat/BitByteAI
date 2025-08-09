@@ -15,7 +15,7 @@ class Category: ObservableObject, Identifiable, Codable, Hashable {
     @Published var dailyLogs: [DailyLog]        // Each day’s study minutes
     var colorHex: String                        // A persistent color stored as a hex string
 
-    init(name: String, weeklyGoalMinutes: Int = 60, colorHex: String? = nil) {
+    init(name: String, weeklyGoalMinutes: Int = 0, colorHex: String? = nil) {
         self.id = UUID()
         self.name = name
         self.weeklyGoalMinutes = weeklyGoalMinutes
@@ -283,9 +283,9 @@ struct CreateNewTopicView: View {
                         Text("\(minute) min").tag(minute)
                     }
                 }
-#if os(iOS)
-.pickerStyle(WheelPickerStyle())
-#endif
+                #if os(iOS)
+                .pickerStyle(WheelPickerStyle())
+                #endif
                 .frame(maxWidth: .infinity)
             }
             .frame(height: 150) // Adjust height for the wheel pickers

@@ -11,11 +11,11 @@ struct TopShellSpritePlaceholder: View {
     @AppStorage("profileImageData") private var profileImageData: Data? // Store profile image in AppStorage
     @AppStorage("hasSubscription") private var isPro: Bool = false  // ← new
     @AppStorage("profileEmoji") private var profileEmoji: String = "😀"
-    @Binding var currentView: String // Add binding to navigate to ProfileView
+    var onProfileTapped: () -> Void = {}
 
     var body: some View {
         Button(action: {
-            currentView = "Profile" // Navigate to ProfileView
+            onProfileTapped()
         }) {
             if let imageData = profileImageData {
                 #if os(iOS)
@@ -25,8 +25,25 @@ struct TopShellSpritePlaceholder: View {
                         .scaledToFill()
                         .frame(width: 44, height: 44)
                         .cornerRadius(8) // Rounded corners
-                        // gradient glow when Pro
                         .overlay(
+                            // Glow behind the border
+                            Group {
+                                if isPro {
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(
+                                            AngularGradient(
+                                                gradient: Gradient(colors: [Color.orange.opacity(0.7), Color.yellow.opacity(0.7)]),
+                                                center: .center
+                                            ),
+                                            lineWidth: 4
+                                        )
+                                        .blur(radius: 6)
+                                        .opacity(0.8)
+                                }
+                            }
+                        )
+                        .overlay(
+                            // The angular gradient border
                             RoundedRectangle(cornerRadius: 8)
                                 .stroke(
                                     isPro
@@ -40,8 +57,6 @@ struct TopShellSpritePlaceholder: View {
                                     lineWidth: 2
                                 )
                         )
-                        .shadow(color: isPro ? Color.orange.opacity(0.7) : Color.clear,
-                                radius: isPro ? 8 : 0)
                 }
                 #elseif os(macOS)
                 if let nsImage = NSImage(data: imageData) {
@@ -51,6 +66,24 @@ struct TopShellSpritePlaceholder: View {
                         .frame(width: 44, height: 44)
                         .cornerRadius(8) // Rounded corners
                         .overlay(
+                            // Glow behind the border
+                            Group {
+                                if isPro {
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(
+                                            AngularGradient(
+                                                gradient: Gradient(colors: [Color.orange.opacity(0.7), Color.yellow.opacity(0.7)]),
+                                                center: .center
+                                            ),
+                                            lineWidth: 4
+                                        )
+                                        .blur(radius: 6)
+                                        .opacity(0.8)
+                                }
+                            }
+                        )
+                        .overlay(
+                            // The angular gradient border
                             RoundedRectangle(cornerRadius: 8)
                                 .stroke(
                                     isPro
@@ -64,8 +97,6 @@ struct TopShellSpritePlaceholder: View {
                                     lineWidth: 2
                                 )
                         )
-                        .shadow(color: isPro ? Color.orange.opacity(0.7) : Color.clear,
-                                radius: isPro ? 8 : 0)
                 }
                 #endif
             } else {
@@ -77,6 +108,38 @@ struct TopShellSpritePlaceholder: View {
                             .font(.system(size: 32))
                             .frame(width: 44, height: 44)
                             .multilineTextAlignment(.center)
+                    )
+                    .overlay(
+                        // Glow behind the border for emoji fallback
+                        Group {
+                            if isPro {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(
+                                        AngularGradient(
+                                            gradient: Gradient(colors: [Color.orange.opacity(0.7), Color.yellow.opacity(0.7)]),
+                                            center: .center
+                                        ),
+                                        lineWidth: 4
+                                    )
+                                    .blur(radius: 6)
+                                    .opacity(0.8)
+                            }
+                        }
+                    )
+                    .overlay(
+                        // The angular gradient border for emoji fallback
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(
+                                isPro
+                                    ? AnyShapeStyle(
+                                        AngularGradient(
+                                            gradient: Gradient(colors: [Color.orange, Color.yellow]),
+                                            center: .center
+                                        )
+                                    )
+                                    : AnyShapeStyle(Color.white),
+                                lineWidth: 2
+                            )
                     )
             }
         }
@@ -116,7 +179,7 @@ struct AppHeader: View {
                     // Right-aligned items
                     HStack(spacing: 12) {
                         XPDisplayView()
-                        TopShellSpritePlaceholder(currentView: $currentView)
+                        TopShellSpritePlaceholder(onProfileTapped: { /* TODO: handle profile presentation in parent */ }) // Integrate with parent view logic
                     }
                     .frame(maxWidth: .infinity, alignment: .trailing)
                 }
@@ -194,3 +257,4 @@ struct MarqueeText: View {
         }
     }
 }
+

@@ -37,7 +37,7 @@ class AppRouter: ObservableObject {
 // MARK: - AppTabRootView
 struct AppTabRootView: View {
     let tab: AppTab
-    @Binding var currentView: String // Change from @State to @Binding
+    @State private var currentView: String = "Home"
     @State private var showProfile: Bool = false
     
     var body: some View {
@@ -66,20 +66,24 @@ struct AppTabRootView: View {
                 withAnimation(.easeInOut(duration: 0.3)) {
                     showProfile = true
                 }
-                // currentView = "Home" // Removed this line as per instructions
+                currentView = "Home"
             }
         }
     }
 }
 
 // MARK: - BottomBarButton
+/// A button for the bottom bar that can be disabled to lock interactions,
+/// visually indicating the disabled state by reducing opacity.
 struct BottomBarButton: View {
     let iconName: String
     let viewName: String
     @Binding var currentView: String
+    var disabled: Bool = false
 
     var body: some View {
         Button(action: {
+            guard !disabled else { return }
             if currentView != viewName {
                 #if os(iOS)
                 let generator = UIImpactFeedbackGenerator(style: .medium)
@@ -99,7 +103,9 @@ struct BottomBarButton: View {
                     .font(.caption)
                     .foregroundColor(currentView == viewName ? Color.green : Color.white)
             }
+            .opacity(disabled ? 0.5 : 1.0)
         }
+        .disabled(disabled)
         .buttonStyle(TransparentButtonStyle())
     }
 }
@@ -111,17 +117,35 @@ struct BottomBar: View {
     let timerModel: StudyTimerModel
     let makeContentView: () -> AnyView
     
+    @State private var showProfile: Bool = false
+    
+    private var isTabBarLocked: Bool { timerModel.isTimerRunning && currentView == "Launch" }
+    
     var body: some View {
         #if os(iOS)
         if #available(iOS 18.0, *) {
             VStack(spacing: 0) {
                 AppHeader(currentView: $currentView)
                     .environmentObject(timerModel)
+                    .overlay(
+                        Button(action: { showProfile = true }) {
+                            Rectangle().foregroundColor(.clear)
+                        }
+                        .accessibilityLabel("Open Profile")
+                        .contentShape(Rectangle())
+                        .allowsHitTesting(true)
+                    )
                 
-                TabView(selection: $router.selectedTab) {
+                TabView(selection: Binding {
+                    router.selectedTab
+                } set: { newTab in
+                    if !isTabBarLocked {
+                        router.selectedTab = newTab
+                    }
+                }) {
                     ForEach(AppTab.allCases, id: \.self) { tab in
                         Tab(value: tab) {
-                            AppTabRootView(tab: tab, currentView: $currentView) // Pass the binding
+                            AppTabRootView(tab: tab)
                         } label: {
                             Label(tab.title, systemImage: tab.icon)
                         }
@@ -130,42 +154,83 @@ struct BottomBar: View {
                 .tint(.tabs)
                 .environmentObject(timerModel)
                 .environmentObject(router)
+                .background(Color.black.opacity(0.9).allowsHitTesting(!isTabBarLocked))
+            }
+            .fullScreenCover(isPresented: $showProfile, onDismiss: {
+                currentView = "Home"
+            }) {
+                ProfileView(isPresented: $showProfile)
             }
         } else {
             VStack(spacing: 0) {
                 AppHeader(currentView: $currentView)
                     .environmentObject(timerModel)
+                    .overlay(
+                        Button(action: { showProfile = true }) {
+                            Rectangle().foregroundColor(.clear)
+                        }
+                        .accessibilityLabel("Open Profile")
+                        .contentShape(Rectangle())
+                        .allowsHitTesting(true)
+                    )
                 
                 makeContentView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 
                 legacyBottomBar
             }
+            .fullScreenCover(isPresented: $showProfile, onDismiss: {
+                currentView = "Home"
+            }) {
+                ProfileView(isPresented: $showProfile)
+            }
+            .onChange(of: currentView) { newView in
+                if newView == "Profile" {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        showProfile = true
+                    }
+                    currentView = "Home"
+                }
+            }
         }
         #else
-        legacyBottomBar
+        ZStack {
+            legacyBottomBar
+                .background(Color.black.opacity(0.9).allowsHitTesting(!isTabBarLocked))
+        }
+        .fullScreenCover(isPresented: $showProfile, onDismiss: {
+            currentView = "Home"
+        }) {
+            ProfileView(isPresented: $showProfile)
+        }
+        .onChange(of: currentView) { newView in
+            if newView == "Profile" {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    showProfile = true
+                }
+                currentView = "Home"
+            }
+        }
         #endif
     }
     
     private var legacyBottomBar: some View {
         HStack {
-            BottomBarButton(iconName: "house.fill", viewName: "Home", currentView: $currentView)
+            BottomBarButton(iconName: "house.fill", viewName: "Home", currentView: $currentView, disabled: isTabBarLocked)
                 .frame(maxWidth: .infinity)
-            BottomBarButton(iconName: "globe", viewName: "Tasks", currentView: $currentView)
+            BottomBarButton(iconName: "globe", viewName: "Tasks", currentView: $currentView, disabled: isTabBarLocked)
                 .frame(maxWidth: .infinity)
-            BottomBarButton(iconName: "airplane", viewName: "Launch", currentView: $currentView) 
+            BottomBarButton(iconName: "airplane", viewName: "Launch", currentView: $currentView, disabled: false)
                 .frame(maxWidth: .infinity)
-            BottomBarButton(iconName: "cart.fill", viewName: "Shop", currentView: $currentView)
+            BottomBarButton(iconName: "cart.fill", viewName: "Shop", currentView: $currentView, disabled: isTabBarLocked)
                 .frame(maxWidth: .infinity)
-            BottomBarButton(iconName: "person.2.fill", viewName: "Friends", currentView: $currentView)
+            BottomBarButton(iconName: "person.2.fill", viewName: "Friends", currentView: $currentView, disabled: isTabBarLocked)
                 .frame(maxWidth: .infinity)
         }
         .padding(.horizontal, 10)
         .padding(.top, 10)
         .padding(.bottom, 10)
         .frame(maxWidth: .infinity)
-        .background(Color.black.opacity(0.9))
-        .zIndex(1000)
     }
 }
 

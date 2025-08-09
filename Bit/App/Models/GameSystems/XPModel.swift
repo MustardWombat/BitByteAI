@@ -15,6 +15,8 @@ import AppKit
 #endif
 
 class XPModel: ObservableObject {
+    @AppStorage("hasSubscription") private var isPro: Bool = false
+
     @Published var xp: Int = 0 { didSet { saveIfLoaded() } }
     @Published var level: Int = 1 { didSet { saveIfLoaded() } }
     @Published var xpForNextLevel: Int = 100 { didSet { saveIfLoaded() } }
@@ -75,7 +77,8 @@ class XPModel: ObservableObject {
     }
 
     func addXP(_ amount: Int) {
-        let boostedAmount = Int(Double(amount) * upgradeMultiplier)
+        let proAmount = isPro ? amount * 2 : amount
+        let boostedAmount = Int(Double(proAmount) * upgradeMultiplier)
         xp += boostedAmount
         checkForLevelUp()
     }
@@ -272,3 +275,4 @@ struct XPDisplayView: View {
         .cornerRadius(8) // Rounded corners for a polished look
     }
 }
+

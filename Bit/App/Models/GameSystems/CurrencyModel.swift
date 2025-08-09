@@ -7,6 +7,7 @@
 
 import Foundation
 import Combine
+import SwiftUI
 
 #if canImport(AppKit)
 import AppKit
@@ -15,6 +16,8 @@ import AppKit
 class CurrencyModel: ObservableObject {
     @Published var balance: Int = 0
     @Published var coinMultiplier: Double = 1.0
+    
+    @AppStorage("hasSubscription") private var isPro: Bool = false
 
     private let balanceKey = "CurrencyModel.balance"
 
@@ -55,7 +58,8 @@ class CurrencyModel: ObservableObject {
     }
 
     func earn(amount: Int) {
-        let boostedAmount = Int(Double(amount) * coinMultiplier)
+        let proAmount = isPro ? amount * 2 : amount
+        let boostedAmount = Int(Double(proAmount) * coinMultiplier)
         balance += boostedAmount
         saveToICloud()
     }
@@ -98,3 +102,4 @@ class CurrencyModel: ObservableObject {
         balance = max(Int(cloudValue), localValue)
     }
 }
+

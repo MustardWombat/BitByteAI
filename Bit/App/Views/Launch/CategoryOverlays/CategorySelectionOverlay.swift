@@ -6,6 +6,10 @@ struct CategorySelectionOverlay: View {
     @Binding var isPresented: Bool
     @State private var showCategoryCreationOverlay = false
     @State private var categoryForEditing: Category? = nil  // To track category being edited.
+    
+    @AppStorage("hasSubscription") private var isPro: Bool = false
+    @State private var showProSheet = false
+    @StateObject private var subscriptionManager = SubscriptionManager()
 
     var body: some View {
         VStack {
@@ -21,6 +25,9 @@ struct CategorySelectionOverlay: View {
                             .frame(width: 12, height: 12)
                         Text(category.name)
                         Spacer()
+                        Text("\((category.weeklyGoalMinutes ?? 0)) min goal")
+                            .font(.caption)
+                            .foregroundColor(.gray)
                         if selected?.id == category.id {
                             Image(systemName: "checkmark")
                                 .foregroundColor(.green)
@@ -37,11 +44,16 @@ struct CategorySelectionOverlay: View {
                     }
                 }
                 Button("Create New Category") {
-                    categoryForEditing = nil
-                    showCategoryCreationOverlay = true
+                    if !isPro && categories.count >= 3 {
+                        showProSheet = true
+                    } else {
+                        categoryForEditing = nil
+                        showCategoryCreationOverlay = true
+                    }
                 }
                 .foregroundColor(.blue)
             }
+            .frame(maxHeight: 350)
 
             Button("Close") {
                 isPresented = false
@@ -52,9 +64,12 @@ struct CategorySelectionOverlay: View {
             .cornerRadius(8)
         }
         .padding()
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal)
         .cornerRadius(12)
         .shadow(radius: 10)
         .background(Color.black)
+        .frame(maxHeight: UIScreen.main.bounds.height * 0.7)
         .sheet(isPresented: $showCategoryCreationOverlay) {
             CategoryCreationOverlay(
                 isPresented: $showCategoryCreationOverlay,
@@ -80,6 +95,12 @@ struct CategorySelectionOverlay: View {
                 onCancel: {
                     showCategoryCreationOverlay = false
                 }
+            )
+        }
+        .sheet(isPresented: $showProSheet) {
+            SubscriptionConfirmationView(
+                isPresented: $showProSheet,
+                subscriptionManager: subscriptionManager
             )
         }
     }

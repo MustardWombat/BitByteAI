@@ -14,6 +14,8 @@ import Combine
 private let selectedTopicKey = "selectedTopicID"
 
 class CategoriesViewModel: ObservableObject {
+    @AppStorage("hasSubscription") private var isPro: Bool = false
+    
     @Published var categories: [Category] = [] {
         didSet {
             saveCategories() // Save merged data to both iCloud and local
@@ -37,6 +39,10 @@ class CategoriesViewModel: ObservableObject {
 
     // Add a new category (default weekly goal now 1 hour)
     func addCategory(name: String, weeklyGoalMinutes: Int = 60) {
+        if !isPro && categories.count >= 3 {
+            print("Pro required for more than 3 categories")
+            return
+        }
         let newCat = Category(name: name, weeklyGoalMinutes: weeklyGoalMinutes)
         categories.append(newCat)
     }
@@ -131,5 +137,4 @@ class CategoriesViewModel: ObservableObject {
         #endif
     }
 }
-
 

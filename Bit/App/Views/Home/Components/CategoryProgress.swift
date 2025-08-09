@@ -10,7 +10,7 @@ struct EarnedPlanetsView: View {
             Text("Earned Planets")
                 .font(.title2)
                 .foregroundColor(.orange)
-            HStack(spacing: 16) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 90), spacing: 16)], spacing: 16) {
                 ForEach(categoriesVM.categories, id: \.id) { category in
                     let logs = categoriesVM.weeklyData(for: category.id)
                     let totalMinutes = logs.reduce(0) { $0 + $1.minutes }

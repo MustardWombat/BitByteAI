@@ -53,6 +53,10 @@ struct ProfileView: View {
     @State private var isLoadingDebugData: Bool = false
 
     var body: some View {
+        // Fetch app version and build number from Info.plist
+        let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+        let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
+        
         ZStack {
             ScrollView {
                 ZStack {
@@ -262,6 +266,12 @@ struct ProfileView: View {
                             }
                         }
                         .padding()
+                        
+                        // Version and Build Number display
+                        Text("Version \(appVersion) (Build \(buildNumber))")
+                            .font(.footnote)
+                            .foregroundColor(.gray)
+                            .padding(.top, 4)
                         
                         // Debug section
                         VStack {

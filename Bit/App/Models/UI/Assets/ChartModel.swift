@@ -126,8 +126,23 @@ extension CategoriesViewModel {
         guard let category = categories.first(where: { $0.id == categoryId }) else {
             return []
         }
-        
-        // Use the category's weeklyLogs property which now consistently returns Sun-Sat
-        return category.weeklyLogs
+        let calendar = Calendar.current
+        // Get the start of the current week (Sunday)
+        let today = Date()
+        guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: today) else {
+            return []
+        }
+        let startOfWeek = weekInterval.start
+        // Build an array of all week days (Sun-Sat)
+        let days: [Date] = (0..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: startOfWeek) }
+        let logsByDay = Dictionary(uniqueKeysWithValues: category.weeklyLogs.map { (calendar.startOfDay(for: $0.date), $0) })
+        return days.map { day in
+            if let log = logsByDay[calendar.startOfDay(for: day)] {
+                return log
+            } else {
+                // Synthesize a DailyLog with 0 minutes
+                return DailyLog(id: UUID(), date: day, minutes: 0)
+            }
+        }
     }
 }

@@ -81,7 +81,8 @@ struct HomeView: View {
                                 Spacer(minLength: 40)
                             }
                             .padding(.top, 10)
-                            .padding(.horizontal, 20)
+                            .frame(maxWidth: .infinity)
+                            .padding(.horizontal)
                             .zIndex(1)
                         }
                     }

@@ -4,6 +4,9 @@ import StoreKit
 struct SubscriptionConfirmationView: View {
     @Binding var isPresented: Bool
     @ObservedObject var subscriptionManager: SubscriptionManager
+    @State private var isRestoring = false
+    @State private var restoreResultMessage: String?
+    @State private var showRestoreAlert = false
     
     var body: some View {
         NavigationView {
@@ -37,8 +40,7 @@ struct SubscriptionConfirmationView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             FeatureRow(icon: "star.fill", text: "2x XP from all activities")
                             FeatureRow(icon: "dollarsign.circle.fill", text: "2x Coins from all sources")
-                            FeatureRow(icon: "timer", text: "Extended time for challenges")
-                            FeatureRow(icon: "brain.head.profile", text: "Enhanced focus abilities")
+                            FeatureRow(icon: "folder.fill", text: "Unlimited categories")
                         }
                         .padding(.vertical)
                     }
@@ -72,7 +74,38 @@ struct SubscriptionConfirmationView: View {
                     )
                     .foregroundColor(.white)
                     .cornerRadius(12)
-                    .disabled(subscriptionManager.isLoading)
+                    .disabled(subscriptionManager.isLoading || isRestoring)
+                    
+                    // Restore Purchase Button
+                    Button(action: {
+                        Task {
+                            isRestoring = true
+                            do {
+                                await subscriptionManager.loadProduct()
+                                try await AppStore.sync()
+                                restoreResultMessage = "Restore completed successfully."
+                            } catch {
+                                restoreResultMessage = "Restore failed: \(error.localizedDescription)"
+                            }
+                            isRestoring = false
+                            showRestoreAlert = true
+                        }
+                    }) {
+                        if isRestoring {
+                            ProgressView()
+                                .tint(.white)
+                        } else {
+                            Text("Restore Purchase")
+                                .font(.headline)
+                                .bold()
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(Color.gray)
+                    .foregroundColor(.white)
+                    .cornerRadius(12)
+                    .disabled(subscriptionManager.isLoading || isRestoring)
                     
                 } else {
                     ProgressView("Loading subscription details...")
@@ -87,6 +120,9 @@ struct SubscriptionConfirmationView: View {
                         isPresented = false
                     }
                 }
+            }
+            .alert(restoreResultMessage ?? "", isPresented: $showRestoreAlert) {
+                Button("OK", role: .cancel) { }
             }
         }
     }
