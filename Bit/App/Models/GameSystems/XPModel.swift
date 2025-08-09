@@ -66,14 +66,20 @@ class XPModel: ObservableObject {
     
     @objc private func resetXPBoost(notification: Notification) {
         if let newMultiplier = notification.userInfo?["multiplier"] as? Double {
-            upgradeMultiplier = newMultiplier
+            DispatchQueue.main.async {
+                self.upgradeMultiplier = newMultiplier
+            }
         } else {
-            upgradeMultiplier = 1.0
+            DispatchQueue.main.async {
+                self.upgradeMultiplier = 1.0
+            }
         }
     }
     
     @objc private func resetAllBoosts(notification: Notification) {
-        upgradeMultiplier = 1.0
+        DispatchQueue.main.async {
+            self.upgradeMultiplier = 1.0
+        }
     }
 
     func addXP(_ amount: Int) {

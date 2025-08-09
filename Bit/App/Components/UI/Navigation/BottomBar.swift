@@ -61,12 +61,14 @@ struct AppTabRootView: View {
             ProfileView(isPresented: $showProfile)
                 .transition(.move(edge: .top))
         }
-        .onChange(of: currentView) { newView in
-            if newView == "Profile" {
+        .onChange(of: currentView) { oldValue, newValue in
+            if newValue == "Profile" {
                 withAnimation(.easeInOut(duration: 0.3)) {
                     showProfile = true
                 }
-                currentView = "Home"
+                DispatchQueue.main.async {
+                    currentView = "Home"
+                }
             }
         }
     }
