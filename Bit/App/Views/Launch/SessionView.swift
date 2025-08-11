@@ -1,5 +1,5 @@
 //
-//  LaunchView.swift
+//  SessionView.swift
 //  Cosmos
 //
 //  Created by James Williams on 3/24/25.
@@ -20,3 +20,4 @@ struct LaunchView: View { // Renamed from SessionView
         }
     }
 }
+

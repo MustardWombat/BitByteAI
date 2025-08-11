@@ -26,14 +26,7 @@ struct StudyTimerView: View {
                         .foregroundColor(timerModel.isTimerRunning ? .green : .red)
                         .animation(nil, value: timerModel.timeRemaining)  // ← disable any animation on timer updates
                         .frame(maxWidth: .infinity, alignment: .center)  // center horizontally
-                    // Rocket sprite: fixed layout frame but scaled 3× visually
-                    Image("rocket")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 80, height: 150)   // layout size
-                        .scaleEffect(3, anchor: .center) // visual scale
-                        .frame(maxWidth: .infinity)      // center horizontally
-                        .padding(.vertical, 10)
+                    // Rocket sprite: replaced static image with animated RocketSpriteView
                 }
                 .padding(.top, 100)
                 .padding(.horizontal, 20)
