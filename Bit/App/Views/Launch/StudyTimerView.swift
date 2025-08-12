@@ -7,12 +7,17 @@ struct StudyTimerView: View {
     @EnvironmentObject var categoriesVM: CategoriesViewModel
     @Environment(\.scenePhase) var scenePhase
 
+    @State private var rocketShouldAnimate = false
     @State private var isShowingCategorySheet = false
     @State private var showSessionEndedPopup = false
     @State private var isShowingEditGoalView = false
     @State private var isLaunching = false   // new: control launch animation
     @State private var showRocketOverlay = false   // new: control overlay appearance
     @State private var showLandButton = false   // new: control land button appearance
+    @State private var isStudying: Bool = false
+
+    @State private var rocketVibration: CGSize = .zero
+    @State private var vibrationTimer: Timer? = nil
 
     var body: some View {
         ZStack {
@@ -26,7 +31,12 @@ struct StudyTimerView: View {
                         .foregroundColor(timerModel.isTimerRunning ? .green : .red)
                         .animation(nil, value: timerModel.timeRemaining)  // ← disable any animation on timer updates
                         .frame(maxWidth: .infinity, alignment: .center)  // center horizontally
-                    // Rocket sprite: replaced static image with animated RocketSpriteView
+
+                    RocketSprite(animate: $rocketShouldAnimate, isStudying: $isStudying)
+                        .frame(width: 192, height: 192)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .offset(x: rocketVibration.width, y: rocketVibration.height)
                 }
                 .padding(.top, 100)
                 .padding(.horizontal, 20)
@@ -73,10 +83,14 @@ struct StudyTimerView: View {
                     // MARK: - Control buttons
                     HStack {
                         Button(action: {
+                            rocketShouldAnimate = true
                             timerModel.selectedTopic = categoriesVM.selectedTopic
                             timerModel.categoriesVM = categoriesVM
                             timerModel.xpModel = xpModel
                             timerModel.startTimer(for: 25 * 60)
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.84) {
+                                isStudying = true
+                            }
                             withAnimation(.easeInOut(duration: 1)) {
                                 isLaunching = true
                                 timerModel.isRocketOverlayActive = true    // ← trigger shell animation
@@ -105,8 +119,8 @@ struct StudyTimerView: View {
 
                     Spacer()
                 }
-                .offset(y: isLaunching 
-                         ? UIScreen.main.bounds.height 
+                .offset(y: isLaunching
+                         ? UIScreen.main.bounds.height
                          : 0)
                 .animation(.easeInOut(duration: 1), value: isLaunching)
             }
@@ -132,8 +146,25 @@ struct StudyTimerView: View {
             }
             .onChange(of: timerModel.timeRemaining) { newValue in
                 if newValue == 0 && !timerModel.isTimerRunning {
+                    isStudying = false
                     showSessionEndedPopup = true
                 }
+            }
+            .onChange(of: isStudying) { studying in
+                if studying {
+                    vibrationTimer?.invalidate()
+                    vibrationTimer = Timer.scheduledTimer(withTimeInterval: 0.04, repeats: true) { _ in
+                        rocketVibration = CGSize(width: CGFloat.random(in: -1.2...1.2), height: CGFloat.random(in: -1.2...1.2))
+                    }
+                } else {
+                    vibrationTimer?.invalidate()
+                    rocketVibration = .zero
+                }
+            }
+            .onDisappear {
+                vibrationTimer?.invalidate()
+                vibrationTimer = nil
+                rocketVibration = .zero
             }
 
             if isShowingCategorySheet {
@@ -183,6 +214,7 @@ struct StudyTimerView: View {
             // Land button appears 5s after launch
             if showLandButton {
                 Button("Land") {
+                    isStudying = false
                     timerModel.stopTimer()  // stop the running timer
                     NotificationCenter.default.post(name: .restoreShell, object: nil)  // restore shell UI
 
@@ -197,7 +229,7 @@ struct StudyTimerView: View {
                 .background(Color.blue)
                 .foregroundColor(.white)
                 .cornerRadius(10)
-                .padding(.top, 180)
+                .padding(.top, 216)
                 .transition(.opacity)
                 .zIndex(10)
             }
@@ -256,4 +288,5 @@ struct EditGoalView: View {
 }
 
 // Custom overlay for category selection
+
 
