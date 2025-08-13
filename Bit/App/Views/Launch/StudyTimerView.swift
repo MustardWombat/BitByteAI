@@ -217,10 +217,14 @@ struct StudyTimerView: View {
                 }()
                 let studiedMinutes = elapsedSeconds / 60
                 let studiedSeconds = elapsedSeconds % 60
+                let xpEarned = elapsedSeconds
+                let coinsEarned = RewardCalculator.calculateCoinReward(using: elapsedSeconds)
 
                 SessionEndedOverlay(
                     studiedMinutes: studiedMinutes,
                     studiedSeconds: studiedSeconds,
+                    xpEarned: xpEarned,
+                    coinsEarned: coinsEarned,
                     onDismiss: {
                         showSessionEndedPopup = false
                     }

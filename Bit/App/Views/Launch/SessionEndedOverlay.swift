@@ -3,6 +3,8 @@ import SwiftUI
 struct SessionEndedOverlay: View {
     let studiedMinutes: Int
     let studiedSeconds: Int
+    let xpEarned: Int
+    let coinsEarned: Int
     var onDismiss: () -> Void
 
     var body: some View {
@@ -14,6 +16,19 @@ struct SessionEndedOverlay: View {
             Text("You studied for \(studiedMinutes) minutes and \(studiedSeconds) seconds.")
                 .multilineTextAlignment(.center)
                 .foregroundColor(.white)
+
+            // Earned stats section
+            VStack(spacing: 8) {
+                Text("XP Earned: \(xpEarned)")
+                    .font(.title3)
+                    .foregroundColor(.yellow)
+
+                Text("Coins Earned: \(coinsEarned)")
+                    .font(.title3)
+                    .foregroundColor(.green)
+            }
+            .padding(.top, 10)
+
             Button("Awesome!") {
                 onDismiss()
             }
