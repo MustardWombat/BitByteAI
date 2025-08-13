@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SessionEndedOverlay: View {
     let studiedMinutes: Int
+    let studiedSeconds: Int
     var onDismiss: () -> Void
 
     var body: some View {
@@ -10,7 +11,7 @@ struct SessionEndedOverlay: View {
                 .font(.largeTitle)
                 .bold()
                 .foregroundColor(.white)
-            Text("You studied for \(studiedMinutes) minutes.")
+            Text("You studied for \(studiedMinutes) minutes and \(studiedSeconds) seconds.")
                 .multilineTextAlignment(.center)
                 .foregroundColor(.white)
             Button("Awesome!") {

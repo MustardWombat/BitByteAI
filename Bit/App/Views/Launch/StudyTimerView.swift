@@ -19,6 +19,11 @@ struct StudyTimerView: View {
     @State private var rocketVibration: CGSize = .zero
     @State private var vibrationTimer: Timer? = nil
 
+    private func handleSessionEnded() {
+        isStudying = false
+        showSessionEndedPopup = true
+    }
+
     var body: some View {
         ZStack {
             // Main content wrapped with disabled modifier to lock interactions during focus mode
@@ -146,8 +151,7 @@ struct StudyTimerView: View {
             }
             .onChange(of: timerModel.timeRemaining) { newValue in
                 if newValue == 0 && !timerModel.isTimerRunning {
-                    isStudying = false
-                    showSessionEndedPopup = true
+                    handleSessionEnded()
                 }
             }
             .onChange(of: isStudying) { studying in
@@ -201,8 +205,22 @@ struct StudyTimerView: View {
             }
 
             if showSessionEndedPopup {
+                let elapsedSeconds: Int = {
+                    if let start = timerModel.timerStartDatePublic, let end = timerModel.timerEndDatePublic {
+                        return min(Int(end.timeIntervalSince(start)), timerModel.initialDurationPublic)
+                    } else if let start = timerModel.timerStartDatePublic {
+                        // If timerEndDate is not available, use now
+                        return min(Int(Date().timeIntervalSince(start)), timerModel.initialDurationPublic)
+                    } else {
+                        return timerModel.initialDurationPublic - timerModel.timeRemaining
+                    }
+                }()
+                let studiedMinutes = elapsedSeconds / 60
+                let studiedSeconds = elapsedSeconds % 60
+
                 SessionEndedOverlay(
-                    studiedMinutes: timerModel.studiedMinutes,
+                    studiedMinutes: studiedMinutes,
+                    studiedSeconds: studiedSeconds,
                     onDismiss: {
                         showSessionEndedPopup = false
                     }
@@ -217,7 +235,7 @@ struct StudyTimerView: View {
                     isStudying = false
                     timerModel.stopTimer()  // stop the running timer
                     NotificationCenter.default.post(name: .restoreShell, object: nil)  // restore shell UI
-
+                    handleSessionEnded()
                     withAnimation {
                         isLaunching = false
                         timerModel.isRocketOverlayActive = false
@@ -288,5 +306,4 @@ struct EditGoalView: View {
 }
 
 // Custom overlay for category selection
-
 

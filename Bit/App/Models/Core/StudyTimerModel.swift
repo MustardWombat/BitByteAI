@@ -92,8 +92,14 @@ class StudyTimerModel: ObservableObject {
     
     private var timer: Timer?
     private var timerStartDate: Date?
+    var timerStartDatePublic: Date? { timerStartDate }
     private var initialDuration: Int = 0
+    var initialDurationPublic: Int { initialDuration }
     private var initialEndDate: Date? // Fixed end date
+    var timerEndDatePublic: Date? {
+        guard let start = timerStartDate else { return nil }
+        return start.addingTimeInterval(TimeInterval(initialDuration))
+    }
     
     #if os(iOS)
     private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
