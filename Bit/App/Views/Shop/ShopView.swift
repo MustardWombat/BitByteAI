@@ -48,7 +48,7 @@ struct ShopView: View {
                         VStack(alignment: .leading) {
                             // XP Boosters
                             UpgradeCategoryView(
-                                title: "Knowledge Boosters",
+                                title: "XP Upgrades",
                                 icon: "star.fill",
                                 iconColor: .yellow,
                                 type: .xpBooster,
@@ -59,7 +59,7 @@ struct ShopView: View {
                             
                             // Coin Boosters
                             UpgradeCategoryView(
-                                title: "Wealth Generators",
+                                title: "Coin Upgrades",
                                 icon: "dollarsign.circle.fill",
                                 iconColor: .green,
                                 type: .coinBooster,
