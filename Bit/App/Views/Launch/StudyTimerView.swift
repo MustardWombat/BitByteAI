@@ -19,6 +19,8 @@ struct StudyTimerView: View {
     @State private var rocketVibration: CGSize = .zero
     @State private var vibrationTimer: Timer? = nil
 
+    @State private var containerHeight: CGFloat = 0
+
     private func handleSessionEnded() {
         isStudying = false
         showSessionEndedPopup = true
@@ -26,117 +28,122 @@ struct StudyTimerView: View {
 
     var body: some View {
         ZStack {
-            // Main content wrapped with disabled modifier to lock interactions during focus mode
-            VStack(spacing: 20) {
-                // Fixed header: timer + rocket
-                VStack(alignment: .leading, spacing: 10) {
-                    // MARK: - Timer display
-                    Text(formatTime(timerModel.timeRemaining))
-                        .font(.system(size: 64, weight: .bold, design: .monospaced))
-                        .foregroundColor(timerModel.isTimerRunning ? .green : .red)
-                        .animation(nil, value: timerModel.timeRemaining)  // ← disable any animation on timer updates
-                        .frame(maxWidth: .infinity, alignment: .center)  // center horizontally
+            GeometryReader { geometry in
+                VStack(spacing: 20) {
+                    // Fixed header: timer + rocket
+                    VStack(alignment: .leading, spacing: 10) {
+                        // MARK: - Timer display
+                        Text(formatTime(timerModel.timeRemaining))
+                            .font(.system(size: 64, weight: .bold, design: .monospaced))
+                            .foregroundColor(timerModel.isTimerRunning ? .green : .red)
+                            .animation(nil, value: timerModel.timeRemaining)  // ← disable any animation on timer updates
+                            .frame(maxWidth: .infinity, alignment: .center)  // center horizontally
 
-                    RocketSprite(animate: $rocketShouldAnimate, isStudying: $isStudying)
-                        .frame(width: 192, height: 192)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .offset(x: rocketVibration.width, y: rocketVibration.height)
-                }
-                .padding(.top, 100)
-                .padding(.horizontal, 20)
+                        RocketSprite(animate: $rocketShouldAnimate, isStudying: $isStudying)
+                            .frame(width: 192, height: 192)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .offset(x: rocketVibration.width, y: rocketVibration.height)
+                    }
+                    .padding(.top, 100)
+                    .padding(.horizontal, 20)
 
-                // Now the rest of the UI falls off together
-                VStack(alignment: .leading, spacing: 20) {
-                    // MARK: - Reward display
-                    if let reward = timerModel.reward {
-                        Text("You earned: \(reward)")
+                    // Now the rest of the UI falls off together
+                    VStack(alignment: .leading, spacing: 20) {
+                        // MARK: - Reward display
+                        if let reward = timerModel.reward {
+                            Text("You earned: \(reward)")
+                                .font(.headline)
+                                .foregroundColor(.orange)
+                        }
+
+                        // MARK: - Topic Selector
+                        Text("Selected Topic:")
                             .font(.headline)
-                            .foregroundColor(.orange)
-                    }
+                            .foregroundColor(.white)
 
-                    // MARK: - Topic Selector
-                    Text("Selected Topic:")
-                        .font(.headline)
-                        .foregroundColor(.white)
-
-                    Button(action: {
-                        withAnimation(.spring()) { // Trigger animation when button is pressed
-                            isShowingCategorySheet = true
-                        }
-                    }) {
-                        HStack {
-                            if let topic = categoriesVM.selectedTopic {
-                                Circle()
-                                    .fill(topic.displayColor)
-                                    .frame(width: 12, height: 12)
-                                Text(topic.name)
-                                    .foregroundColor(.white)
-                            } else {
-                                Text("Choose a topic")
-                                    .foregroundColor(.gray)
-                            }
-                            Spacer()
-                            Image(systemName: "chevron.up")
-                                .foregroundColor(.white)
-                        }
-                        .padding()
-                        .background(Color.black.opacity(0.3))
-                        .cornerRadius(10)
-                    }
-
-                    // MARK: - Control buttons
-                    HStack {
                         Button(action: {
-                            rocketShouldAnimate = true
-                            timerModel.selectedTopic = categoriesVM.selectedTopic
-                            timerModel.categoriesVM = categoriesVM
-                            timerModel.xpModel = xpModel
-                            timerModel.startTimer(for: 25 * 60)
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.84) {
-                                isStudying = true
-                            }
-                            withAnimation(.easeInOut(duration: 1)) {
-                                isLaunching = true
-                                timerModel.isRocketOverlayActive = true    // ← trigger shell animation
-                            }
-                            // delay the full-screen overlay to let the animation finish
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                                showRocketOverlay = true
-                            }
-                            // Notify the shell to wipe off screen
-                            NotificationCenter.default.post(name: .wipeShell, object: nil)
-                            // schedule land button
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                                withAnimation { showLandButton = true }
+                            withAnimation(.spring()) { // Trigger animation when button is pressed
+                                isShowingCategorySheet = true
                             }
                         }) {
-                            Text("Launch")
-                                .padding()
-                                .frame(maxWidth: .infinity)
-                                .background(categoriesVM.selectedTopic == nil ? Color.gray : Color.green)
-                                .foregroundColor(.white)
-                                .cornerRadius(10)
+                            HStack {
+                                if let topic = categoriesVM.selectedTopic {
+                                    Circle()
+                                        .fill(topic.displayColor)
+                                        .frame(width: 12, height: 12)
+                                    Text(topic.name)
+                                        .foregroundColor(.white)
+                                } else {
+                                    Text("Choose a topic")
+                                        .foregroundColor(.gray)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.up")
+                                    .foregroundColor(.white)
+                            }
+                            .padding()
+                            .background(Color.black.opacity(0.3))
+                            .cornerRadius(10)
                         }
-                        .disabled(categoriesVM.selectedTopic == nil) // Disable if no topic is selected
+
+                        // MARK: - Control buttons
+                        HStack {
+                            Button(action: {
+                                rocketShouldAnimate = true
+                                timerModel.selectedTopic = categoriesVM.selectedTopic
+                                timerModel.categoriesVM = categoriesVM
+                                timerModel.xpModel = xpModel
+                                timerModel.startTimer(for: 25 * 60)
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.84) {
+                                    isStudying = true
+                                }
+                                withAnimation(.easeInOut(duration: 1)) {
+                                    isLaunching = true
+                                    timerModel.isRocketOverlayActive = true    // ← trigger shell animation
+                                }
+                                // delay the full-screen overlay to let the animation finish
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                                    showRocketOverlay = true
+                                }
+                                // Notify the shell to wipe off screen
+                                NotificationCenter.default.post(name: .wipeShell, object: nil)
+                                // schedule land button
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                                    withAnimation { showLandButton = true }
+                                }
+                            }) {
+                                Text("Launch")
+                                    .padding()
+                                    .frame(maxWidth: .infinity)
+                                    .background(categoriesVM.selectedTopic == nil ? Color.gray : Color.green)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(10)
+                            }
+                            .disabled(categoriesVM.selectedTopic == nil) // Disable if no topic is selected
+                        }
+                        .padding()
+
+                        Spacer()
                     }
-                    .padding()
-
-                    Spacer()
+                    .offset(y: isLaunching
+                             ? containerHeight
+                             : 0)
+                    .animation(.easeInOut(duration: 1), value: isLaunching)
                 }
-                .offset(y: isLaunching
-                         ? UIScreen.main.bounds.height
-                         : 0)
-                .animation(.easeInOut(duration: 1), value: isLaunching)
-            }
-            .padding()
-            .allowsHitTesting(!isLaunching)
-
-            .onAppear {
-                if categoriesVM.selectedTopic == nil {
-                    categoriesVM.selectedTopic = categoriesVM.loadSelectedTopic()
+                .padding()
+                .allowsHitTesting(!isLaunching)
+                .onAppear {
+                    containerHeight = geometry.size.height
+                    if categoriesVM.selectedTopic == nil {
+                        categoriesVM.selectedTopic = categoriesVM.loadSelectedTopic()
+                    }
+                }
+                .onChange(of: geometry.size.height) { newHeight in
+                    containerHeight = newHeight
                 }
             }
+
             .onChange(of: scenePhase) { newPhase in
                 #if os(iOS) || os(macOS)
                 if newPhase == .active {

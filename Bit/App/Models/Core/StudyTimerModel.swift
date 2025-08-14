@@ -391,7 +391,8 @@ class StudyTimerModel: ObservableObject {
         let deviceName = Host.current().localizedName ?? "Mac User"
         #endif
         
-        let username = UserDefaults.standard.string(forKey: "Username") ?? deviceName
+        // Removed line:
+        // let username = UserDefaults.standard.string(forKey: "Username") ?? deviceName
         
         // Create record ID with a deterministic key to avoid duplicates
         let weekString = DateFormatter.localizedString(from: weekStartDate, dateStyle: .short, timeStyle: .none)
@@ -434,10 +435,11 @@ class StudyTimerModel: ObservableObject {
             timeRemaining: duration,
             endDate: endDate
         )
+        let content = ActivityContent(state: state, staleDate: nil)
         do {
             liveActivity = try Activity<StudyTimerAttributes>.request(
                 attributes: attributes,
-                contentState: state
+                content: content
             )
         } catch {
             print("Failed to start live activity: \(error)")
@@ -449,10 +451,10 @@ class StudyTimerModel: ObservableObject {
         #if os(iOS)
         guard let activity = liveActivity, let endDate = initialEndDate else { return }
         Task {
-            await activity.update(using: StudyTimerAttributes.ContentState(
+            await activity.update(ActivityContent(state: StudyTimerAttributes.ContentState(
                 timeRemaining: remaining,
                 endDate: endDate
-            ))
+            ), staleDate: nil))
         }
         #else
         // No live activity update on macOS.
@@ -461,9 +463,13 @@ class StudyTimerModel: ObservableObject {
     
     private func stopLiveActivity() {
         #if os(iOS)
-        guard let activity = liveActivity as? Activity<StudyTimerAttributes> else { return }
+        guard let activity = liveActivity else { return }
         Task {
-            await activity.end(dismissalPolicy: .immediate)
+            let finalContent = ActivityContent(state: StudyTimerAttributes.ContentState(
+                timeRemaining: 0,
+                endDate: initialEndDate ?? Date()
+            ), staleDate: nil)
+            await activity.end(finalContent, dismissalPolicy: .immediate)
             liveActivity = nil
         }
         #else

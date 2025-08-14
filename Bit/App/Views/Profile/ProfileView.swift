@@ -387,8 +387,8 @@ struct ProfileView: View {
             }
             fetchUserLevelFromCloudKit()
         }
-        .onChange(of: isSignedIn) { signedIn in
-            if (signedIn) {
+        .onChange(of: isSignedIn) {
+            if isSignedIn {
                 // pull stats from CloudKit instead of pushing
                 CloudKitManager.shared.fetchUserProgress(
                     xpModel: xpModel,
@@ -423,19 +423,25 @@ struct ProfileView: View {
             // Query for an existing UserProfile record
             let pred = NSPredicate(format: "userID == %@", userID)
             let query = CKQuery(recordType: "UserProfile", predicate: pred)
-            privateDB.perform(query, inZoneWith: nil) { results, _ in
-                // Use existing or create new
-                let record: CKRecord = results?.first ?? CKRecord(recordType: "UserProfile")
-                
-                // Set or overwrite fields
-                record["userID"]        = userID as CKRecordValue
-                record["username"]      = self.username as CKRecordValue
-                record["displayName"]   = self.name as CKRecordValue
-                record["profileEmoji"]  = self.profileEmoji as CKRecordValue // Save profileEmoji
-                record["lastLoginDate"] = Date() as CKRecordValue
+            privateDB.fetch(withQuery: query, inZoneWith: nil, desiredKeys: nil, resultsLimit: 1) { result in
+                switch result {
+                case .success(let records):
+                    let record = records.matchResults.compactMap { match in
+                        try? match.1.get()
+                    }.first ?? CKRecord(recordType: "UserProfile")
+                    
+                    // Set or overwrite fields
+                    record["userID"]        = userID as CKRecordValue
+                    record["username"]      = self.username as CKRecordValue
+                    record["displayName"]   = self.name as CKRecordValue
+                    record["profileEmoji"]  = self.profileEmoji as CKRecordValue // Save profileEmoji
+                    record["lastLoginDate"] = Date() as CKRecordValue
 
-                // Save (will update if record was fetched)
-                self.performCloudKitSave(record, on: privateDB, attempts: 0)
+                    // Save (will update if record was fetched)
+                    self.performCloudKitSave(record, on: privateDB, attempts: 0)
+                case .failure(let error):
+                    print("🌩️❌ CloudKit fetch error: \(error)")
+                }
             }
         }
     }
@@ -508,16 +514,20 @@ struct ProfileView: View {
         let predicate = NSPredicate(format: "userID == %@", userID)
         let query = CKQuery(recordType: "UserProfile", predicate: predicate)
         
-        CKContainer.default().privateCloudDatabase.perform(query, inZoneWith: nil) { records, error in
+        CKContainer.default().privateCloudDatabase.fetch(withQuery: query, inZoneWith: nil, desiredKeys: nil, resultsLimit: 1) { result in
             DispatchQueue.main.async {
-                if let records = records, let record = records.first {
-                    self.name = record["displayName"] as? String ?? ""
-                    self.username = record["username"] as? String ?? ""
-                    self.profileEmoji = record["profileEmoji"] as? String ?? "😀" // Load profileEmoji
-                    
-                    self.isSignedIn = true
-                } else if let ckError = error as? CKError {
-                    print("🌩️❌ CloudKit fetch error: \(ckError)")
+                switch result {
+                case .success(let records):
+                    if let record = records.matchResults.compactMap({ try? $0.1.get() }).first {
+                        self.name = record["displayName"] as? String ?? ""
+                        self.username = record["username"] as? String ?? ""
+                        self.profileEmoji = record["profileEmoji"] as? String ?? "😀"
+                        self.isSignedIn = true
+                    } else {
+                        print("🌩️❌ No profile record found")
+                    }
+                case .failure(let error):
+                    print("🌩️❌ CloudKit fetch error: \(error)")
                 }
             }
         }
@@ -546,21 +556,26 @@ struct ProfileView: View {
         let predicate = NSPredicate(format: "userID == %@", userID)
         let query = CKQuery(recordType: "UserProfile", predicate: predicate)
         
-        CKContainer.default().privateCloudDatabase.perform(query, inZoneWith: nil) { records, error in
-            if let records = records, let record = records.first {
-                CKContainer.default().privateCloudDatabase.delete(withRecordID: record.recordID) { _, error in
-                    if let error = error {
-                        print("🌩️❌ Error deleting CloudKit profile: \(error)")
-                    } else {
-                        print("🌩️✅ CloudKit profile deleted.")
-                        
-                        // Clear cached user ID
-                        UserDefaults.standard.removeObject(forKey: "cachedCloudKitUserID")
-                        
-                        // Also delete progress data
-                        self.deleteProgressFromCloudKit()
+        CKContainer.default().privateCloudDatabase.fetch(withQuery: query, inZoneWith: nil, desiredKeys: nil, resultsLimit: 1) { result in
+            switch result {
+            case .success(let records):
+                if let record = records.matchResults.compactMap({ try? $0.1.get() }).first {
+                    CKContainer.default().privateCloudDatabase.delete(withRecordID: record.recordID) { _, error in
+                        if let error = error {
+                            print("🌩️❌ Error deleting CloudKit profile: \(error)")
+                        } else {
+                            print("🌩️✅ CloudKit profile deleted.")
+                            
+                            // Clear cached user ID
+                            UserDefaults.standard.removeObject(forKey: "cachedCloudKitUserID")
+                            
+                            // Also delete progress data
+                            self.deleteProgressFromCloudKit()
+                        }
                     }
                 }
+            case .failure(let error):
+                print("🌩️❌ CloudKit fetch error: \(error)")
             }
         }
     }
@@ -570,15 +585,20 @@ struct ProfileView: View {
         let predicate = NSPredicate(format: "userID == %@", userID)
         let query = CKQuery(recordType: "UserProgress", predicate: predicate)
         
-        CKContainer.default().privateCloudDatabase.perform(query, inZoneWith: nil) { records, error in
-            if let records = records, let record = records.first {
-                CKContainer.default().privateCloudDatabase.delete(withRecordID: record.recordID) { _, error in
-                    if let error = error {
-                        print("Error deleting progress data: \(error)")
-                    } else {
-                        print("Progress data deleted.")
+        CKContainer.default().privateCloudDatabase.fetch(withQuery: query, inZoneWith: nil, desiredKeys: nil, resultsLimit: 1) { result in
+            switch result {
+            case .success(let records):
+                if let record = records.matchResults.compactMap({ try? $0.1.get() }).first {
+                    CKContainer.default().privateCloudDatabase.delete(withRecordID: record.recordID) { _, error in
+                        if let error = error {
+                            print("Error deleting progress data: \(error)")
+                        } else {
+                            print("Progress data deleted.")
+                        }
                     }
                 }
+            case .failure(let error):
+                print("🌩️❌ CloudKit fetch error: \(error)")
             }
         }
     }
@@ -614,32 +634,30 @@ struct ProfileView: View {
         let predicate = NSPredicate(format: "userID == %@", userID)
         let query = CKQuery(recordType: "UserProfile", predicate: predicate)
         
-        CKContainer.default().privateCloudDatabase.perform(query, inZoneWith: nil) { records, error in
+        CKContainer.default().privateCloudDatabase.fetch(withQuery: query, inZoneWith: nil, desiredKeys: nil, resultsLimit: 1) { result in
             DispatchQueue.main.async {
-                if let error = error {
-                    self.userProfileData["Error"] = error.localizedDescription
-                    completion()
-                    return
-                }
-                
-                if let record = records?.first {
-                    // Convert all fields to string representation
-                    for (key, value) in record.allValues() {
-                        if key == "profileImage", let asset = value as? CKAsset {
-                            self.userProfileData[key] = "[Image Asset: \(asset.fileURL?.lastPathComponent)]"
-                        } else {
-                            self.userProfileData[key] = String(describing: value)
+                switch result {
+                case .success(let records):
+                    if let record = records.matchResults.compactMap({ try? $0.1.get() }).first {
+                        // Convert all fields to string representation
+                        for (key, value) in record.allValues() {
+                            if key == "profileImage", let asset = value as? CKAsset {
+                                self.userProfileData[key] = "[Image Asset: \(asset.fileURL?.lastPathComponent)]"
+                            } else {
+                                self.userProfileData[key] = String(describing: value)
+                            }
                         }
+                        
+                        // Add record metadata - use the system property not a custom field
+                        self.userProfileData["recordID"] = record.recordID.recordName
+                        self.userProfileData["systemCreationDate"] = record.creationDate?.description ?? "N/A"
+                        self.userProfileData["systemModificationDate"] = record.modificationDate?.description ?? "N/A"
+                    } else {
+                        self.userProfileData["Status"] = "No profile record found"
                     }
-                    
-                    // Add record metadata - use the system property not a custom field
-                    self.userProfileData["recordID"] = record.recordID.recordName
-                    self.userProfileData["systemCreationDate"] = record.creationDate?.description ?? "N/A"
-                    self.userProfileData["systemModificationDate"] = record.modificationDate?.description ?? "N/A"
-                } else {
-                    self.userProfileData["Status"] = "No profile record found"
+                case .failure(let error):
+                    self.userProfileData["Error"] = error.localizedDescription
                 }
-                
                 completion()
             }
         }

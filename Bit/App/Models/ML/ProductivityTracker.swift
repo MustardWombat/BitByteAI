@@ -90,7 +90,7 @@ class ProductivityTracker: ObservableObject {
         
         // Check if we have enough data to train the ML model
         if sessions.count >= minSessionsForAI {
-            NotificationModelTrainer.shared.trainModel(from: sessions)
+            _ = NotificationModelTrainer.shared.trainModel(from: sessions)
         }
         
         // Check if we should share data
@@ -188,7 +188,7 @@ class ProductivityTracker: ObservableObject {
     private func getPredictedNotificationTimes() -> [DateComponents] {
         do {
             // Use the generated class from your .mlmodel file
-            let model = try NotificationTimePredictor()
+            let model = NotificationTimePredictor()
             let calendar = Calendar.current
             let now = Date()
             let dayOfWeek = calendar.component(.weekday, from: now)
