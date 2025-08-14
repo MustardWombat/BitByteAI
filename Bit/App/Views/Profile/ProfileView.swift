@@ -230,7 +230,7 @@ struct ProfileView: View {
                                 .font(.subheadline)
                             
                             Toggle("Allow Notifications on Device", isOn: $deviceNotificationsAllowed)
-                                .onChange(of: deviceNotificationsAllowed) { newValue in
+                                .onChange(of: deviceNotificationsAllowed) { _, newValue in
                                     if newValue {
                                         NotificationManager.shared.requestAuthorization()
                                     } else {
@@ -240,7 +240,7 @@ struct ProfileView: View {
                                 .padding(.bottom)
                             
                             Toggle("Enable Reminders", isOn: $notificationsEnabled)
-                                .onChange(of: notificationsEnabled) { newValue in
+                                .onChange(of: notificationsEnabled) { _, newValue in
                                     if newValue {
                                         NotificationManager.shared.requestAuthorization()
                                     }
@@ -248,18 +248,18 @@ struct ProfileView: View {
                                 }
                             
                             Toggle("Use Smart Reminders", isOn: $useDynamicReminders)
-                                .onChange(of: useDynamicReminders) { newValue in
+                                .onChange(of: useDynamicReminders) { _, newValue in
                                     updateNotifications()
                                 }
                             
                             if notificationsEnabled && !useDynamicReminders {
                                 DatePicker("Reminder 1", selection: $reminderTime1UI, displayedComponents: .hourAndMinute)
-                                    .onChange(of: reminderTime1UI) { newValue in 
+                                    .onChange(of: reminderTime1UI) { _, newValue in 
                                         reminderTime1Interval = newValue.timeIntervalSince1970
                                         updateNotifications()
                                     }
                                 DatePicker("Reminder 2", selection: $reminderTime2UI, displayedComponents: .hourAndMinute)
-                                    .onChange(of: reminderTime2UI) { newValue in
+                                    .onChange(of: reminderTime2UI) { _, newValue in
                                         reminderTime2Interval = newValue.timeIntervalSince1970
                                         updateNotifications()
                                     }
@@ -818,3 +818,4 @@ struct BulletPoint: View {
         .padding(.leading)
     }
 }
+
