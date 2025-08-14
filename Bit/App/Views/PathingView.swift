@@ -17,11 +17,6 @@ struct MainTabView: View {
                     Text("Home")
                 }
             
-            ProductivitySessionView()
-                .tabItem {
-                    Image(systemName: "clock")
-                    Text("Study")
-                }
             
             ProfileView()
                 .tabItem {
