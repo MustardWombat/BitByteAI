@@ -171,19 +171,6 @@ struct StudyTimerView: View {
                 rocketVibration = .zero
             }
 
-            if isShowingCategorySheet {
-                CategorySelectionOverlay(
-                    categories: $categoriesVM.categories, // updated: pass binding instead of value
-                    selected: $categoriesVM.selectedTopic,
-                    isPresented: $isShowingCategorySheet
-                )
-                .transition(.asymmetric(
-                    insertion: .opacity.combined(with: .move(edge: .bottom)),
-                    removal: .opacity.combined(with: .move(edge: .bottom))
-                ))
-                .zIndex(2)
-            }
-
             if isShowingEditGoalView {
                 EditGoalView(
                     goalInput: String((categoriesVM.selectedTopic?.weeklyGoalMinutes ?? 60) / 60),
@@ -258,6 +245,13 @@ struct StudyTimerView: View {
 
             // Fullscreen takeover overlay (delayed)
             // overlay removed to prevent black full-screen takeover
+        }
+        .fullScreenCover(isPresented: $isShowingCategorySheet) {
+            CategorySelectionOverlay(
+                categories: $categoriesVM.categories,
+                selected: $categoriesVM.selectedTopic,
+                isPresented: $isShowingCategorySheet
+            )
         }
     }
 
