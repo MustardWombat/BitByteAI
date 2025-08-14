@@ -351,25 +351,10 @@ struct TaskListView: View {
                 }
                 #endif
             }
-            
-            // Task creation overlay
-            if showTaskCreationOverlay {
-                Color.black.opacity(0.4)
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        withAnimation(.spring()) {
-                            showTaskCreationOverlay = false
-                        }
-                    }
-                
-                TaskCreationOverlay(isPresented: $showTaskCreationOverlay)
-                    .environmentObject(taskModel)
-                    .transition(.asymmetric(
-                        insertion: .opacity.combined(with: .move(edge: .bottom)),
-                        removal: .opacity.combined(with: .move(edge: .bottom))
-                    ))
-                    .zIndex(1)
-            }
+        }
+        .fullScreenCover(isPresented: $showTaskCreationOverlay) {
+            TaskCreationOverlay(isPresented: $showTaskCreationOverlay)
+                .environmentObject(taskModel)
         }
     }
     
@@ -442,5 +427,3 @@ struct TaskListView: View {
         }
     }
 }
-
-
