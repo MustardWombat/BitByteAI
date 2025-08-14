@@ -108,12 +108,12 @@ public struct RocketSprite: View {
             #endif
             currentFrame = 0
         }
-        .onChange(of: animate) { newValue in
+        .onChange(of: animate) { oldValue, newValue in
             if newValue && !isAnimating {
                 startLaunchAnimation()
             }
         }
-        .onChange(of: isStudying) { newValue in
+        .onChange(of: isStudying) { oldValue, newValue in
             if newValue {
                 currentFrame = 0
                 startStudyingAnimation()
@@ -154,3 +154,4 @@ public struct RocketSprite: View {
         timer = nil
     }
 }
+

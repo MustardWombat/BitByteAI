@@ -59,31 +59,34 @@ class CloudKitManager {
         let query = CKQuery(recordType: "UserProgress", predicate: predicate)
         let privateDB = container.privateCloudDatabase
 
-        privateDB.perform(query, inZoneWith: nil) { records, error in
-            if let error = error {
+        // Updated for modern CloudKit API
+        privateDB.fetch(withQuery: query, inZoneWith: nil, desiredKeys: nil, resultsLimit: 1) { result in
+            switch result {
+            case .failure(let error):
                 print("Error fetching UserProgress: \(error.localizedDescription)")
-                // On error, fallback to local value
                 completion(localStreak)
                 return
-            }
+            case .success(let fetchResult):
+                let record = fetchResult.matchResults.first.flatMap { (recordID, recordResult) in
+                    try? recordResult.get()
+                } ?? CKRecord(recordType: "UserProgress")
+                let cloudStreak = record["studyStreak"] as? Int ?? 0
+                let cloudDate = record["lastStudyDate"] as? Date ?? Date.distantPast
 
-            let record = records?.first ?? CKRecord(recordType: "UserProgress")
-            let cloudStreak = record["studyStreak"] as? Int ?? 0
-            let cloudDate = record["lastStudyDate"] as? Date ?? Date.distantPast
-
-            // Decide which to use: the one with the most recent lastStudyDate
-            if localDate > cloudDate {
-                // Local is newer, update cloud
-                record["studyStreak"] = localStreak as CKRecordValue
-                record["lastStudyDate"] = localDate as CKRecordValue
-                privateDB.save(record) { _, saveError in
-                    if let saveError = saveError {
-                        print("Error updating cloud streak: \(saveError.localizedDescription)")
+                // Decide which to use: the one with the most recent lastStudyDate
+                if localDate > cloudDate {
+                    // Local is newer, update cloud
+                    record["studyStreak"] = localStreak as CKRecordValue
+                    record["lastStudyDate"] = localDate as CKRecordValue
+                    privateDB.save(record) { _, saveError in
+                        if let saveError = saveError {
+                            print("Error updating cloud streak: \(saveError.localizedDescription)")
+                        }
+                        completion(localStreak)
                     }
-                    completion(localStreak)
+                } else {
+                    completion(cloudStreak)
                 }
-            } else {
-                completion(cloudStreak)
             }
         }
     }
@@ -323,8 +326,10 @@ class CloudKitManager {
         let query = CKQuery(recordType: "UserProgress", predicate: predicate)
         
         print("🔍 CLOUDKIT: Executing query for UserProgress records...")
-        privateDB.perform(query, inZoneWith: nil) { records, error in
-            if let error = error {
+        // Updated for modern CloudKit API
+        privateDB.fetch(withQuery: query, inZoneWith: nil, desiredKeys: nil, resultsLimit: 1) { result in
+            switch result {
+            case .failure(let error):
                 print("🔍 CLOUDKIT: Error fetching XP: \(error.localizedDescription)")
                 if let ckError = error as? CKError {
                     print("🔍 CLOUDKIT: Error code: \(ckError.errorCode)")
@@ -334,13 +339,10 @@ class CloudKitManager {
                     }
                 }
                 completion(nil, error)
-                return
-            }
-            
-            if let records = records {
-                print("🔍 CLOUDKIT: Found \(records.count) UserProgress records")
+            case .success(let fetchResult):
+                print("🔍 CLOUDKIT: Found \(fetchResult.matchResults.count) UserProgress records")
                 
-                if let record = records.first {
+                if let record = fetchResult.matchResults.first.flatMap({ (_, recordResult) in try? recordResult.get() }) {
                     // List all available fields in the record
                     print("🔍 CLOUDKIT: Available fields: \(record.allKeys().joined(separator: ", "))")
                     
@@ -355,9 +357,6 @@ class CloudKitManager {
                     print("🔍 CLOUDKIT: No records found")
                     completion(nil, NSError(domain: "CloudKitManager", code: 101, userInfo: [NSLocalizedDescriptionKey: "No records found"]))
                 }
-            } else {
-                print("🔍 CLOUDKIT: No records returned")
-                completion(nil, NSError(domain: "CloudKitManager", code: 102, userInfo: [NSLocalizedDescriptionKey: "No records returned"]))
             }
         }
     }
@@ -372,30 +371,34 @@ class CloudKitManager {
         let predicate = NSPredicate(format: "userID == %@", userID)
         let query = CKQuery(recordType: "UserProgress", predicate: predicate)
 
-        container.privateCloudDatabase.perform(query, inZoneWith: nil) { records, error in
-            if let error = error {
+        // Updated for modern CloudKit API
+        container.privateCloudDatabase.fetch(withQuery: query, inZoneWith: nil, desiredKeys: nil, resultsLimit: 1) { result in
+            switch result {
+            case .failure(let error):
                 print("🌩️❌ Fetch progress error: \(error.localizedDescription)")
-                return
-            }
-            guard let record = records?.first else { return }
-
-            DispatchQueue.main.async {
-                // XP & level
-                if let xp = record["xp"] as? Int,
-                   let level = record["level"] as? Int {
-                    xpModel.applyCloudProgress(level: level, xp: xp)
+            case .success(let fetchResult):
+                guard let record = fetchResult.matchResults.first.flatMap({ (_, recordResult) in try? recordResult.get() }) else {
+                    return
                 }
-                // Coin balance
-                if let balance = record["coinBalance"] as? Int {
-                    currencyModel.balance = balance
-                }
-                // Study timer minutes
-                if let totalMinutes = record["totalStudyMinutes"] as? Double {
-                    timerModel.totalTimeStudied = Int(totalMinutes * 60)
-                }
-                // Weekly breakdown
-                if let dailyArray = record["daily_Minutes"] as? [Int] {
-                    timerModel.weeklyStudyMinutes = dailyArray.reduce(0, +)
+                
+                DispatchQueue.main.async {
+                    // XP & level
+                    if let xp = record["xp"] as? Int,
+                       let level = record["level"] as? Int {
+                        xpModel.applyCloudProgress(level: level, xp: xp)
+                    }
+                    // Coin balance
+                    if let balance = record["coinBalance"] as? Int {
+                        currencyModel.balance = balance
+                    }
+                    // Study timer minutes
+                    if let totalMinutes = record["totalStudyMinutes"] as? Double {
+                        timerModel.totalTimeStudied = Int(totalMinutes * 60)
+                    }
+                    // Weekly breakdown
+                    if let dailyArray = record["daily_Minutes"] as? [Int] {
+                        timerModel.weeklyStudyMinutes = dailyArray.reduce(0, +)
+                    }
                 }
             }
         }
@@ -408,19 +411,42 @@ class CloudKitManager {
         let query = CKQuery(recordType: "UserProfile", predicate: predicate)
         let privateDB = container.privateCloudDatabase
 
-        privateDB.perform(query, inZoneWith: nil) { records, error in
-            let record = records?.first ?? CKRecord(recordType: "UserProfile")
-            record["userID"] = userID as CKRecordValue
-            record["profileEmoji"] = emoji as CKRecordValue
+        // Updated for modern CloudKit API
+        privateDB.fetch(withQuery: query, inZoneWith: nil, desiredKeys: nil, resultsLimit: 1) { result in
+            switch result {
+            case .failure:
+                let record = CKRecord(recordType: "UserProfile")
+                record["userID"] = userID as CKRecordValue
+                record["profileEmoji"] = emoji as CKRecordValue
 
-            privateDB.save(record) { _, error in
-                DispatchQueue.main.async {
-                    if let error = error {
-                        print("🌩️❌ Error saving profile emoji: \(error.localizedDescription)")
-                        completion?(false)
-                    } else {
-                        print("🌩️✅ Profile emoji saved to CloudKit: \(emoji)")
-                        completion?(true)
+                privateDB.save(record) { _, error in
+                    DispatchQueue.main.async {
+                        if let error = error {
+                            print("🌩️❌ Error saving profile emoji: \(error.localizedDescription)")
+                            completion?(false)
+                        } else {
+                            print("🌩️✅ Profile emoji saved to CloudKit: \(emoji)")
+                            completion?(true)
+                        }
+                    }
+                }
+            case .success(let fetchResult):
+                let record = fetchResult.matchResults.first.flatMap { (recordID, recordResult) in
+                    try? recordResult.get()
+                } ?? CKRecord(recordType: "UserProfile")
+
+                record["userID"] = userID as CKRecordValue
+                record["profileEmoji"] = emoji as CKRecordValue
+
+                privateDB.save(record) { _, error in
+                    DispatchQueue.main.async {
+                        if let error = error {
+                            print("🌩️❌ Error saving profile emoji: \(error.localizedDescription)")
+                            completion?(false)
+                        } else {
+                            print("🌩️✅ Profile emoji saved to CloudKit: \(emoji)")
+                            completion?(true)
+                        }
                     }
                 }
             }
@@ -444,3 +470,4 @@ extension StudyTimerModel {
         return dailyArray
     }
 }
+
