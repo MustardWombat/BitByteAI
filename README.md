@@ -22,13 +22,7 @@ Welcome to **BitByteAI** — your companion for staying focused, leveling up wit
 
 | Status | Feature                              | Target |
 |--------|--------------------------------------|--------|
-| ✅     | Core timer & XP system               | v1.0   |
-| ✅     | Reward planets based on session time | v1.0   |
-| ✅     | Local data persistence               | v1.0   |
-| 🔜     | User profiles & custom themes        | v1.1   |
-| 🔜     | Siri Shortcuts integration           | v1.1   |
-| 🔜     | External device sync (iPad/Mac)      | v1.2   |
-| 🧪     | AI suggestion system for study focus | v2.0   |
+| x      | Public release                       | v1.0   |
 
 ---
 
