@@ -40,10 +40,7 @@ struct SessionEndedOverlay: View {
                 .foregroundColor(.white)
                 .cornerRadius(12)
             }
-            .padding()
-            .background(Color.black.opacity(0.8))
-            .cornerRadius(12)
-            .shadow(radius: 10)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .contentShape(Rectangle())

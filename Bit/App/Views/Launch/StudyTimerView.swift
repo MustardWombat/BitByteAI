@@ -191,34 +191,6 @@ struct StudyTimerView: View {
                 .zIndex(3)
             }
 
-            if showSessionEndedPopup {
-                let elapsedSeconds: Int = {
-                    if let start = timerModel.timerStartDatePublic, let end = timerModel.timerEndDatePublic {
-                        return min(Int(end.timeIntervalSince(start)), timerModel.initialDurationPublic)
-                    } else if let start = timerModel.timerStartDatePublic {
-                        // If timerEndDate is not available, use now
-                        return min(Int(Date().timeIntervalSince(start)), timerModel.initialDurationPublic)
-                    } else {
-                        return timerModel.initialDurationPublic - timerModel.timeRemaining
-                    }
-                }()
-                let studiedMinutes = elapsedSeconds / 60
-                let studiedSeconds = elapsedSeconds % 60
-                let xpEarned = elapsedSeconds
-                let coinsEarned = RewardCalculator.calculateCoinReward(using: elapsedSeconds)
-
-                SessionEndedOverlay(
-                    studiedMinutes: studiedMinutes,
-                    studiedSeconds: studiedSeconds,
-                    xpEarned: xpEarned,
-                    coinsEarned: coinsEarned,
-                    onDismiss: {
-                        showSessionEndedPopup = false
-                    }
-                )
-                .transition(.opacity)
-                .zIndex(4)
-            }
 
             // Land button appears 5s after launch
             if showLandButton {
@@ -251,6 +223,31 @@ struct StudyTimerView: View {
                 categories: $categoriesVM.categories,
                 selected: $categoriesVM.selectedTopic,
                 isPresented: $isShowingCategorySheet
+            )
+        }
+        .fullScreenCover(isPresented: $showSessionEndedPopup) {
+            let elapsedSeconds: Int = {
+                if let start = timerModel.timerStartDatePublic, let end = timerModel.timerEndDatePublic {
+                    return min(Int(end.timeIntervalSince(start)), timerModel.initialDurationPublic)
+                } else if let start = timerModel.timerStartDatePublic {
+                    // If timerEndDate is not available, use now
+                    return min(Int(Date().timeIntervalSince(start)), timerModel.initialDurationPublic)
+                } else {
+                    return timerModel.initialDurationPublic - timerModel.timeRemaining
+                }
+            }()
+            let studiedMinutes = elapsedSeconds / 60
+            let studiedSeconds = elapsedSeconds % 60
+            let xpEarned = elapsedSeconds
+            let coinsEarned = RewardCalculator.calculateCoinReward(using: elapsedSeconds)
+            SessionEndedOverlay(
+                studiedMinutes: studiedMinutes,
+                studiedSeconds: studiedSeconds,
+                xpEarned: xpEarned,
+                coinsEarned: coinsEarned,
+                onDismiss: {
+                    showSessionEndedPopup = false
+                }
             )
         }
     }
