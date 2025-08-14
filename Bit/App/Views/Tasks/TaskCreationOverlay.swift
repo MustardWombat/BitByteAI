@@ -15,7 +15,7 @@ struct TaskCreationOverlay: View {
     var body: some View {
         ZStack {
             Color.black
-                .edgesIgnoringSafeArea(.all)
+                .ignoresSafeArea()
             
             VStack(spacing: 20) {
                 Text("Create Task")
@@ -118,11 +118,7 @@ struct TaskCreationOverlay: View {
                     .cornerRadius(8)
                 }
             }
-            .padding()
-            .background(Color.black.opacity(0.9))
-            .cornerRadius(12)
-            .shadow(radius: 10)
-            .padding()
+            .padding(.horizontal, 24)
         }
     }
 }
