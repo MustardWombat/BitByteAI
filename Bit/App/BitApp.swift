@@ -217,12 +217,6 @@ struct BitApp: App {
 
         setupCloudKit()
 
-        // start periodic progress sync
-        CloudKitManager.shared.setupSync(
-            xpModel: xpModel,
-            currencyModel: currencyModel,
-            timerModel: timerModel
-        )
         // push any local profile values up
         CloudKitManager.shared.syncUserProfileToCloud()
     }
