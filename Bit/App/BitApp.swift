@@ -114,34 +114,29 @@ struct BitAppView: View {
         let predicate = NSPredicate(format: "userID == %@", userID)
         let query = CKQuery(recordType: "UserProgress", predicate: predicate)
         
-        privateDB.perform(query, inZoneWith: nil) { (records, error) in
-            guard let record = records?.first, error == nil else {
-                if let error = error {
-                    print("Error loading user progress: \(error)")
+        privateDB.fetch(withQuery: query, inZoneWith: nil, desiredKeys: nil, resultsLimit: 1) { result in
+            switch result {
+            case .success(let (matchResults, _)):
+                if let firstResult = matchResults.first, case .success(let record) = firstResult.1 {
+                    DispatchQueue.main.async {
+                        if let level = record["level"] as? Int,
+                           let xp    = record["xp"]    as? Int {
+                            self.xpModel.applyCloudProgress(level: level, xp: xp)
+                        }
+                        if let balance = record["coinBalance"] as? Int {
+                            self.currencyModel.balance = balance
+                        }
+                        if let totalMinutes = record["totalStudyMinutes"] as? Double {
+                            self.timerModel.totalTimeStudied = Int(totalMinutes * 60)
+                        }
+                        if let dailyMinutes = record["daily_Minutes"] as? [Int] {
+                            let totalWeeklyMinutes = dailyMinutes.reduce(0, +)
+                            self.timerModel.weeklyStudyMinutes = totalWeeklyMinutes
+                        }
+                    }
                 }
-                return
-            }
-
-            DispatchQueue.main.async {
-                if let level = record["level"] as? Int,
-                   let xp    = record["xp"]    as? Int
-                {
-                    // atomic update to avoid UI glitch
-                    self.xpModel.applyCloudProgress(level: level, xp: xp)
-                }
-
-                if let balance = record["coinBalance"] as? Int {
-                    self.currencyModel.balance = balance
-                }
-                
-                if let totalMinutes = record["totalStudyMinutes"] as? Double {
-                    self.timerModel.totalTimeStudied = Int(totalMinutes * 60)
-                }
-                
-                if let dailyMinutes = record["daily_Minutes"] as? [Int] {
-                    let totalWeeklyMinutes = dailyMinutes.reduce(0, +)
-                    self.timerModel.weeklyStudyMinutes = totalWeeklyMinutes
-                }
+            case .failure(let error):
+                print("Error loading user progress: \(error)")
             }
         }
     }
