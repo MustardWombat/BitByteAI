@@ -33,14 +33,6 @@ class CloudKitManager {
             }
             
             print("CloudKit account status: \(status)")
-            
-            // Check container permissions too
-            self.container.requestApplicationPermission(.userDiscoverability) { status, error in
-                print("CloudKit permission status: \(status.rawValue)")
-                if let error = error {
-                    print("CloudKit permission error: \(error.localizedDescription)")
-                }
-            }
         }
     }
     
