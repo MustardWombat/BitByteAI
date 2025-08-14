@@ -415,10 +415,9 @@ struct OnboardingView: View {
     private func scheduleStudyReminders() {
         let comp1 = Calendar.current.dateComponents([.hour, .minute], from: Date(timeIntervalSince1970: reminderTime1Interval))
         let comp2 = Calendar.current.dateComponents([.hour, .minute], from: Date(timeIntervalSince1970: reminderTime2Interval))
-        if let notificationManager = NotificationManager.shared as? NotificationManager {
-            notificationManager.reminderTimes = [comp1, comp2]
-            notificationManager.updateReminders()
-        }
+        let notificationManager = NotificationManager.shared
+        notificationManager.reminderTimes = [comp1, comp2]
+        notificationManager.updateReminders()
     }
 }
 
