@@ -55,7 +55,7 @@ struct TaskCreationOverlay: View {
                                 .font(.subheadline)
                                 .foregroundColor(.white)
                             Button(action: {
-                                showDueDatePicker.toggle()
+                                showDueDatePicker = true
                             }) {
                                 HStack {
                                     if let due = dueDate {
@@ -78,21 +78,6 @@ struct TaskCreationOverlay: View {
                                 .background(Color.black.opacity(0.3))
                                 .cornerRadius(10)
                             }
-                        }
-                        if showDueDatePicker {
-                            DatePicker(
-                                "Select Date",
-                                selection: Binding(
-                                    get: { dueDate ?? Date() },
-                                    set: { dueDate = $0 }
-                                ),
-                                displayedComponents: .date
-                            )
-                            .datePickerStyle(GraphicalDatePickerStyle())
-                            .padding()
-                            .background(Color.black.opacity(0.3))
-                            .cornerRadius(10)
-                            .foregroundColor(.white)
                         }
                         HStack {
                             Button("Save") {
@@ -126,6 +111,9 @@ struct TaskCreationOverlay: View {
                     .transition(.move(edge: .bottom))
                     .animation(.spring(), value: isPresented)
                 }
+            }
+            .sheet(isPresented: $showDueDatePicker) {
+                DueDatePickerView(selectedDate: $dueDate, isPresented: $showDueDatePicker)
             }
         }
     }

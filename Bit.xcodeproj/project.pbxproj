@@ -36,6 +36,7 @@
 		4F16446E2E46BB5A008AAD91 /* Bit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Bit.xcodeproj; sourceTree = "<group>"; };
 		4F187BF02E497446005BB096 /* Bit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Bit.xcodeproj; sourceTree = "<group>"; };
 		4F187DDC2E4981C1005BB096 /* Bit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Bit.xcodeproj; sourceTree = "<group>"; };
+		4F3C1CA22E4D654400F0475A /* Bit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Bit.xcodeproj; sourceTree = "<group>"; };
 		4F4FB6862E45604400E27245 /* Bit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Bit.xcodeproj; sourceTree = "<group>"; };
 		4F8E91C92E4D579D00E5CA36 /* Bit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Bit.xcodeproj; sourceTree = "<group>"; };
 		4F95C6552DA30C7F00839484 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
@@ -169,6 +170,13 @@
 			sourceTree = "<group>";
 		};
 		4F187E232E4981C1005BB096 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		4F3C1CE82E4D654400F0475A /* Products */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -443,6 +451,10 @@
 				{
 					ProductGroup = 4FD1468E2E41DC1200A121B0 /* Products */;
 					ProjectRef = 4FD146492E41DC1200A121B0 /* Bit.xcodeproj */;
+				},
+				{
+					ProductGroup = 4F3C1CE82E4D654400F0475A /* Products */;
+					ProjectRef = 4F3C1CA22E4D654400F0475A /* Bit.xcodeproj */;
 				},
 				{
 					ProductGroup = 4FC1BA232E43ED6A00CE751B /* Products */;
