@@ -242,8 +242,8 @@ struct BitApp: App {
                     timerModel: timerModel
                 )
             }
-            .onChange(of: isSignedIn) { signedIn in
-                if signedIn {
+            .onChange(of: isSignedIn) { newValue, _ in
+                if newValue {
                     // immediately fetch latest stats (coins, xp, study minutes)
                     CloudKitManager.shared.syncUserProfileToCloud()
                     CloudKitManager.shared.fetchUserProgress(
