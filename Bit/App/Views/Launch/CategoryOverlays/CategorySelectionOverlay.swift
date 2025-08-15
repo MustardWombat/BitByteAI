@@ -13,12 +13,13 @@ struct CategorySelectionOverlay: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.6)
+            Color.black
                 .ignoresSafeArea()
-
+            
             VStack {
                 Text("Select a Category")
                     .font(.headline)
+                    .foregroundColor(.white)
                     .padding()
 
                 List {
@@ -46,6 +47,8 @@ struct CategorySelectionOverlay: View {
                             categoryForEditing = category
                             showCategoryCreationOverlay = true
                         }
+                        .listRowBackground(Color.black)
+                        .foregroundColor(.white)
                     }
                     Button("Create New Category") {
                         if !isPro && categories.count >= 3 {
@@ -56,24 +59,30 @@ struct CategorySelectionOverlay: View {
                         }
                     }
                     .foregroundColor(.blue)
+                    .listRowBackground(Color.black)
                 }
-                .frame(maxHeight: .infinity)
-
-                Button("Close") {
-                    isPresented = false
-                }
-                .padding()
-                .background(Color.blue)
+                .background(Color.black)
                 .foregroundColor(.white)
-                .cornerRadius(8)
+                .frame(maxHeight: .infinity)
             }
-            .padding(20)
-            .background(.ultraThinMaterial)
-            .cornerRadius(12)
-            .shadow(radius: 10)
-            .padding(.horizontal, 16)
-            .frame(maxHeight: .infinity, alignment: .bottom)
-            .ignoresSafeArea(edges: .bottom)
+            
+            VStack {
+                HStack {
+                    Button(action: { isPresented = false }) {
+                        Text("Close")
+                            .foregroundColor(.primary)
+                            .fontWeight(.semibold)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(.ultraThinMaterial)
+                            .clipShape(Capsule())
+                            .shadow(radius: 4)
+                    }
+                    .padding([.top, .leading], 20)
+                    Spacer()
+                }
+                Spacer()
+            }
         }
         .sheet(isPresented: $showCategoryCreationOverlay) {
             CategoryCreationOverlay(
@@ -107,4 +116,3 @@ struct CategorySelectionOverlay: View {
         }
     }
 }
-
