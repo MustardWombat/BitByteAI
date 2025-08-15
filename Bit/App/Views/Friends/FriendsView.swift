@@ -285,16 +285,22 @@ struct FriendsView: View {
         let operation = CKQueryOperation(query: query)
         operation.resultsLimit = 1
         
-        operation.recordFetchedBlock = { record in
-            DispatchQueue.main.async {
-                if let level = record["level"] as? Int {
-                    self.profileLevel = level
+        operation.recordMatchedBlock = { recordID, result in
+            switch result {
+            case .success(let record):
+                DispatchQueue.main.async {
+                    if let level = record["level"] as? Int {
+                        self.profileLevel = level
+                    }
                 }
+            case .failure(let error):
+                print("Error fetching matched record: \(error)")
             }
         }
         
-        operation.queryCompletionBlock = { _, _ in
+        operation.queryResultBlock = { result in
             // No action required on complete
+            // You can handle completion result here if needed.
         }
         
         CKContainer.default().publicCloudDatabase.add(operation)
@@ -303,13 +309,18 @@ struct FriendsView: View {
     private func fetchLevel(for userID: String) {
         let predicate = NSPredicate(format: "userID == %@", userID)
         let query = CKQuery(recordType: "UserProgress", predicate: predicate)
-        CKContainer.default().publicCloudDatabase.perform(query, inZoneWith: nil) { records, error in
-            if let level = records?.first?["level"] as? Int {
-                DispatchQueue.main.async {
-                    friendLevels[userID] = level
+        CKContainer.default().publicCloudDatabase.fetch(withQuery: query, inZoneWith: nil, desiredKeys: ["level"], resultsLimit: 1) { result in
+            switch result {
+            case .success(let (matchedResults, _)):
+                if let recordResult = matchedResults.first?.1, case .success(let record) = recordResult, let level = record["level"] as? Int {
+                    DispatchQueue.main.async {
+                        friendLevels[userID] = level
+                    }
                 }
+            case .failure(let error):
+                // Optionally handle error
+                print("Error fetching level: \(error)")
             }
         }
     }
 }
-

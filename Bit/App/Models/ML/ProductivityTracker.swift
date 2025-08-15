@@ -318,7 +318,14 @@ class ProductivityTracker: ObservableObject {
             let isWeekend = session.isWeekend ? "1" : "0"
             let hour = session.hour
             let optimalHour = (hour - 1 + 24) % 24 // 1 hour before productive time
-            
+            let taskType = session.taskType ?? ""
+            let difficulty = session.difficulty.map { String(describing: $0) } ?? ""
+            let completionPercentage = session.completionPercentage.map { String(describing: $0) } ?? ""
+            let energyLevel = session.userEnergyLevel.map { String(describing: $0) } ?? ""
+            // 'location' is not a field in ProductivitySession, so leave blank for now:
+            let location = ""
+            let row = "\(session.dayOfWeek),\(hour),\(isWeekend),\(Int(session.duration)),\(session.engagement),\(taskType),\(difficulty),\(completionPercentage),\(location),\(energyLevel),\(optimalHour)\n"
+            csvContent.append(row)
         }
         
         // Save to documents directory
@@ -499,3 +506,4 @@ class ProductivityTracker: ObservableObject {
         let appVersion: String
     }
 }
+

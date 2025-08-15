@@ -642,9 +642,15 @@ struct ProfileView: View {
                         // Convert all fields to string representation
                         for (key, value) in record.allValues() {
                             if key == "profileImage", let asset = value as? CKAsset {
-                                self.userProfileData[key] = "[Image Asset: \(asset.fileURL?.lastPathComponent)]"
+                                self.userProfileData[key] = "[Image Asset: \(asset.fileURL?.lastPathComponent ?? "unknown")]"
                             } else {
-                                self.userProfileData[key] = String(describing: value)
+                                if let unwrapped = value as? CustomStringConvertible {
+                                    self.userProfileData[key] = String(describing: unwrapped)
+                                } else if let optionalValue = value as? OptionalProtocol {
+                                    self.userProfileData[key] = optionalValue.stringDescription
+                                } else {
+                                    self.userProfileData[key] = "(unknown type)"
+                                }
                             }
                         }
                         
@@ -719,20 +725,30 @@ struct ProfileView: View {
         let container = CKContainer.default()
 
         // First try private database
-        container.privateCloudDatabase.perform(query, inZoneWith: nil) { records, error in
-            if let record = records?.first, let level = record["level"] as? Int {
-                print("✅ Found level in private database: \(level)")
-                DispatchQueue.main.async { self.cloudLevel = level }
-            } else {
-                // If not found, try public database
-                container.publicCloudDatabase.perform(query, inZoneWith: nil) { pubRecords, pubError in
-                    if let pubRecord = pubRecords?.first, let pubLevel = pubRecord["level"] as? Int {
-                        print("✅ Found level in public database: \(pubLevel)")
-                        DispatchQueue.main.async { self.cloudLevel = pubLevel }
-                    } else {
-                        print("❌ No level found in either database.")
+        container.privateCloudDatabase.fetch(withQuery: query, inZoneWith: nil, desiredKeys: nil, resultsLimit: 1) { result in
+            if case .success(let records) = result {
+                if let record = records.matchResults.compactMap({ try? $0.1.get() }).first,
+                   let level = record["level"] as? Int {
+                    print("✅ Found level in private database: \(level)")
+                    DispatchQueue.main.async { self.cloudLevel = level }
+                } else {
+                    // If not found, try public database
+                    container.publicCloudDatabase.fetch(withQuery: query, inZoneWith: nil, desiredKeys: nil, resultsLimit: 1) { pubResult in
+                        if case .success(let pubRecords) = pubResult {
+                            if let pubRecord = pubRecords.matchResults.compactMap({ try? $0.1.get() }).first,
+                               let pubLevel = pubRecord["level"] as? Int {
+                                print("✅ Found level in public database: \(pubLevel)")
+                                DispatchQueue.main.async { self.cloudLevel = pubLevel }
+                            } else {
+                                print("❌ No level found in either database.")
+                            }
+                        } else if case .failure(let pubError) = pubResult {
+                            print("❌ Error fetching level from public database: \(pubError)")
+                        }
                     }
                 }
+            } else if case .failure(let error) = result {
+                print("❌ Error fetching level from private database: \(error)")
             }
         }
     }
@@ -837,3 +853,15 @@ struct BulletPoint: View {
     }
 }
 
+// MARK: - OptionalProtocol for safe optional description
+private protocol OptionalProtocol {
+    var stringDescription: String { get }
+}
+extension Optional: OptionalProtocol {
+    var stringDescription: String {
+        switch self {
+        case .some(let wrapped): return String(describing: wrapped)
+        case .none: return "nil"
+        }
+    }
+}

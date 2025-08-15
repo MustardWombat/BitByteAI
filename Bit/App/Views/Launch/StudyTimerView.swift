@@ -139,6 +139,7 @@ struct StudyTimerView: View {
                         categoriesVM.selectedTopic = categoriesVM.loadSelectedTopic()
                     }
                 }
+                // Use standard .onChange for geometry.size.height - the older syntax with initial parameter is deprecated.
                 .onChange(of: geometry.size.height) { newHeight in
                     containerHeight = newHeight
                 }

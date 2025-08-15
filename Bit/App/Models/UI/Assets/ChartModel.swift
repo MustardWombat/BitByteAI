@@ -76,7 +76,7 @@ struct WeeklyProgressChart: View {
                     }
                     .frame(height: 250)
                     .animation(.easeInOut, value: viewModel.categories)
-                    .onChange(of: viewModel.categories) { _ in
+                    .onChange(of: viewModel.categories) {
                         print("🟢 Chart detected a category update")
                     }
                     .onReceive(viewModel.objectWillChange) { _ in
@@ -146,3 +146,4 @@ extension CategoriesViewModel {
         }
     }
 }
+

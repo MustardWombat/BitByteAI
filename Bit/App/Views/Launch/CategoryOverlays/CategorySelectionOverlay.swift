@@ -29,7 +29,7 @@ struct CategorySelectionOverlay: View {
                                 .frame(width: 12, height: 12)
                             Text(category.name)
                             Spacer()
-                            Text("\((category.weeklyGoalMinutes ?? 0)) min goal")
+                            Text("\(category.weeklyGoalMinutes) min goal")
                                 .font(.caption)
                                 .foregroundColor(.gray)
                             if selected?.id == category.id {
