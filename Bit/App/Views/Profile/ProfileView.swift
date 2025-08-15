@@ -53,9 +53,8 @@ struct ProfileView: View {
     @State private var isLoadingDebugData: Bool = false
 
     var body: some View {
-        // Fetch app version and build number from Info.plist
+        // Fetch app version from Info.plist
         let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
-        let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
         
         ZStack {
             ScrollView {
@@ -219,6 +218,17 @@ struct ProfileView: View {
                             .background(Color.red)
                             .foregroundColor(.white)
                             .cornerRadius(8)
+                            
+                            #if DEBUG
+                            Button("Show Onboarding") {
+                                UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
+                                // Optionally trigger onboarding presentation if you have such logic
+                            }
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
+                            #endif
                         }
                         .padding()
                         
@@ -268,10 +278,17 @@ struct ProfileView: View {
                         .padding()
                         
                         // Version and Build Number display
-                        Text("Version \(appVersion) (Build \(buildNumber))")
+                        #if DEBUG
+                        Text("Version \(appVersion) DEBUG")
                             .font(.footnote)
                             .foregroundColor(.gray)
                             .padding(.top, 4)
+                        #else
+                        Text("Version \(appVersion)")
+                            .font(.footnote)
+                            .foregroundColor(.gray)
+                            .padding(.top, 4)
+                        #endif
                         
                         // Debug section
                         VStack {
@@ -865,3 +882,4 @@ extension Optional: OptionalProtocol {
         }
     }
 }
+

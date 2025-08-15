@@ -13,103 +13,78 @@ struct TaskCreationOverlay: View {
     var onCancel: () -> Void = {}
 
     var body: some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .bottom) {
-                Rectangle()
-                    .fill(Color.clear)
-                    .background(.ultraThinMaterial)
-                    .blur(radius: 18)
-                    .opacity(0.85)
-                    .ignoresSafeArea()
-                
-                VStack(spacing: 20) {
-                    Spacer()
-                    VStack(spacing: 20) {
-                        Text("Create Task")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                        TextField("Task Title", text: $title)
-                            .padding()
-                            .background(Color.black.opacity(0.3))
-                            .cornerRadius(10)
-                            .foregroundColor(.white)
-                        VStack(alignment: .leading) {
-                            Text("Difficulty")
-                                .font(.subheadline)
-                                .foregroundColor(.white)
-                            HStack {
-                                ForEach(1...5, id: \.self) { level in
-                                    Button(action: { difficulty = level }) {
-                                        Image(systemName: level <= difficulty ? "star.fill" : "star")
-                                            .foregroundColor(.yellow)
-                                            .font(.system(size: 24))
-                                    }
-                                }
+        NavigationView {
+            VStack(spacing: 24) {
+                TextField("Task Title", text: $title)
+                    .padding()
+                    .background(Color(.secondarySystemBackground))
+                    .cornerRadius(10)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Difficulty")
+                        .font(.subheadline)
+                    HStack {
+                        ForEach(1...5, id: \.self) { level in
+                            Button(action: { difficulty = level }) {
+                                Image(systemName: level <= difficulty ? "star.fill" : "star")
+                                    .foregroundColor(.yellow)
+                                    .font(.system(size: 24))
                             }
-                            .padding()
-                            .background(Color.black.opacity(0.3))
-                            .cornerRadius(10)
-                        }
-                        VStack(alignment: .leading) {
-                            Text("Due Date")
-                                .font(.subheadline)
-                                .foregroundColor(.white)
-                            Button(action: {
-                                showDueDatePicker = true
-                            }) {
-                                HStack {
-                                    if let due = dueDate {
-                                        Text(due, style: .date)
-                                            .foregroundColor(.white)
-                                        Spacer()
-                                        Button(action: { dueDate = nil }) {
-                                            Image(systemName: "xmark.circle.fill")
-                                                .foregroundColor(.red)
-                                        }
-                                    } else {
-                                        Text("Set Due Date")
-                                            .foregroundColor(.gray)
-                                        Spacer()
-                                        Image(systemName: "calendar")
-                                            .foregroundColor(.white)
-                                    }
-                                }
-                                .padding()
-                                .background(Color.black.opacity(0.3))
-                                .cornerRadius(10)
-                            }
-                        }
-                        HStack {
-                            Button("Save") {
-                                let trimmed = title.trimmingCharacters(in: .whitespaces)
-                                guard !trimmed.isEmpty else { return }
-                                taskModel.addTask(title: trimmed, difficulty: difficulty, dueDate: dueDate)
-                                onSave()
-                                isPresented = false
-                            }
-                            .padding()
-                            .background(Color.green)
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
-                            .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
-                            Button("Cancel") {
-                                onCancel()
-                                isPresented = false
-                            }
-                            .padding()
-                            .background(Color.red)
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
+                            .buttonStyle(.plain)
                         }
                     }
-                    .padding()
-                    .background(.ultraThinMaterial)
-                    .cornerRadius(16)
-                    .shadow(radius: 10)
-                    .padding(.horizontal, 24)
-                    .frame(maxHeight: geometry.size.height * 0.55)
-                    .transition(.move(edge: .bottom))
-                    .animation(.spring(), value: isPresented)
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Due Date")
+                        .font(.subheadline)
+                    Button(action: { showDueDatePicker = true }) {
+                        HStack {
+                            if let due = dueDate {
+                                Text(due, style: .date)
+                                    .foregroundColor(.primary)
+                                Spacer()
+                                Button(action: { dueDate = nil }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundColor(.red)
+                                }
+                            } else {
+                                Text("Set Due Date")
+                                    .foregroundColor(.gray)
+                                Spacer()
+                                Image(systemName: "calendar")
+                                    .foregroundColor(.primary)
+                            }
+                        }
+                        .padding(8)
+                        .background(Color(.secondarySystemBackground))
+                        .cornerRadius(8)
+                    }
+                    .buttonStyle(.plain)
+                }
+                Spacer()
+            }
+            .padding()
+            .background(Color(.systemBackground))
+            .cornerRadius(16)
+            .shadow(radius: 10)
+            .padding([.horizontal, .top])
+            .navigationTitle("Create Task")
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        let trimmed = title.trimmingCharacters(in: .whitespaces)
+                        guard !trimmed.isEmpty else { return }
+                        taskModel.addTask(title: trimmed, difficulty: difficulty, dueDate: dueDate)
+                        onSave()
+                        isPresented = false
+                    }
+                    .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        onCancel()
+                        isPresented = false
+                    }
+                    .foregroundColor(.red)
                 }
             }
             .sheet(isPresented: $showDueDatePicker) {
