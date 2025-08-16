@@ -83,7 +83,8 @@ class XPModel: ObservableObject {
     }
 
     func addXP(_ amount: Int) {
-        let proAmount = isPro ? amount * 2 : amount
+        let cappedAmount = min(amount, 25)
+        let proAmount = isPro ? cappedAmount * 2 : cappedAmount
         let boostedAmount = Int(Double(proAmount) * upgradeMultiplier)
         xp += boostedAmount
         checkForLevelUp()

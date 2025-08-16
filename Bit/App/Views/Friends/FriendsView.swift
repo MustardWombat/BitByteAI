@@ -1,6 +1,8 @@
 import SwiftUI
 import CloudKit
 
+// NOTE: System fields should never be displayed. Only explicitly known, user-defined fields such as "userID", "profileEmoji", "username" should be shown in FriendsView.
+
 private struct LevelPillWidthKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
@@ -118,6 +120,11 @@ struct FriendsView: View {
                                         }
                                     }
                                     .padding(.vertical, 8)
+                                    
+                                    /*
+                                    // Debug display for all fields (non-system) in profile record - uncomment for debugging
+                                    // Removed per instructions to not display or iterate record.allKeys()
+                                    */
                                 } else {
                                     Text("No profile found")
                                         .foregroundColor(.gray)
@@ -163,6 +170,11 @@ struct FriendsView: View {
                                         }
                                     }
                                     .padding(.vertical, 8)
+                                    
+                                    /*
+                                    // Debug display for all fields (non-system) in friend record - uncomment for debugging
+                                    // Removed per instructions to not display or iterate record.allKeys()
+                                    */
                                 }
                             }
                         }

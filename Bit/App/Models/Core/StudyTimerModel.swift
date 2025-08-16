@@ -175,16 +175,19 @@ class StudyTimerModel: ObservableObject {
         let studiedTimeSeconds = Int(Date().timeIntervalSince(timerStartDate ?? Date()))
         let studiedTimeMinutes = studiedTimeSeconds / 60
         
+        let cappedSeconds = min(studiedTimeSeconds, 25 * 60)
+        let cappedMinutes = min(studiedTimeMinutes, 25)
+        
         print("Adding \(studiedTimeSeconds) sec (\(studiedTimeMinutes) min) XP")
-        xpModel?.addXP(studiedTimeSeconds)
+        xpModel?.addXP(cappedSeconds)
         
         if studiedTimeSeconds >= 300 {
             // Award planet rewards
-            calculateReward(using: studiedTimeSeconds)
+            calculateReward(using: cappedSeconds)
             
             // Award coin rewards based on study time
-            let coinReward = RewardCalculator.calculateCoinReward(using: studiedTimeSeconds)
-            print("Awarding \(coinReward) coins for studying \(studiedTimeMinutes) minutes")
+            let coinReward = RewardCalculator.calculateCoinReward(using: cappedSeconds)
+            print("Awarding \(coinReward) coins for studying \(cappedMinutes) minutes")
             
             // Use notification pattern to deposit coins - more decoupled approach
             NotificationCenter.default.post(
@@ -194,11 +197,11 @@ class StudyTimerModel: ObservableObject {
             )
             
             // Update weekly study minutes
-            updateWeeklyStudyMinutes(minutes: studiedTimeMinutes)
+            updateWeeklyStudyMinutes(minutes: cappedMinutes)
         }
         
         if let topic = selectedTopic, let vm = categoriesVM {
-            vm.logStudyTime(categoryID: topic.id, date: Date(), minutes: studiedTimeMinutes)
+            vm.logStudyTime(categoryID: topic.id, date: Date(), minutes: cappedMinutes)
         }
         
         // --- Daily Streak Logic ---

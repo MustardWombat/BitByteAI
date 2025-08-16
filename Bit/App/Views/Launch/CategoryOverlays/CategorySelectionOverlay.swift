@@ -68,16 +68,11 @@ struct CategorySelectionOverlay: View {
             
             VStack {
                 HStack {
-                    Button(action: { isPresented = false }) {
-                        Text("Close")
-                            .foregroundColor(.primary)
-                            .fontWeight(.semibold)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(.ultraThinMaterial)
-                            .clipShape(Capsule())
-                            .shadow(radius: 4)
+                    Button("Close") {
+                        isPresented = false
                     }
+                    .foregroundColor(.red)
+                    .font(.headline)
                     .padding([.top, .leading], 20)
                     Spacer()
                 }

@@ -656,18 +656,20 @@ struct ProfileView: View {
                 switch result {
                 case .success(let records):
                     if let record = records.matchResults.compactMap({ try? $0.1.get() }).first {
-                        // Convert all fields to string representation
+                        // Convert all fields to string representation, skipping system fields
                         for (key, value) in record.allValues() {
+                            // Skip known system fields and any that start with _ or $
+                            if key == "recordID" || key == "creationDate" || key == "modificationDate" || key.hasPrefix("$") || key.hasPrefix("_") {
+                                continue
+                            }
                             if key == "profileImage", let asset = value as? CKAsset {
                                 self.userProfileData[key] = "[Image Asset: \(asset.fileURL?.lastPathComponent ?? "unknown")]"
+                            } else if let convertible = value as? CustomStringConvertible {
+                                self.userProfileData[key] = String(describing: convertible)
+                            } else if let optionalValue = value as? OptionalProtocol {
+                                self.userProfileData[key] = optionalValue.stringDescription
                             } else {
-                                if let unwrapped = value as? CustomStringConvertible {
-                                    self.userProfileData[key] = String(describing: unwrapped)
-                                } else if let optionalValue = value as? OptionalProtocol {
-                                    self.userProfileData[key] = optionalValue.stringDescription
-                                } else {
-                                    self.userProfileData[key] = "(unknown type)"
-                                }
+                                self.userProfileData[key] = "(not displayable)"
                             }
                         }
                         
@@ -882,4 +884,3 @@ extension Optional: OptionalProtocol {
         }
     }
 }
-
