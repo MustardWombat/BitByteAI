@@ -38,6 +38,7 @@
 		4F187DDC2E4981C1005BB096 /* Bit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Bit.xcodeproj; sourceTree = "<group>"; };
 		4F3C1CA22E4D654400F0475A /* Bit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Bit.xcodeproj; sourceTree = "<group>"; };
 		4F4FB6862E45604400E27245 /* Bit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Bit.xcodeproj; sourceTree = "<group>"; };
+		4F83219F2E5133C200C6EF76 /* Bit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Bit.xcodeproj; sourceTree = "<group>"; };
 		4F8E91C92E4D579D00E5CA36 /* Bit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Bit.xcodeproj; sourceTree = "<group>"; };
 		4F95C6552DA30C7F00839484 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		4F95C6572DA30C7F00839484 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -184,6 +185,13 @@
 			sourceTree = "<group>";
 		};
 		4F4FB6CC2E45604400E27245 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		4F8321E52E5133C200C6EF76 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -421,32 +429,8 @@
 			projectDirPath = "";
 			projectReferences = (
 				{
-					ProductGroup = 4F187E232E4981C1005BB096 /* Products */;
-					ProjectRef = 4F187DDC2E4981C1005BB096 /* Bit.xcodeproj */;
-				},
-				{
-					ProductGroup = 4FE506392E15DBBF00FB0901 /* Products */;
-					ProjectRef = 4FE506362E15DBBF00FB0901 /* Bit.xcodeproj */;
-				},
-				{
 					ProductGroup = 4F9FA4352E442C5D00C200E4 /* Products */;
 					ProjectRef = 4F9FA3EF2E442C5D00C200E4 /* Bit.xcodeproj */;
-				},
-				{
-					ProductGroup = 4F4FB6CC2E45604400E27245 /* Products */;
-					ProjectRef = 4F4FB6862E45604400E27245 /* Bit.xcodeproj */;
-				},
-				{
-					ProductGroup = 4FB295752E41E41F00AC243A /* Products */;
-					ProjectRef = 4FB295302E41E41F00AC243A /* Bit.xcodeproj */;
-				},
-				{
-					ProductGroup = 4FBF561C2E3D68D6003E52FF /* Products */;
-					ProjectRef = 4FBF55D72E3D68D6003E52FF /* Bit.xcodeproj */;
-				},
-				{
-					ProductGroup = 4FC1B9292E42E10F00CE751B /* Products */;
-					ProjectRef = 4FC1B8E42E42E10F00CE751B /* Bit.xcodeproj */;
 				},
 				{
 					ProductGroup = 4FD1468E2E41DC1200A121B0 /* Products */;
@@ -471,6 +455,34 @@
 				{
 					ProductGroup = 4F8E92102E4D579D00E5CA36 /* Products */;
 					ProjectRef = 4F8E91C92E4D579D00E5CA36 /* Bit.xcodeproj */;
+				},
+				{
+					ProductGroup = 4F187E232E4981C1005BB096 /* Products */;
+					ProjectRef = 4F187DDC2E4981C1005BB096 /* Bit.xcodeproj */;
+				},
+				{
+					ProductGroup = 4FE506392E15DBBF00FB0901 /* Products */;
+					ProjectRef = 4FE506362E15DBBF00FB0901 /* Bit.xcodeproj */;
+				},
+				{
+					ProductGroup = 4F4FB6CC2E45604400E27245 /* Products */;
+					ProjectRef = 4F4FB6862E45604400E27245 /* Bit.xcodeproj */;
+				},
+				{
+					ProductGroup = 4F8321E52E5133C200C6EF76 /* Products */;
+					ProjectRef = 4F83219F2E5133C200C6EF76 /* Bit.xcodeproj */;
+				},
+				{
+					ProductGroup = 4FB295752E41E41F00AC243A /* Products */;
+					ProjectRef = 4FB295302E41E41F00AC243A /* Bit.xcodeproj */;
+				},
+				{
+					ProductGroup = 4FBF561C2E3D68D6003E52FF /* Products */;
+					ProjectRef = 4FBF55D72E3D68D6003E52FF /* Bit.xcodeproj */;
+				},
+				{
+					ProductGroup = 4FC1B9292E42E10F00CE751B /* Products */;
+					ProjectRef = 4FC1B8E42E42E10F00CE751B /* Bit.xcodeproj */;
 				},
 				{
 					ProductGroup = 4F12FA542E49712600B621E0 /* Products */;

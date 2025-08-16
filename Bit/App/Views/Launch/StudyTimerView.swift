@@ -13,7 +13,6 @@ struct StudyTimerView: View {
     @State private var isShowingEditGoalView = false
     @State private var isLaunching = false   // new: control launch animation
     @State private var showRocketOverlay = false   // new: control overlay appearance
-    @State private var showLandButton = false   // new: control land button appearance
     @State private var isStudying: Bool = false
 
     @State private var rocketVibration: CGSize = .zero
@@ -48,11 +47,33 @@ struct StudyTimerView: View {
                                 .frame(maxWidth: .infinity, alignment: .center)  // center horizontally
                         }
 
-                        RocketSprite(animate: $rocketShouldAnimate, isStudying: $isStudying)
-                            .frame(width: 192, height: 192)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .offset(x: rocketVibration.width, y: rocketVibration.height)
+                        Button {
+                            rocketShouldAnimate = true
+                            timerModel.selectedTopic = categoriesVM.selectedTopic
+                            timerModel.categoriesVM = categoriesVM
+                            timerModel.xpModel = xpModel
+                            timerModel.startTimer(for: timerModel.timeRemaining > 0 ? timerModel.timeRemaining : 25 * 60)
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.84) {
+                                isStudying = true
+                            }
+                            withAnimation(.easeInOut(duration: 1)) {
+                                isLaunching = true
+                                timerModel.isRocketOverlayActive = true    // ← trigger shell animation
+                            }
+                            // delay the full-screen overlay to let the animation finish
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                                showRocketOverlay = true
+                            }
+                        } label: {
+                            RocketSprite(animate: $rocketShouldAnimate, isStudying: $isStudying)
+                                .frame(width: 192, height: 192)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .offset(x: rocketVibration.width, y: rocketVibration.height)
+                                .offset(y: isLaunching ? -400 : 0) // Added offset for launch animation
+                                .animation(.easeInOut(duration: 1.5), value: isLaunching) // Animate rocket lift-off
+                        }
+                        .buttonStyle(PlainButtonStyle())
                     }
                     .padding(.top, 100)
                     .padding(.horizontal, 20)
@@ -98,38 +119,7 @@ struct StudyTimerView: View {
 
                         // MARK: - Control buttons
                         HStack {
-                            Button(action: {
-                                rocketShouldAnimate = true
-                                timerModel.selectedTopic = categoriesVM.selectedTopic
-                                timerModel.categoriesVM = categoriesVM
-                                timerModel.xpModel = xpModel
-                                timerModel.startTimer(for: timerModel.timeRemaining > 0 ? timerModel.timeRemaining : 25 * 60)
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.84) {
-                                    isStudying = true
-                                }
-                                withAnimation(.easeInOut(duration: 1)) {
-                                    isLaunching = true
-                                    timerModel.isRocketOverlayActive = true    // ← trigger shell animation
-                                }
-                                // delay the full-screen overlay to let the animation finish
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                                    showRocketOverlay = true
-                                }
-                                // Notify the shell to wipe off screen
-                                NotificationCenter.default.post(name: .wipeShell, object: nil)
-                                // schedule land button
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                                    withAnimation { showLandButton = true }
-                                }
-                            }) {
-                                Text("Launch")
-                                    .padding()
-                                    .frame(maxWidth: .infinity)
-                                    .background(categoriesVM.selectedTopic == nil ? Color.gray : Color.green)
-                                    .foregroundColor(.white)
-                                    .cornerRadius(10)
-                            }
-                            .disabled(categoriesVM.selectedTopic == nil) // Disable if no topic is selected
+                            // Launch button removed as per instructions
                         }
                         .padding()
 
@@ -171,17 +161,8 @@ struct StudyTimerView: View {
                     handleSessionEnded()
                 }
             }
-            .onChange(of: isStudying) { studying in
-                if studying {
-                    vibrationTimer?.invalidate()
-                    vibrationTimer = Timer.scheduledTimer(withTimeInterval: 0.04, repeats: true) { _ in
-                        rocketVibration = CGSize(width: CGFloat.random(in: -1.2...1.2), height: CGFloat.random(in: -1.2...1.2))
-                    }
-                } else {
-                    vibrationTimer?.invalidate()
-                    rocketVibration = .zero
-                }
-            }
+            // Removed vibration logic from StudyTimerView since RocketFocusOverlay owns it
+
             .onDisappear {
                 vibrationTimer?.invalidate()
                 vibrationTimer = nil
@@ -208,32 +189,8 @@ struct StudyTimerView: View {
                 .zIndex(3)
             }
 
+            // Removed Land button block
 
-            // Land button appears 5s after launch
-            if showLandButton {
-                Button("Land") {
-                    isStudying = false
-                    timerModel.stopTimer()  // stop the running timer
-                    NotificationCenter.default.post(name: .restoreShell, object: nil)  // restore shell UI
-                    handleSessionEnded()
-                    withAnimation {
-                        isLaunching = false
-                        timerModel.isRocketOverlayActive = false
-                        showRocketOverlay = false
-                        showLandButton = false
-                    }
-                }
-                .padding()
-                .background(Color.blue)
-                .foregroundColor(.white)
-                .cornerRadius(10)
-                .padding(.top, 216)
-                .transition(.opacity)
-                .zIndex(10)
-            }
-
-            // Fullscreen takeover overlay (delayed)
-            // overlay removed to prevent black full-screen takeover
         }
         .fullScreenCover(isPresented: $isShowingCategorySheet) {
             CategorySelectionOverlay(
@@ -301,6 +258,25 @@ struct StudyTimerView: View {
                 .padding(.horizontal)
             }
             .padding()
+        }
+        // Added fullScreenCover for RocketFocusOverlay
+        .fullScreenCover(isPresented: $showRocketOverlay) {
+            RocketFocusOverlay(
+                isPresented: $showRocketOverlay,
+                rocketShouldAnimate: $rocketShouldAnimate,
+                isStudying: $isStudying,
+                timerModel: timerModel,
+                onLand: {
+                    isStudying = false
+                    timerModel.stopTimer()
+                    handleSessionEnded()
+                    withAnimation {
+                        isLaunching = false
+                        timerModel.isRocketOverlayActive = false
+                        showRocketOverlay = false
+                    }
+                }
+            )
         }
     }
 
