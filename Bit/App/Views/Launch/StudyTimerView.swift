@@ -21,6 +21,10 @@ struct StudyTimerView: View {
 
     @State private var containerHeight: CGFloat = 0
 
+    // Added states for minute picker
+    @State private var showMinutePicker = false
+    @State private var selectedMinuteValue = 25
+
     private func handleSessionEnded() {
         isStudying = false
         showSessionEndedPopup = true
@@ -32,12 +36,17 @@ struct StudyTimerView: View {
                 VStack(spacing: 20) {
                     // Fixed header: timer + rocket
                     VStack(alignment: .leading, spacing: 10) {
-                        // MARK: - Timer display
-                        Text(formatTime(timerModel.timeRemaining))
-                            .font(.system(size: 64, weight: .bold, design: .monospaced))
-                            .foregroundColor(timerModel.isTimerRunning ? .green : .red)
-                            .animation(nil, value: timerModel.timeRemaining)  // ← disable any animation on timer updates
-                            .frame(maxWidth: .infinity, alignment: .center)  // center horizontally
+                        // MARK: - Timer display replaced with Button
+                        Button {
+                            selectedMinuteValue = timerModel.timeRemaining > 0 ? timerModel.timeRemaining / 60 : 25
+                            showMinutePicker = true
+                        } label: {
+                            Text(formatTime(timerModel.timeRemaining))
+                                .font(.system(size: 64, weight: .bold, design: .monospaced))
+                                .foregroundColor(timerModel.isTimerRunning ? .green : .red)
+                                .animation(nil, value: timerModel.timeRemaining)  // ← disable any animation on timer updates
+                                .frame(maxWidth: .infinity, alignment: .center)  // center horizontally
+                        }
 
                         RocketSprite(animate: $rocketShouldAnimate, isStudying: $isStudying)
                             .frame(width: 192, height: 192)
@@ -94,7 +103,7 @@ struct StudyTimerView: View {
                                 timerModel.selectedTopic = categoriesVM.selectedTopic
                                 timerModel.categoriesVM = categoriesVM
                                 timerModel.xpModel = xpModel
-                                timerModel.startTimer(for: 25 * 60)
+                                timerModel.startTimer(for: timerModel.timeRemaining > 0 ? timerModel.timeRemaining : 25 * 60)
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.84) {
                                     isStudying = true
                                 }
@@ -257,6 +266,41 @@ struct StudyTimerView: View {
                     showSessionEndedPopup = false
                 }
             )
+        }
+        // Added minute picker sheet
+        .sheet(isPresented: $showMinutePicker) {
+            VStack(spacing: 20) {
+                Text("Set Study Time")
+                    .font(.headline)
+                Picker("Minutes", selection: $selectedMinuteValue) {
+                    ForEach(1...60, id: \.self) { minute in
+                        Text("\(minute) min").tag(minute)
+                    }
+                }
+                .pickerStyle(WheelPickerStyle())
+                HStack {
+                    Button("Cancel") {
+                        showMinutePicker = false
+                    }
+                    .padding()
+                    .background(Color.red)
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
+
+                    Button("Set") {
+                        if !timerModel.isTimerRunning {
+                            timerModel.timeRemaining = selectedMinuteValue * 60
+                        }
+                        showMinutePicker = false
+                    }
+                    .padding()
+                    .background(Color.green)
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
+                }
+                .padding(.horizontal)
+            }
+            .padding()
         }
     }
 
