@@ -48,6 +48,12 @@ struct BitAppView: View {
         _civModel       = StateObject(wrappedValue: CivilizationModel())
         _categoriesModel = StateObject(wrappedValue: CategoriesViewModel())
         _taskModel      = StateObject(wrappedValue: TaskModel())
+
+        // Ensure every user has a username
+        let username = UserDefaults.standard.string(forKey: "profileUsername")
+        if username == nil || username?.isEmpty == true {
+            self.createLocalUserProfile()
+        }
     }
 
     var body: some View {
@@ -156,9 +162,12 @@ struct BitAppView: View {
     }
     
     private func createLocalUserProfile() {
-        // Create a default local profile when user skips sign-in
-        UserDefaults.standard.set("Guest", forKey: "profileUsername")
-        UserDefaults.standard.set("Guest", forKey: "profileName")
+        // Generate a randomized guest username (e.g., Guest12345)
+        let randomNum = Int.random(in: 10000...99999)
+        let generatedUsername = "Guest\(randomNum)"
+        UserDefaults.standard.set(generatedUsername, forKey: "profileUsername")
+        UserDefaults.standard.set(generatedUsername, forKey: "profileName")
+        CloudKitManager.shared.syncUserProfileToCloud()
     }
     
     #if os(iOS)

@@ -537,7 +537,12 @@ struct ProfileView: View {
                 case .success(let records):
                     if let record = records.matchResults.compactMap({ try? $0.1.get() }).first {
                         self.name = record["displayName"] as? String ?? ""
-                        self.username = record["username"] as? String ?? ""
+                        let loadedUsername = record["username"] as? String
+                        if let loadedUsername, !loadedUsername.isEmpty {
+                            self.username = loadedUsername
+                        } else {
+                            self.username = UserDefaults.standard.string(forKey: "profileUsername") ?? ""
+                        }
                         self.profileEmoji = record["profileEmoji"] as? String ?? "😀"
                         self.isSignedIn = true
                     } else {
@@ -884,3 +889,4 @@ extension Optional: OptionalProtocol {
         }
     }
 }
+
