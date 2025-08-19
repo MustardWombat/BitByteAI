@@ -3,7 +3,6 @@ import SwiftUI
 import UIKit
 #else
 import AppKit
-typealias UIImage = NSImage
 #endif
 
 public struct RocketSprite: View {
