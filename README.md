@@ -21,3 +21,28 @@ Welcome to **BitByteAI** — your companion for staying focused, leveling up wit
 ---
 
 ## Documentation
+
+This app uses Apple's CloudKit to save and transfer data between devices.
+
+INFO datastructure
+
+Record types:
+
+UserProfile:
+
+creationDate
+displayName
+lastLoginDate
+profileImage
+userID
+username
+
+UserProgress:
+
+coinBalance
+dailyMinutes
+level
+streak
+totalStudyMinutes
+userID
+xp
