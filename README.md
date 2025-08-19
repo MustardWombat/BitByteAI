@@ -1,4 +1,4 @@
-# 🚀 BitByte
+# BitByte
 
 > AI-powered productivity and focus assistant designed to make study time immersive, rewarding, and personalized.
 
