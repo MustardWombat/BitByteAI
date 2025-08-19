@@ -24,6 +24,7 @@ struct FriendsView: View {
     @State private var currentUserStreak: Int? = nil
     @State private var friendLevels: [String: Int] = [:]
     @State private var levelPillWidth: CGFloat = 0
+    @State private var addFriendSearchText: String = ""
     private let friendsManager = CloudFriendsManager()
 
     var body: some View {
@@ -197,13 +198,21 @@ struct FriendsView: View {
                     VStack(spacing: 16) {
                         Text("Add a Friend")
                             .font(.headline)
-                        // list of users not already friends or self
+                        TextField("Search users...", text: $addFriendSearchText)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .padding(.horizontal)
+                        // list of users not already friends or self, filtered by search text
                         ScrollView {
                             VStack(spacing: 12) {
                                 ForEach(allUsers.filter {
                                     let uid = $0["userID"] as? String ?? ""
+                                    let username = $0["username"] as? String ?? ""
+                                    let emoji = $0["profileEmoji"] as? String ?? ""
                                     return uid != UserDefaults.standard.string(forKey: "UserID") &&
-                                           !friendIDs.contains(uid)
+                                           !friendIDs.contains(uid) &&
+                                           (addFriendSearchText.isEmpty ||
+                                            username.localizedCaseInsensitiveContains(addFriendSearchText) ||
+                                            emoji.contains(addFriendSearchText))
                                 }, id: \.recordID) { record in
                                     let uid = record["userID"] as? String ?? ""
                                     let emoji = record["profileEmoji"] as? String ?? "😀"
