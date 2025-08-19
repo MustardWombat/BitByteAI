@@ -4,6 +4,21 @@
 
 Welcome to **BitByteAI** — your companion for staying focused, leveling up with XP, and tracking your study patterns. This iOS app gamifies productivity with live activities, session tracking, and even cosmic mining rewards.
 
+
+---
+## 📑 Table of Contents
+
+1. [BitByte](#bitbyte)
+2. [Features](#features)
+3. [Support / Bug Report / Feature Requests](#support--bug-report--feature-requests)
+4. [🧭 Roadmap](#-roadmap)
+5. [Documentation](#documentation)
+   - [CloudKit Documentation](#cloudkit-documentation)
+   - [Data Structure Overview](#data-structure-overview)
+   - [Record Types](#record-types)
+     - [UserProfile](#1-userprofile)
+     - [UserProgress](#2-userprogress)
+
 ---
 
 ## Features
