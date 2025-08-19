@@ -83,11 +83,19 @@ class XPModel: ObservableObject {
     }
 
     func addXP(_ amount: Int) {
-        let cappedAmount = min(amount, 25)
-        let proAmount = isPro ? cappedAmount * 2 : cappedAmount
+        let baseAmount = amount
+        let proAmount = isPro ? baseAmount * 2 : baseAmount
         let boostedAmount = Int(Double(proAmount) * upgradeMultiplier)
         xp += boostedAmount
         checkForLevelUp()
+    }
+    
+    /// Returns the XP that would be awarded for a session of this duration, accounting for Pro status and upgrades (but does not mutate state).
+    func xpAwardForSession(seconds: Int) -> Int {
+        let baseAmount = seconds
+        let proAmount = isPro ? baseAmount * 2 : baseAmount
+        let boostedAmount = Int(Double(proAmount) * upgradeMultiplier)
+        return boostedAmount
     }
 
     // New method to check if XP exceeds requirement for level-up

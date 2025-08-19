@@ -211,7 +211,7 @@ struct StudyTimerView: View {
                 }
             }()
             let totalTimeStudied = String(format: "%02d:%02d", elapsedSeconds / 60, elapsedSeconds % 60)
-            let xpEarned = elapsedSeconds
+            let xpEarned = xpModel.xpAwardForSession(seconds: elapsedSeconds)
             let coinsEarned = RewardCalculator.calculateCoinReward(using: elapsedSeconds)
             SessionEndedOverlay(
                 totalTimeStudied: totalTimeStudied,
@@ -327,4 +327,5 @@ struct EditGoalView: View {
 }
 
 // Custom overlay for category selection
+
 
