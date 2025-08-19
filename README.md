@@ -17,6 +17,8 @@ Welcome to **BitByteAI** — your companion for staying focused, leveling up wit
 |--------|--------------------------------------|--------|
 | x      | Public release                       | v1.1   |
 | x      | Fleshed out Progression and tools    | v1.2   |
+| x      | AI powered                           | v2.0   |
+
 
 ---
 
