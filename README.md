@@ -8,6 +8,13 @@ Welcome to **BitByteAI** — your companion for staying focused, leveling up wit
 
 ## Features
 
+---
+
+## Support / bug report / feature requests
+
+Thank you for taking the time to report issues as this helps a lot with development
+
+https://mustardwombat.github.io/BitByteAI/
 
 ---
 
