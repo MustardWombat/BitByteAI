@@ -9,6 +9,7 @@ struct OnboardingView: View {
     @State private var showTaskCreationOverlay = false
     @State private var presetCategoryName = ""
     @State private var presetCategoryColor = Color.blue
+    @State private var showSubscriptionOverlay = false
 
     @State private var notificationRequested = false
     @State private var notificationGranted = false
@@ -321,7 +322,7 @@ struct OnboardingView: View {
                     }
 
                     Button("Upgrade to Pro") {
-                        // Handle upgrade
+                        showSubscriptionOverlay = true
                     }
                     .padding()
                     .background(Color.orange)
@@ -387,6 +388,20 @@ struct OnboardingView: View {
                         withAnimation { selection = 7 }
                     }
                 }
+            }
+
+            if showSubscriptionOverlay {
+                Color.black.opacity(0.4)
+                    .ignoresSafeArea()
+                    .onTapGesture { showSubscriptionOverlay = false }
+                SubscriptionConfirmationView(
+                    isPresented: $showSubscriptionOverlay,
+                    subscriptionManager: subscriptionManager
+                )
+                .frame(maxWidth: 400)
+                .padding()
+                .transition(.move(edge: .bottom))
+                .zIndex(100)
             }
         }
     }
