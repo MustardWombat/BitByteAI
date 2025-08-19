@@ -22,7 +22,7 @@ Welcome to **BitByteAI** — your companion for staying focused, leveling up wit
 
 | Status | Feature                              | Target |
 |--------|--------------------------------------|--------|
-| x      | Public release                       | v1.0   |
+| x      | Public release                       | v1.1   |
 
 ---
 
