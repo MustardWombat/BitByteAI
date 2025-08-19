@@ -210,13 +210,11 @@ struct StudyTimerView: View {
                     return timerModel.initialDurationPublic - timerModel.timeRemaining
                 }
             }()
-            let studiedMinutes = elapsedSeconds / 60
-            let studiedSeconds = elapsedSeconds % 60
+            let totalTimeStudied = String(format: "%02d:%02d", elapsedSeconds / 60, elapsedSeconds % 60)
             let xpEarned = elapsedSeconds
             let coinsEarned = RewardCalculator.calculateCoinReward(using: elapsedSeconds)
             SessionEndedOverlay(
-                studiedMinutes: studiedMinutes,
-                studiedSeconds: studiedSeconds,
+                totalTimeStudied: totalTimeStudied,
                 xpEarned: xpEarned,
                 coinsEarned: coinsEarned,
                 onDismiss: {
