@@ -57,6 +57,8 @@
 		4FEA9AFC2D8E205B00D8B37B /* Bit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Bit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4FEA9B0D2D8E205D00D8B37B /* CosmosTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CosmosTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4FEA9B172D8E205D00D8B37B /* CosmosUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CosmosUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		4FED4B972E53FAAC0079FF7A /* Bit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Bit.xcodeproj; sourceTree = "<group>"; };
+		4FED4C992E54030E0079FF7A /* Bit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Bit.xcodeproj; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -296,6 +298,20 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		4FED4BDE2E53FAAC0079FF7A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		4FED4CE02E54030E0079FF7A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -457,6 +473,10 @@
 					ProjectRef = 4F8E91C92E4D579D00E5CA36 /* Bit.xcodeproj */;
 				},
 				{
+					ProductGroup = 4FED4BDE2E53FAAC0079FF7A /* Products */;
+					ProjectRef = 4FED4B972E53FAAC0079FF7A /* Bit.xcodeproj */;
+				},
+				{
 					ProductGroup = 4F187E232E4981C1005BB096 /* Products */;
 					ProjectRef = 4F187DDC2E4981C1005BB096 /* Bit.xcodeproj */;
 				},
@@ -483,6 +503,10 @@
 				{
 					ProductGroup = 4FC1B9292E42E10F00CE751B /* Products */;
 					ProjectRef = 4FC1B8E42E42E10F00CE751B /* Bit.xcodeproj */;
+				},
+				{
+					ProductGroup = 4FED4CE02E54030E0079FF7A /* Products */;
+					ProjectRef = 4FED4C992E54030E0079FF7A /* Bit.xcodeproj */;
 				},
 				{
 					ProductGroup = 4F12FA542E49712600B621E0 /* Products */;
@@ -792,7 +816,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.2;
@@ -839,7 +863,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.2;
