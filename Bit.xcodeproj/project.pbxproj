@@ -59,6 +59,7 @@
 		4FEA9B172D8E205D00D8B37B /* CosmosUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CosmosUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4FED4B972E53FAAC0079FF7A /* Bit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Bit.xcodeproj; sourceTree = "<group>"; };
 		4FED4C992E54030E0079FF7A /* Bit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Bit.xcodeproj; sourceTree = "<group>"; };
+		4FED4E712E5513F50079FF7A /* Bit.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Bit.xcodeproj; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -312,6 +313,13 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		4FED4EB52E5513F50079FF7A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -459,6 +467,10 @@
 				{
 					ProductGroup = 4FC1BA232E43ED6A00CE751B /* Products */;
 					ProjectRef = 4FC1B9DE2E43ED6A00CE751B /* Bit.xcodeproj */;
+				},
+				{
+					ProductGroup = 4FED4EB52E5513F50079FF7A /* Products */;
+					ProjectRef = 4FED4E712E5513F50079FF7A /* Bit.xcodeproj */;
 				},
 				{
 					ProductGroup = 4F1644B42E46BB5A008AAD91 /* Products */;
@@ -821,7 +833,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.2;
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.jameswilliams.BitByteAI-";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -869,7 +881,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.2;
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.jameswilliams.Bit-";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
