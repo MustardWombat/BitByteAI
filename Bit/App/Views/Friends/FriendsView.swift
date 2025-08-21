@@ -190,62 +190,17 @@ struct FriendsView: View {
                         .padding()
                     }
                 }
-
-                // Overlay for adding a friend
-                if showAddFriendOverlay {
-                    Color.black.opacity(0.6)
-                        .ignoresSafeArea()
-                    VStack(spacing: 16) {
-                        Text("Add a Friend")
-                            .font(.headline)
-                        TextField("Search users...", text: $addFriendSearchText)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .padding(.horizontal)
-                        // list of users not already friends or self, filtered by search text
-                        ScrollView {
-                            VStack(spacing: 12) {
-                                ForEach(allUsers.filter {
-                                    let uid = $0["userID"] as? String ?? ""
-                                    let username = $0["username"] as? String ?? ""
-                                    let emoji = $0["profileEmoji"] as? String ?? ""
-                                    return uid != UserDefaults.standard.string(forKey: "UserID") &&
-                                           !friendIDs.contains(uid) &&
-                                           (addFriendSearchText.isEmpty ||
-                                            username.localizedCaseInsensitiveContains(addFriendSearchText) ||
-                                            emoji.contains(addFriendSearchText))
-                                }, id: \.recordID) { record in
-                                    let uid = record["userID"] as? String ?? ""
-                                    let emoji = record["profileEmoji"] as? String ?? "😀"
-                                    HStack {
-                                        Text(emoji)
-                                            .font(.title2)
-                                        Text(record["username"] as? String ?? "Unknown")
-                                        Spacer()
-                                        Button("Add") {
-                                            let currentID = UserDefaults.standard.string(forKey: "UserID") ?? ""
-                                            friendsManager.addFriend(currentUserID: currentID, friendID: uid) { success, _ in
-                                                if success {
-                                                    friendIDs.insert(uid)
-                                                }
-                                            }
-                                        }
-                                    }
-                                    .padding(.horizontal)
-                                }
-                            }
-                            .padding(.vertical)
-                        }
-                        Button("Close") {
-                            showAddFriendOverlay = false
-                        }
-                        .padding(.top)
-                    }
-                    .frame(maxWidth: 300, maxHeight: 400)
-                    .background(Color(UIColor.systemBackground))
-                    .cornerRadius(12)
-                    .shadow(radius: 10)
-                }
             }
+        }
+        .fullScreenCover(isPresented: $showAddFriendOverlay) {
+            AddFriendOverlay(
+                showAddFriendOverlay: $showAddFriendOverlay,
+                addFriendSearchText: $addFriendSearchText,
+                allUsers: allUsers,
+                friendIDs: friendIDs,
+                friendsManager: friendsManager,
+                onFriendAdded: { uid in friendIDs.insert(uid) }
+            )
         }
         .background(Color.black.ignoresSafeArea())
         .foregroundColor(.white)
