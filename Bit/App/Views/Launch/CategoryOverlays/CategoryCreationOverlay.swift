@@ -32,95 +32,97 @@ struct CategoryCreationOverlay: View {
     }
 
     var body: some View {
-        VStack(spacing: 20) {
-            Text(category == nil ? "Create Category" : "Edit Category")
-                .font(.headline)
+        ZStack {
+            Color.black
+                .ignoresSafeArea()
+            
+            VStack(spacing: 20) {
+                Text(category == nil ? "Create Category" : "Edit Category")
+                    .font(.headline)
 
-            TextField("Name", text: $categoryName)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding()
+                TextField("Name", text: $categoryName)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .padding()
 
-            VStack {
-                Text("Weekly Goal")
-                    .font(.subheadline)
+                VStack {
+                    Text("Weekly Goal")
+                        .font(.subheadline)
+
+                    HStack {
+                        Picker("Hours", selection: $selectedHours) {
+                            ForEach(0..<24) { hour in
+                                Text("\(hour) h").tag(hour)
+                            }
+                        }
+                        #if os(iOS)
+                        .pickerStyle(WheelPickerStyle())
+                        #endif
+                        .frame(maxWidth: 100)
+
+                        Picker("Minutes", selection: $selectedMinutes) {
+                            ForEach(0..<60) { minute in
+                                Text("\(minute) m").tag(minute)
+                            }
+                        }
+                        #if os(iOS)
+                        .pickerStyle(WheelPickerStyle())
+                        #endif
+                        .frame(maxWidth: 100)
+                    }
+                }
+
+                VStack {
+                    Text("Color")
+                        .font(.subheadline)
+                    if category == nil {
+                        ColorPicker("Select Color", selection: $selectedColor)
+                            .padding()
+                    } else {
+                        // Allow editing of color for existing categories.
+                        ColorPicker("Select Color", selection: $selectedColor)
+                            .padding()
+                    }
+                }
 
                 HStack {
-                    Picker("Hours", selection: $selectedHours) {
-                        ForEach(0..<24) { hour in
-                            Text("\(hour) h").tag(hour)
+                    Button("Save") {
+                        let totalMinutes = (selectedHours * 60) + selectedMinutes
+                        if !categoryName.isEmpty {
+                            onSaveCategory(categoryName, totalMinutes, selectedColor, category)
+                            isPresented = false
+                        } else {
+                            print("Category name is empty. Save aborted.")
                         }
                     }
-                    #if os(iOS)
-                    .pickerStyle(WheelPickerStyle())
-                    #endif
-                    .frame(maxWidth: 100)
+                    .padding()
+                    .background(Color.green)
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
 
-                    Picker("Minutes", selection: $selectedMinutes) {
-                        ForEach(0..<60) { minute in
-                            Text("\(minute) m").tag(minute)
-                        }
-                    }
-#if os(iOS)
-.pickerStyle(WheelPickerStyle())
-#endif
-.frame(maxWidth: 100)
-                }
-            }
-
-            VStack {
-                Text("Color")
-                    .font(.subheadline)
-                if category == nil {
-                    ColorPicker("Select Color", selection: $selectedColor)
-                        .padding()
-                } else {
-                    // Allow editing of color for existing categories.
-                    ColorPicker("Select Color", selection: $selectedColor)
-                        .padding()
-                }
-            }
-
-            HStack {
-                Button("Save") {
-                    let totalMinutes = (selectedHours * 60) + selectedMinutes
-                    if !categoryName.isEmpty {
-                        onSaveCategory(categoryName, totalMinutes, selectedColor, category)
+                    Button("Cancel") {
+                        onCancel()
                         isPresented = false
-                    } else {
-                        print("Category name is empty. Save aborted.")
                     }
+                    .padding()
+                    .background(Color.red)
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
                 }
-                .padding()
-                .background(Color.green)
-                .foregroundColor(.white)
-                .cornerRadius(8)
-
-                Button("Cancel") {
-                    onCancel()
-                    isPresented = false
+                
+                // Delete button only appears when editing an existing category
+                if category != nil {
+                    Button("Delete Category") {
+                        showDeleteAlert = true
+                    }
+                    .padding()
+                    .background(Color.red.opacity(0.8))
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
+                    .padding(.top, 8)
                 }
-                .padding()
-                .background(Color.red)
-                .foregroundColor(.white)
-                .cornerRadius(8)
             }
-            
-            // Delete button only appears when editing an existing category
-            if category != nil {
-                Button("Delete Category") {
-                    showDeleteAlert = true
-                }
-                .padding()
-                .background(Color.red.opacity(0.8))
-                .foregroundColor(.white)
-                .cornerRadius(8)
-                .padding(.top, 8)
-            }
+            .padding()
         }
-        .padding()
-        .background(Color.black)
-        .cornerRadius(12)
-        .shadow(radius: 10)
         .alert(isPresented: $showDeleteAlert) {
             Alert(
                 title: Text("Delete Category"),
@@ -150,4 +152,3 @@ struct CategoryCreationOverlay: View {
         }
     }
 }
-

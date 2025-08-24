@@ -17,27 +17,21 @@ struct ShopView: View {
             VStack {
                 // --- BitByte Pro Subscription Button ---
                 Group {
-                    if subscriptionManager.isLoading {
-                        ProgressView()
+                    Button(action: {
+                        print("🔔 Subscribe tapped")
+                        subscribePro()
+                    }) {
+                        Text("BitByte Pro")
+                            .font(.largeTitle).bold()
+                            .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding()
-                    } else {
-                        Button(action: {
-                            print("🔔 Subscribe tapped")
-                            subscribePro()
-                        }) {
-                            Text("BitByte Pro")
-                                .font(.largeTitle).bold()
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                        }
-                        .frame(maxWidth: .infinity)
-                        .background(Color.orange)
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
-                        .opacity(subscriptionManager.subscriptionProduct == nil ? 0.6 : 1.0)
                     }
+                    .frame(maxWidth: .infinity)
+                    .background(Color.orange)
+                    .foregroundColor(.white)
+                    .cornerRadius(12)
+                    .opacity(subscriptionManager.isLoading ? 0.6 : 1.0)
                 }
                 .padding(.horizontal)
                 // --- end subscription button ---

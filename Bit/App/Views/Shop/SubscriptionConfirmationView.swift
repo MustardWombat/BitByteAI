@@ -23,94 +23,77 @@ struct SubscriptionConfirmationView: View {
                         .foregroundColor(.primary)
                 }
                 
-                // Product Info
-                if let product = subscriptionManager.subscriptionProduct {
-                    VStack(spacing: 16) {
-                        Text(product.displayName)
-                            .font(.title2)
-                            .bold()
-                            .multilineTextAlignment(.center)
-                        
-                        Text(product.displayPrice)
-                            .font(.title)
-                            .foregroundColor(.green)
-                            .bold()
-                        
-                        // Benefits list
-                        VStack(alignment: .leading, spacing: 8) {
-                            FeatureRow(icon: "star.fill", text: "2x XP from all activities")
-                            FeatureRow(icon: "dollarsign.circle.fill", text: "2x Coins from all sources")
-                            FeatureRow(icon: "folder.fill", text: "Unlimited categories")
-                        }
-                        .padding(.vertical)
+                VStack(spacing: 16) {
+                    Text(subscriptionManager.subscriptionProduct?.displayName ?? "Loading...")
+                        .font(.title2)
+                        .bold()
+                        .multilineTextAlignment(.center)
+                    
+                    Text(subscriptionManager.subscriptionProduct?.displayPrice ?? "...")
+                        .font(.title)
+                        .foregroundColor(.green)
+                        .bold()
+                    
+                    // Benefits list
+                    VStack(alignment: .leading, spacing: 8) {
+                        FeatureRow(icon: "star.fill", text: "2x XP from all activities")
+                        FeatureRow(icon: "dollarsign.circle.fill", text: "2x Coins from all sources")
+                        FeatureRow(icon: "folder.fill", text: "Unlimited categories")
                     }
-                    
-                    Spacer()
-                    
-                    // Purchase Button
-                    Button(action: {
-                        Task { 
-                            await subscriptionManager.purchase()
-                            isPresented = false
-                        }
-                    }) {
-                        if subscriptionManager.isLoading {
-                            ProgressView()
-                                .tint(.white)
-                        } else {
-                            Text("Subscribe Now")
-                                .font(.headline)
-                                .bold()
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                    .background(
-                        LinearGradient(
-                            gradient: Gradient(colors: [Color.orange, Color.yellow]),
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .foregroundColor(.white)
-                    .cornerRadius(12)
-                    .disabled(subscriptionManager.isLoading || isRestoring)
-                    
-                    // Restore Purchase Button
-                    Button(action: {
-                        Task {
-                            isRestoring = true
-                            do {
-                                await subscriptionManager.loadProduct()
-                                try await AppStore.sync()
-                                restoreResultMessage = "Restore completed successfully."
-                            } catch {
-                                restoreResultMessage = "Restore failed: \(error.localizedDescription)"
-                            }
-                            isRestoring = false
-                            showRestoreAlert = true
-                        }
-                    }) {
-                        if isRestoring {
-                            ProgressView()
-                                .tint(.white)
-                        } else {
-                            Text("Restore Purchase")
-                                .font(.headline)
-                                .bold()
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                    .background(Color.gray)
-                    .foregroundColor(.white)
-                    .cornerRadius(12)
-                    .disabled(subscriptionManager.isLoading || isRestoring)
-                    
-                } else {
-                    ProgressView("Loading subscription details...")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.vertical)
                 }
+                
+                Spacer()
+                
+                // Purchase Button
+                Button(action: {
+                    Task { 
+                        await subscriptionManager.purchase()
+                        isPresented = false
+                    }
+                }) {
+                    Text("Subscribe Now")
+                        .font(.headline)
+                        .bold()
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .background(
+                    LinearGradient(
+                        gradient: Gradient(colors: [Color.orange, Color.yellow]),
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .foregroundColor(.white)
+                .cornerRadius(12)
+                .disabled(subscriptionManager.isLoading || isRestoring)
+                
+                // Restore Purchase Button
+                Button(action: {
+                    Task {
+                        isRestoring = true
+                        do {
+                            await subscriptionManager.loadProduct()
+                            try await AppStore.sync()
+                            restoreResultMessage = "Restore completed successfully."
+                        } catch {
+                            restoreResultMessage = "Restore failed: \(error.localizedDescription)"
+                        }
+                        isRestoring = false
+                        showRestoreAlert = true
+                    }
+                }) {
+                    Text("Restore Purchase")
+                        .font(.headline)
+                        .bold()
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .background(Color.gray)
+                .foregroundColor(.white)
+                .cornerRadius(12)
+                .disabled(subscriptionManager.isLoading || isRestoring)
             }
             .padding()
             .navigationBarTitleDisplayMode(.inline)

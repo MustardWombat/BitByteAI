@@ -14,6 +14,7 @@ enum TaskSortOption: String, CaseIterable, Identifiable {
 struct TaskItem: Identifiable, Codable {
     let id: UUID
     var title: String
+    var subcategory: String
     var isCompleted: Bool
     var xpReward: Int
     var coinReward: Int
@@ -22,9 +23,10 @@ struct TaskItem: Identifiable, Codable {
     var createdAt: Date
     var completedAt: Date? // Add this property to record completion time
 
-    init(title: String, xpReward: Int = 20, coinReward: Int = 10, difficulty: Int = 3, dueDate: Date? = nil) {
+    init(title: String, subcategory: String = "General", xpReward: Int = 20, coinReward: Int = 10, difficulty: Int = 3, dueDate: Date? = nil) {
         self.id = UUID()
         self.title = title
+        self.subcategory = subcategory
         self.isCompleted = false
         self.xpReward = xpReward
         self.coinReward = coinReward
@@ -57,8 +59,8 @@ class TaskModel: ObservableObject {
         sortTasks(by: sortOption)
     }
 
-    func addTask(title: String, xpReward: Int = 20, coinReward: Int = 10, difficulty: Int = 3, dueDate: Date? = nil) {
-        let task = TaskItem(title: title, xpReward: xpReward, coinReward: coinReward, difficulty: difficulty, dueDate: dueDate)
+    func addTask(title: String, subcategory: String = "General", xpReward: Int = 20, coinReward: Int = 10, difficulty: Int = 3, dueDate: Date? = nil) {
+        let task = TaskItem(title: title, subcategory: subcategory, xpReward: xpReward, coinReward: coinReward, difficulty: difficulty, dueDate: dueDate)
         tasks.append(task)
         sortTasks(by: sortOption)
     }
@@ -129,5 +131,9 @@ class TaskModel: ObservableObject {
         guard let data = try? JSONEncoder().encode(tasks) else { return }
         NSUbiquitousKeyValueStore.default.set(data, forKey: tasksKey)
         NSUbiquitousKeyValueStore.default.synchronize()
+    }
+    
+    var allSubcategories: [String] {
+        Set(tasks.map { $0.subcategory }).sorted()
     }
 }

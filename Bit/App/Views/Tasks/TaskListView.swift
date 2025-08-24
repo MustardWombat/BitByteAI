@@ -8,6 +8,7 @@ struct TaskListView: View {
     
     @State private var showTaskCreationOverlay: Bool = false
     @State private var showSortMenu: Bool = false
+    @State private var selectedSubcategory: String = "All"
     
     var body: some View {
         #if os(iOS)
@@ -15,6 +16,31 @@ struct TaskListView: View {
         #endif
         
         ZStack {
+            if !taskModel.allSubcategories.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack {
+                        Button(action: { selectedSubcategory = "All" }) {
+                            Text("All")
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(selectedSubcategory == "All" ? Color.green.opacity(0.2) : Color.clear)
+                                .cornerRadius(8)
+                        }
+                        ForEach(taskModel.allSubcategories, id: \.self) { cat in
+                            Button(action: { selectedSubcategory = cat }) {
+                                Text(cat)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(selectedSubcategory == cat ? Color.green.opacity(0.2) : Color.clear)
+                                    .cornerRadius(8)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.top, 8)
+                }
+            }
+            
             // --- Empty state when no tasks exist ---
             if taskModel.tasks.isEmpty {
                 VStack(spacing: 20) {
@@ -114,10 +140,11 @@ struct TaskListView: View {
                             ScrollView {
                                 LazyVStack(alignment: .leading, spacing: 8) {
                                     ForEach(taskModel.tasks.filter { task in
+                                        let showByCategory = selectedSubcategory == "All" || task.subcategory == selectedSubcategory
                                         if task.isCompleted, let done = task.completedAt {
-                                            return Date().timeIntervalSince(done) < 86400 // hide if completed over 1 day ago
+                                            return showByCategory && Date().timeIntervalSince(done) < 86400 // hide if completed over 1 day ago
                                         }
-                                        return true
+                                        return showByCategory
                                     }) { task in
                                         HStack {
                                             // Replace the static image with a button for incomplete tasks
@@ -263,12 +290,13 @@ struct TaskListView: View {
                         // --- Task List ---
                         List {
                             ForEach(taskModel.tasks.filter { task in
+                                let showByCategory = selectedSubcategory == "All" || task.subcategory == selectedSubcategory
                                 if task.isCompleted, let done = task.completedAt {
                                     let _ = print("🔍 DEBUG: Task \(task.title) is completed")
-                                    return Date().timeIntervalSince(done) < 86400
+                                    return showByCategory && Date().timeIntervalSince(done) < 86400
                                 }
                                 let _ = print("🔍 DEBUG: Task \(task.title) is shown")
-                                return true
+                                return showByCategory
                             }) { task in
                                 HStack {
                                     if task.isCompleted {
@@ -427,3 +455,4 @@ struct TaskListView: View {
         }
     }
 }
+
