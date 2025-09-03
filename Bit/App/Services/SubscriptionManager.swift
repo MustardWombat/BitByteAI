@@ -7,14 +7,27 @@ class SubscriptionManager: ObservableObject {
     @Published var isLoading = false
     @Published var purchaseSuccess = false
     @Published var purchaseError: Error?
+    
+    // Temporarily make pro features available by default
+    @Published var hasProAccess = true
+    private let enableSubscriptions = false // Set to true when ready to enable subscriptions
 
     private let productId = "BitBytePro"  // ← use the exact product identifier from App Store Connect
 
     init() {
-        Task { await loadProduct() }
+        // Only load products if subscriptions are enabled
+        if enableSubscriptions {
+            Task { await loadProduct() }
+        }
+        // Set pro access to true by default (for free upload)
+        hasProAccess = true
+        UserDefaults.standard.set(true, forKey: "hasSubscription")
     }
 
     func loadProduct() async {
+        // Skip loading if subscriptions are disabled
+        guard enableSubscriptions else { return }
+        
         isLoading = true
         defer { isLoading = false }
         do {
@@ -31,6 +44,14 @@ class SubscriptionManager: ObservableObject {
     }
 
     func purchase() async {
+        // If subscriptions are disabled, just mark as successful
+        guard enableSubscriptions else {
+            purchaseSuccess = true
+            hasProAccess = true
+            UserDefaults.standard.set(true, forKey: "hasSubscription")
+            return
+        }
+        
         guard let product = subscriptionProduct else { return }
         do {
             let result = try await product.purchase()
@@ -39,6 +60,7 @@ class SubscriptionManager: ObservableObject {
                 let transaction = try checkVerified(verification)
                 await transaction.finish()
                 purchaseSuccess = true
+                hasProAccess = true
                 // ← persist Pro status
                 UserDefaults.standard.set(true, forKey: "hasSubscription")
             case .userCancelled, .pending:
